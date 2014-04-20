@@ -9,6 +9,7 @@ package nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ServiceLoader;
@@ -94,7 +95,10 @@ public abstract class Stream {
 
 				@Override
 				public Stream openImpl(String path) throws IOException {
-					return Stream.open(Stream.class.getResource(path).toExternalForm());
+					URL resource = Stream.class.getResource(path);
+					if(resource == null)
+						throw new IOException("No such resource found: " + path);
+					return Stream.open(resource.toExternalForm());
 				}
 				
 			});
