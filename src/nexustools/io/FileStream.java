@@ -1,0 +1,98 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package nexustools.io;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.WeakHashMap;
+
+/**
+ *
+ * @author katelyn
+ */
+public class FileStream extends Stream {
+	
+	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
+	private final RandomAccessFile randomAccessFile;
+	private final String path;
+	private boolean writable;
+	private long pos;
+	
+	public FileStream(String path, boolean writable) throws FileNotFoundException, IOException {
+		randomAccessFile = new RandomAccessFile(path, writable ? "rw" : "r");
+		randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
+		this.writable = writable;
+		this.path = path;
+	}
+	
+	public FileStream(String path) throws FileNotFoundException, IOException {
+		this(path, false);
+	}
+	
+	public static SubStream getStream(String filePath) throws IOException {
+		return getStream(filePath, false);
+	}
+	
+	public static SubStream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
+		FileStream fileStream;
+		if(writeable)
+			fileStream = new FileStream(filePath, true);
+		else {
+			fileStream = instanceCache.get(filePath);
+			if(fileStream == null) {
+				fileStream = new FileStream(filePath);
+				instanceCache.put(filePath, fileStream);
+			}
+		}
+		
+		return fileStream.createSubSectorStream();
+	}
+
+	@Override
+	public void seek(long pos) throws IOException {
+		randomAccessFile.seek(pos);
+	}
+
+	@Override
+	public long pos() {
+		return pos;
+	}
+
+	@Override
+	public long size() throws IOException {
+		return randomAccessFile.length();
+	}
+
+	@Override
+	public int read(byte[] buffer, int off, int len) throws IOException {
+		int read = randomAccessFile.read(buffer, off, len);
+		if(read > 0)
+			pos += read;
+		return read;
+	}
+
+	@Override
+	public void write(byte[] buffer, int off, int len) throws IOException {
+		randomAccessFile.write(buffer, off, len);
+		pos += len;
+	}
+
+	@Override
+	public boolean canWrite() {
+		return writable;
+	}
+
+	@Override
+	public void flush() throws IOException {}
+
+	@Override
+	public String getURL() {
+		return "file:" + path;
+	}
+	
+}
