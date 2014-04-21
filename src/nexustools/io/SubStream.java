@@ -14,36 +14,83 @@ import java.io.IOException;
  */
 public class SubStream extends Stream {
 	
-	public static final class Range {
+	public static interface Range {
 		
-		public final long start;
-		public final long end;
+		public boolean isSubRange();
 		
-		protected Range(long start, long end) {
+		public long getStart();
+		public long getEnd();
+		
+		public long getSize();
+		
+	}
+	
+	private static final class SetRange implements Range {
+		
+		private final long start;
+		private final long end;
+		
+		protected SetRange(long start, long end) {
 			this.start = start;
 			this.end = end;
 		}
 
-		protected Range() {
+		protected SetRange() {
 			this(0, Long.MAX_VALUE);
 		}
 		
+		@Override
 		public boolean isSubRange() {
 			return start > 0 || end < Long.MAX_VALUE;
 		}
 
-		private long size() {
+		@Override
+		public long getSize() {
 			return end-start;
+		}
+
+		@Override
+		public long getStart() {
+			return start;
+		}
+
+		@Override
+		public long getEnd() {
+			return end;
 		}
 		
 	}
 	
-	public static Range getRange() {
-		return new Range();
+	private static final Range fullRange = new Range() {
+
+		@Override
+		public boolean isSubRange() {
+			return false;
+		}
+
+		@Override
+		public long getSize() {
+			return Long.MAX_VALUE;
+		}
+
+		@Override
+		public long getStart() {
+			return 0;
+		}
+
+		@Override
+		public long getEnd() {
+			return Long.MAX_VALUE;
+		}
+		
+	};
+	
+	public static Range getFullRange() {
+		return fullRange;
 	}
 	
-	public static Range getRange(long start, long end) {
-		return new Range(start, end);
+	public static Range createRange(long start, long end) {
+		return new SetRange(start, end);
 	}
 	
 	private long pos = 0;
@@ -55,17 +102,17 @@ public class SubStream extends Stream {
 		this.range = range;
 	}
 
-	SubStream(Stream stream, long start, long end) {
-		this(stream, new Range(start, end));
+	public SubStream(Stream stream, long start, long end) {
+		this(stream, new SetRange(start, end));
 	}
 
-	SubStream(Stream stream) {
-		this(stream, new Range());
+	public SubStream(Stream stream) {
+		this(stream, getFullRange());
 	}
 
 	@Override
 	public void seek(long pos) throws IOException {
-		stream.seek(Math.min(pos, size()) + range.start);
+		stream.seek(Math.min(pos, size()) + range.getStart());
 	}
 
 	@Override
@@ -75,7 +122,7 @@ public class SubStream extends Stream {
 
 	@Override
 	public long size() throws IOException {
-		return Math.min(stream.size() - range.start, range.size());
+		return Math.min(stream.size() - range.getStart(), range.getSize());
 	}
 
 	@Override
@@ -89,7 +136,7 @@ public class SubStream extends Stream {
 	@Override
 	public void write(byte[] buffer, int offset, int len) throws IOException {
 		stream.seek(pos);
-		stream.write(buffer, offset, (int) (Math.min(range.end, offset+len)-offset));
+		stream.write(buffer, offset, (int) (Math.min(range.getEnd(), offset+len)-offset));
 		pos = stream.pos();
 	}
 
@@ -115,7 +162,7 @@ public class SubStream extends Stream {
 		if(!range.isSubRange())
 			return stream.getURL();
 		
-		return "substream:" + range.start + "-" + range.end + "@" + stream.getURL();
+		return "substream:" + range.getStart() + "-" + range.getEnd() + "@" + stream.getURL();
 	}
 	
 	@Override
@@ -124,6 +171,25 @@ public class SubStream extends Stream {
 			return stream.toString();
 		
 		return super.toString();
+	}
+	
+	public Stream getEffectiveStream() {
+		Stream effectiveStream;
+		if(!range.isSubRange()) {
+			effectiveStream = this.stream;
+			while(effectiveStream instanceof SubStream)
+				effectiveStream = ((SubStream)effectiveStream).getEffectiveStream();
+		} else
+			effectiveStream = this;
+		return effectiveStream;
+	}
+
+	public Stream getUnderlyingString() {
+		return stream;
+	}
+
+	public Range getRange() {
+		return range;
 	}
 	
 }

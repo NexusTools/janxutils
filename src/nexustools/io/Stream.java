@@ -63,7 +63,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path) throws IOException {
+				public Stream openImpl(String path, String raw) throws IOException {
 					return FileStream.getStream(path);
 				}
 				
@@ -94,11 +94,12 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path) throws IOException {
+				public Stream openImpl(String path, String raw) throws IOException {
 					URL resource = Stream.class.getResource(path);
 					if(resource == null)
 						throw new IOException("No such resource found: " + path);
-					return Stream.open(resource.toExternalForm());
+					
+					return Stream.synthesize(resource.toExternalForm(), "resource:" + raw, "ResourceSynth");
 				}
 				
 			});
@@ -177,6 +178,26 @@ public abstract class Stream {
 		} else
 			return FileStream.getStream(url);
 	}
+	
+	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException {
+		Stream stream = open(effectiveURL);
+		while(stream instanceof SubStream)
+			stream = ((SubStream)stream).getEffectiveStream();
+		
+		return new SubStream(stream) {
+
+			@Override
+			public String getURL() {
+				return reportedURL;
+			}
+
+			@Override
+			public String toString() {
+				return stringForStream(this, Stream.class.getName() + "$" + name);
+			}
+			
+		};
+	}
 
 	public static InputStream openInputStream(String url) throws IOException {
 		return open(url).createInputStream();
@@ -214,10 +235,10 @@ public abstract class Stream {
 		return new SubStream(this, range);
 	}
 	public final SubStream createSubSectorStream(long start, long end) {
-		return createSubSectorStream(SubStream.getRange(start, end));
+		return createSubSectorStream(SubStream.createRange(start, end));
 	}
 	public final SubStream createSubSectorStream() {
-		return createSubSectorStream(SubStream.getRange());
+		return createSubSectorStream(SubStream.getFullRange());
 	}
 
 	public final InputStream createInputStream() throws IOException {
@@ -333,15 +354,62 @@ public abstract class Stream {
 
 	public abstract String getURL();
 	
-	@Override
-	public String toString() {
+	protected static String stringForStream(Stream stream) {
+		return stringForStream(stream, stream.getClass().getName());
+	}
+	
+	protected static String stringForStream(Stream stream, String name) {
 		StringBuilder builder = new StringBuilder();
-		builder.append(getClass().getName());
+		builder.append(name);
 		builder.append('(');
-		builder.append(getURL());
+		builder.append(stream.getURL());
 		builder.append(')');
 		
 		return builder.toString();
+	}
+	
+	@Override
+	public String toString() {
+		return stringForStream(this);
+	}
+	
+	public String getExtension() {
+		String url = getURL();
+		int lastPos = url.lastIndexOf('.');
+		if(lastPos > -1)
+			return url.substring(lastPos+1);
+		return null;
+	}
+	
+	public String getMimeType() {
+		String extension = getExtension();
+		if(extension != null)
+			switch(extension) {
+				case "txt":
+					return "text/plain";
+					
+				case "html":
+					return "text/html";
+
+				case "png":
+					return "image/png";
+
+				case "jpg":
+				case "jpeg":
+					return "image/jpeg";
+
+				case "gif":
+					return "image/gif";
+
+				case "tiff":
+					return "image/tiff";
+
+				case "bmp":
+					return "image/bmp";
+					
+			}
+		
+		return "application/octet-stream";
 	}
 	
 }

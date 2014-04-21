@@ -6,10 +6,15 @@
 
 package nexustools.io;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Method;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import nexustools.utils.WeakArrayList;
 
 /**
  *
@@ -17,6 +22,7 @@ import java.util.WeakHashMap;
  */
 public class FileStream extends Stream {
 	
+	private static final WeakArrayList<FileStream> deleteOnExit = new WeakArrayList();
 	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
 	private final RandomAccessFile randomAccessFile;
 	private final String path;
@@ -34,14 +40,18 @@ public class FileStream extends Stream {
 		this(path, false);
 	}
 	
-	public static SubStream getStream(String filePath) throws IOException {
+	public String getFilePath() {
+		return path;
+	}
+	
+	public static Stream getStream(String filePath) throws IOException {
 		return getStream(filePath, false);
 	}
 	
-	public static SubStream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
+	public static Stream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
 		FileStream fileStream;
 		if(writeable)
-			fileStream = new FileStream(filePath, true);
+			return new FileStream(filePath, true);
 		else {
 			fileStream = instanceCache.get(filePath);
 			if(fileStream == null) {
@@ -93,6 +103,63 @@ public class FileStream extends Stream {
 	@Override
 	public String getURL() {
 		return "file:" + path;
+	}
+
+	private boolean markedForDeletion = false;
+	private static Thread deleteOnExitThread;
+	public void markDeleteOnExit() {
+		if(!writable)
+			throw new RuntimeException("It makes no sense to mark a read-only file as deleteOnExit...");
+		
+		if(markedForDeletion)
+			return;
+		markedForDeletion = true;
+		deleteOnExit.add(this);
+		if(deleteOnExitThread == null) {
+			deleteOnExitThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					System.out.println("Cleaning remaining deleteOnExit FileStreams...");
+					for(FileStream fStream : deleteOnExit)
+						try {
+							fStream.delete();
+						} catch (Throwable ex) {
+							ex.printStackTrace(System.err);
+						}
+				}
+				
+			}, "deleteOnExitHandler");
+			Runtime.getRuntime().addShutdownHook(deleteOnExitThread);
+		}
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		try {
+			if(markedForDeletion)
+				delete();
+		} catch (IOException ex) {
+			Logger.getLogger(FileStream.class.getName()).log(Level.SEVERE, null, ex);
+		} finally {
+			super.finalize();
+		}
+	}
+
+	private void delete() throws IOException {
+		randomAccessFile.close();
+		(new File(path)).delete();
+	}
+
+	@Override
+	public String getMimeType() {
+		try {
+			Method method = File.class.getMethod("probeContentType", String.class);
+			String type = (String)method.invoke(null, getFilePath());
+			if(type != null)
+				return type;
+		} catch(Throwable t) {}
+		return super.getMimeType(); //To change body of generated methods, choose Tools | Templates.
 	}
 	
 }

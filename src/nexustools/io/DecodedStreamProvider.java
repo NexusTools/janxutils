@@ -17,16 +17,17 @@ import java.net.URISyntaxException;
 public abstract class DecodedStreamProvider implements StreamProvider {
 
 	@Override
-	public final Stream open(String path) throws IOException {
+	public final Stream open(String raw) throws IOException {
+		String path;
 		try {
-			URI uri = new URI(null, null, path, null);
+			URI uri = new URI(null, null, raw, null);
 			path = uri.getPath();
 		} catch (URISyntaxException ex) {
 			throw new IOException(ex);
 		}
-		return openImpl(path);
+		return openImpl(path, raw);
 	}
 	
-	public abstract Stream openImpl(String path) throws IOException;
+	public abstract Stream openImpl(String path, String raw) throws IOException;
 	
 }
