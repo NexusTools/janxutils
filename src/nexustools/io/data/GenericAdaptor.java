@@ -96,6 +96,9 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 					fieldInstruction.staticField = fieldStream.staticField();
 					fieldInstruction.mutableType = fieldStream.mutableType();
+					try {
+						fieldInstruction.mutableType = fieldInstruction.mutableType && Adaptor.isMutable(field.getType());
+					} catch (AdaptorException ex) {}
 					fieldInstruction.neverNull = fieldStream.neverNull();
 					fieldInstruction.fieldID = fieldStream.fieldID();
 
@@ -195,7 +198,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 						try {
 							field.set(target, in.readMutableObject());
 						} catch (IllegalArgumentException | IllegalAccessException ex) {
-							throw new IOException();
+							throw new IOException(ex);
 						}
 					}
 
@@ -293,11 +296,11 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	}
 
 	private final Class<?> target;
-	private final ClassStreamInstructions instructions;
+	private final ClassStreamInstructions typeInstructions;
 	
 	public GenericAdaptor(Class<?> target) {
+		this.typeInstructions = lookupStreamable(target);
 		this.target = target;
-		this.instructions = lookupStreamable(target);
 	}
 
 	@Override
@@ -307,6 +310,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void write(T target, DataOutputStream out) throws IOException {
+		ClassStreamInstructions instructions = lookupStreamable(target.getClass());
 		for(ClassStreamInstructions.FieldAdaptor fAdaptor : instructions.staticFields) {
 			fAdaptor.write(target, out);
 		}
@@ -324,6 +328,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void read(T target, DataInputStream in) throws IOException {
+		ClassStreamInstructions instructions = lookupStreamable(target.getClass());
 		for(ClassStreamInstructions.FieldAdaptor fAdaptor : instructions.staticFields) {
 			fAdaptor.read(target, in);
 		}
@@ -355,9 +360,9 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	 * @throws RuntimeException
 	 */
 	public void validate() {
-		if(instructions.staticFields.isEmpty() &&
-				instructions.fieldMap.isEmpty() &&
-				instructions.otherFields.isEmpty())
+		if(typeInstructions.staticFields.isEmpty() &&
+				typeInstructions.fieldMap.isEmpty() &&
+				typeInstructions.otherFields.isEmpty())
 			throw new RuntimeException(getType().getName() + " has no usable fields");
 	}
 
