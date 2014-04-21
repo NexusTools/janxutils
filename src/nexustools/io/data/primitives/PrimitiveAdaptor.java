@@ -19,11 +19,11 @@ import nexustools.io.data.Adaptor;
 public abstract class PrimitiveAdaptor<T> extends Adaptor<T> {
 
 	@Override
-	public abstract T createInstance(DataInputStream in) throws IOException;
+	public abstract T createInstance(DataInputStream in, Class<? extends T> target) throws IOException;
 
 	@Override
-	public final T readInstance(DataInputStream in) throws IOException {
-		return createInstance(in);
+	public final T readInstance(DataInputStream in, Class<? extends T> target) throws IOException {
+		return createInstance(in, target);
 	}
 
 	@Override

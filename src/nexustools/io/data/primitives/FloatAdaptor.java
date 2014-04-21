@@ -21,12 +21,12 @@ public class FloatAdaptor extends PrimitiveAdaptor<Float> {
 	}
 
 	@Override
-	public Float createInstance(DataInputStream in) throws IOException {
+	public Float createInstance(DataInputStream in, Class<? extends Float> target) throws IOException {
 		return in.readFloat();
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Float> getType() {
 		return Float.class;
 	}
 

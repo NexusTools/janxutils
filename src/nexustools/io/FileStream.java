@@ -17,7 +17,8 @@ import java.util.logging.Logger;
 import nexustools.utils.WeakArrayList;
 
 /**
- *
+ * A Stream which allows reading/writing using a {@link RandomAccessFile}.
+ * 
  * @author katelyn
  */
 public class FileStream extends Stream {

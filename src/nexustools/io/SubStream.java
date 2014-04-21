@@ -9,7 +9,11 @@ package nexustools.io;
 import java.io.IOException;
 
 /**
- *
+ * A Stream that uses other Streams,
+ * you can provide a Range, or use it
+ * to read from the same Stream at multiple
+ * positions without losing track.
+ * 
  * @author katelyn
  */
 public class SubStream extends Stream {

@@ -9,11 +9,9 @@ package nexustools.io.data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
-import static nexustools.io.data.Adaptor.writeMutable;
+import static nexustools.io.data.Adaptor.resolveAndWriteMutable;
 
 /**
  *
@@ -26,7 +24,7 @@ public class CollectionAdaptor extends Adaptor<Collection> {
 		try {
 			out.writeInt(target.size());
 			for(Object obj : target)
-				writeMutable(obj, out);
+				resolveAndWriteMutable(obj, out);
 		} catch (UnsupportedOperationException | AdaptorException ex) {
 			throw new IOException(ex);
 		}
@@ -38,7 +36,7 @@ public class CollectionAdaptor extends Adaptor<Collection> {
 		int len = in.readInt();
 		while(len > 0) {
 			try {
-				target.add(readMutable(in));
+				target.add(resolveAndReadMutable(in));
 			} catch (AdaptorException | ClassNotFoundException ex) {
 				throw new IOException(ex);
 			}
@@ -47,12 +45,7 @@ public class CollectionAdaptor extends Adaptor<Collection> {
 	}
 
 	@Override
-	public Collection createInstance(DataInputStream in) throws IOException {
-		return new ArrayList();
-	}
-
-	@Override
-	public Class<?> getType() {
+	public Class<? extends Collection> getType() {
 		return Collection.class;
 	}
 

@@ -28,12 +28,7 @@ public class MapAdaptor extends Adaptor<Map> {
 	}
 
 	@Override
-	public Map createInstance(DataInputStream in) {
-		return new HashMap();
-	}
-
-	@Override
-	public Class<?> getType() {
+	public Class<? extends Map> getType() {
 		return Map.class;
 	}
 

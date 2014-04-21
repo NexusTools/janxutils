@@ -19,7 +19,7 @@ import nexustools.io.data.primitives.PrimitiveAdaptor;
 public class VersionAdaptor extends PrimitiveAdaptor<Version> {
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Version> getType() {
 		return Version.class;
 	}
 
@@ -32,7 +32,7 @@ public class VersionAdaptor extends PrimitiveAdaptor<Version> {
 	}
 
 	@Override
-	public Version createInstance(DataInputStream in) throws IOException {
+	public Version createInstance(DataInputStream in, Class<? extends Version> target) throws IOException {
 		return new Version(in.readByte(), in.readByte(), Version.Stage.forOrdinal(in.readByte()), in.readShort());
 	}
 	

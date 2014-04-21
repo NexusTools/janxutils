@@ -17,17 +17,17 @@ import nexustools.io.DataOutputStream;
 public class StringAdaptor extends PrimitiveAdaptor<String> {
 
 	@Override
-	public String createInstance(DataInputStream in) throws IOException {
-		return in.readUTF8();
-	}
-
-	@Override
 	public void write(String target, DataOutputStream out) throws IOException {
 		out.writeUTF8(target);
 	}
 
 	@Override
-	public Class<?> getType() {
+	public String createInstance(DataInputStream in, Class<? extends String> target) throws IOException {
+		return in.readUTF8();
+	}
+
+	@Override
+	public Class<? extends String> getType() {
 		return String.class;
 	}
 

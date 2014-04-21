@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- *
+ * A Stream which caches an InputStream and provides
+ * read/write functionality through an underlying FileStream.
+ * 
  * @author katelyn
  */
 public class LocalCacheStream extends Stream {

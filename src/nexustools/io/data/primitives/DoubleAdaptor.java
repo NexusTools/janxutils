@@ -21,12 +21,12 @@ public class DoubleAdaptor extends PrimitiveAdaptor<Double> {
 	}
 
 	@Override
-	public Double createInstance(DataInputStream in) throws IOException {
+	public Double createInstance(DataInputStream in, Class<? extends Double> target) throws IOException {
 		return in.readDouble();
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Double> getType() {
 		return Double.class;
 	}
 

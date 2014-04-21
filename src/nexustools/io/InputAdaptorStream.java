@@ -10,7 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- *
+ * Adapts a InputStream to a Stream
+ * 
  * @author katelyn
  */
 public class InputAdaptorStream extends Stream {

@@ -22,6 +22,12 @@ import java.util.regex.Pattern;
  */
 public abstract class Stream {
 	
+	/**
+	 * Returns the NullStream instance
+	 * 
+	 * @see NullStream.getInstance
+	 * @return
+	 */
 	public static final NullStream Null() {
 		return NullStream.getInstance();
 	}
@@ -140,6 +146,13 @@ public abstract class Stream {
 			registerProvider(provider);
 	}
 	
+	/**
+	 * Registers a new {@link StreamProvider}
+	 * Stream providers provide streams by parsing URIs passed to
+	 * @see Stream.open
+	 * 
+	 * @param provider
+	 */
 	public static void registerProvider(StreamProvider provider) {
 		String protocol = provider.protocol();
 		if(protocol == null)
@@ -150,6 +163,19 @@ public abstract class Stream {
 
 	private static final Pattern urlPattern = Pattern.compile("^(\\w+):(.+)$");
 	private static final Pattern wrapperPattern = Pattern.compile("^([^\\(]+)\\((.+)\\)$");
+
+	/**
+	 * Parse and attempt to return a new Stream
+	 * using a registered {@link StreamProvider}.
+	 * 
+	 * This method is also capable of unwrapping {@link InputStream}
+	 * and {@link DataInputStream}s returned by a Stream to return
+	 * the original Stream
+	 * 
+	 * @param url URL String to parse
+	 * @return A Stream compatible with the URL String given
+	 * @throws IOException
+	 */
 	public static Stream open(String url) throws IOException {
 		Matcher matcher;
 		while(true) {
@@ -179,6 +205,16 @@ public abstract class Stream {
 			return FileStream.getStream(url);
 	}
 	
+	/**
+	 * Synthesizes a new Stream by pretending to be another type of Stream
+	 * This method is primarily useful for aliases such as resource:
+	 * 
+	 * @param effectiveURL URL to open and use as the underlying Stream
+	 * @param reportedURL URL to report the Synthesized Stream is using
+	 * @param name Name of the Synthesized Stream
+	 * @return
+	 * @throws IOException
+	 */
 	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException {
 		Stream stream = open(effectiveURL);
 		while(stream instanceof SubStream)
@@ -199,10 +235,25 @@ public abstract class Stream {
 		};
 	}
 
+	/**
+	 * Opens a Stream and creates a new InputStream
+	 * 
+	 * @see Stream.open
+	 * @param url URL String to open
+	 * @return
+	 * @throws IOException
+	 */
 	public static InputStream openInputStream(String url) throws IOException {
 		return open(url).createInputStream();
 	}
 
+	/**
+	 * Opens a Stream and returns a new {@link DataInputStream}
+	 * 
+	 * @param url URL String to open
+	 * @return
+	 * @throws IOException
+	 */
 	public static DataInputStream openDataInputStream(String url) throws IOException {
 		return open(url).createDataInputStream();
 	}
@@ -215,32 +266,138 @@ public abstract class Stream {
 		return open(url).createDataOutputStream();
 	}
 	
+	/**
+	 * Read bytes from this Stream
+	 * 
+	 * @param buffer Buffer to read into
+	 * @param off Offset to read into
+	 * @param len Length of data to try and read
+	 * @return Number of bytes read
+	 * @throws IOException
+	 */
 	public abstract int read(byte[] buffer, int off, int len) throws IOException;
+
+	/**
+	 * Write bytes to this Stream
+	 * 
+	 * @param buffer Buffer to write data from
+	 * @param off Offset to write from
+	 * @param len Length of data to write
+	 * @throws IOException
+	 */
 	public abstract void write(byte[] buffer, int off, int len) throws IOException;
+
+	/**
+	 * Indicates whether or not this Stream supports writing
+	 * 
+	 * @return
+	 */
 	public abstract boolean canWrite(); // Not all sector streams even support writing
+
+	/**
+	 * Flush data to the underlying Stream.
+	 * 
+	 * This method is rarely implemented and would
+	 * only be useful when this Stream uses a buffering mechanism.
+	 * 
+	 * @throws IOException
+	 */
 	public abstract void flush() throws IOException;
 	
+	/**
+	 * Position of this Stream within its content.
+	 * 
+	 * SubStreams can be used to read from the same Stream
+	 * at multiple locations without requiring multiple FDs.
+	 * 
+	 * @see Stream.createSubSectorStream
+	 * @return
+	 */
 	public abstract long pos();
+
+	/**
+	 * Seeks this Stream to another position within its content.
+	 * 
+	 * @param pos
+	 * @throws IOException
+	 */
 	public abstract void seek(long pos) throws IOException;
 	
+	/**
+	 * Returns the Size of the content in this Stream.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public abstract long size() throws IOException;
+
+	/**
+	 * Returns the remaining number of bytes from the current
+	 * location to the end of this contnet.
+	 * 
+	 * Not all Streams know how much content they content
+	 * and so this value may change overtime.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public long remaining() throws IOException {
 		return size() - pos();
 	}
+
+	/**
+	 * Checks whether or not this Stream is at the end.
+	 * 
+	 * This method may not be accurate if the implementation
+	 * doesn't know the total size of its content.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public boolean atEnd() throws IOException {
 		return remaining() <= 0;
 	}
 
+	/**
+	 * Creates a new {@link SubStream} using the given Range
+	 * 
+	 * @param range
+	 * @return
+	 */
 	public SubStream createSubSectorStream(SubStream.Range range) {
 		return new SubStream(this, range);
 	}
+
+	/**
+	 * Creates a new {@link SubStream} using the given Range
+	 * 
+	 * @param start
+	 * @param end
+	 * @return
+	 */
 	public final SubStream createSubSectorStream(long start, long end) {
 		return createSubSectorStream(SubStream.createRange(start, end));
 	}
+
+	/**
+	 * Creates a new {@link SubStream} using the given Range
+	 * 
+	 * @return
+	 */
 	public final SubStream createSubSectorStream() {
 		return createSubSectorStream(SubStream.getFullRange());
 	}
 
+	/**
+	 * Creates a new {@link InputStream} for this Stream.
+	 * 
+	 * Each InputStream uses its own SubStream and so
+	 * you can have multiple InputStreams from the same
+	 * Stream independent of each other.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public final InputStream createInputStream() throws IOException {
 		final SubStream subStream = createSubSectorStream();
 		return new EfficientInputStream() {
@@ -297,10 +454,29 @@ public abstract class Stream {
 		};
 	}
 	
+	/**
+	 * Creates a new {@link DataInputStream} for this Stream.
+	 * 
+	 * Each DataInputStream uses its own SubStream and so
+	 * you can have multiple InputStreams from the same
+	 * Stream independent of each other.
+	 * @return
+	 * @throws IOException
+	 */
 	public final DataInputStream createDataInputStream() throws IOException {
 		return new DataInputStream(createInputStream());
 	}
 	
+	/**
+	 * Creates a new {@link OutputStream} for this Stream.
+	 * 
+	 * Each OutputStream uses its own SubStream and so
+	 * you can have multiple InputStreams from the same
+	 * Stream independent of each other.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public final OutputStream createOutputStream() throws IOException {
 		if(!canWrite())
 			throw new IOException("This Sector's stream does not support writing...");
@@ -332,6 +508,16 @@ public abstract class Stream {
 		};
 	}
 	
+	/**
+	 * Creates a new {@link DataOutputStream} for this Stream.
+	 * 
+	 * Each DataOutputStream uses its own SubStream and so
+	 * you can have multiple InputStreams from the same
+	 * Stream independent of each other.
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public final DataOutputStream createDataOutputStream() throws IOException {
 		return new DataOutputStream(createOutputStream());
 	}
@@ -352,12 +538,31 @@ public abstract class Stream {
 		createDataOutputStream().writeMutableObject(target);
 	}
 
+	/**
+	 * Return a URL String for this Stream
+	 * 
+	 * @see Stream.open
+	 * @return
+	 */
 	public abstract String getURL();
 	
+	/**
+	 * Provides the default toString implementation for Streams
+	 * 
+	 * @param stream
+	 * @return
+	 */
 	protected static String stringForStream(Stream stream) {
 		return stringForStream(stream, stream.getClass().getName());
 	}
 	
+	/**
+	 * Provides the default toString implementation for Streams
+	 * 
+	 * @param stream
+	 * @param name
+	 * @return
+	 */
 	protected static String stringForStream(Stream stream, String name) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(name);
@@ -373,7 +578,12 @@ public abstract class Stream {
 		return stringForStream(this);
 	}
 	
-	public String getExtension() {
+	/**
+	 * Parses the extension from this Stream's URL String
+	 * 
+	 * @return
+	 */
+	public final String getExtension() {
 		String url = getURL();
 		int lastPos = url.lastIndexOf('.');
 		if(lastPos > -1)
@@ -381,6 +591,12 @@ public abstract class Stream {
 		return null;
 	}
 	
+	/**
+	 * Returns the MimeType for the content of this Stream,
+	 * if it can't be determined, null is returned.
+	 * 
+	 * @return MimeType or null
+	 */
 	public String getMimeType() {
 		String extension = getExtension();
 		if(extension != null)

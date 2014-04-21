@@ -219,7 +219,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 							try {
 								Object value;
 								if(adaptor.isPrimitive())
-									value = adaptor.readInstance(in);
+									value = adaptor.readInstance(in, field.getType());
 								else {
 									value = field.get(target);
 									adaptor.read(value, in);
@@ -250,7 +250,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 								if(!in.readBoolean())
 									value = null;
 								else if(adaptor.isPrimitive())
-									value = adaptor.readInstance(in);
+									value = adaptor.readInstance(in, field.getType());
 								else {
 									value = field.get(target);
 									adaptor.read(value, in);
@@ -293,16 +293,16 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 		public final HashMap<Byte, FieldAdaptor> fieldMap = new HashMap();
 	}
 
-	private final Class<?> target;
+	private final Class<? extends T> target;
 	private final ClassStreamInstructions typeInstructions;
 	
-	public GenericAdaptor(Class<?> target) {
+	public GenericAdaptor(Class<? extends T> target) {
 		this.typeInstructions = lookupStreamable(target);
 		this.target = target;
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends T> getType() {
 		return target;
 	}
 

@@ -21,12 +21,12 @@ public class ShortAdaptor extends PrimitiveAdaptor<Short> {
 	}
 
 	@Override
-	public Short createInstance(DataInputStream in) throws IOException {
+	public Short createInstance(DataInputStream in, Class<? extends Short> target) throws IOException {
 		return in.readShort();
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Short> getType() {
 		return Short.class;
 	}
 

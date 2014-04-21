@@ -10,7 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- *
+ * A expanding Stream that stores its contents in memory.
+ * 
+ * While writing, this Stream expands its internal buffer
+ * by a multiple of 2 each time its about to become full.
+ * 
  * @author katelyn
  */
 public class MemoryStream extends Stream {

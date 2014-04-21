@@ -21,12 +21,12 @@ public class IntegerAdaptor extends PrimitiveAdaptor<Integer> {
 	}
 
 	@Override
-	public Integer createInstance(DataInputStream in) throws IOException {
+	public Integer createInstance(DataInputStream in, Class<? extends Integer> target) throws IOException {
 		return in.readInt();
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Integer> getType() {
 		return Integer.class;
 	}
 

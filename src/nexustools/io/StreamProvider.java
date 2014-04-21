@@ -9,7 +9,8 @@ package nexustools.io;
 import java.io.IOException;
 
 /**
- *
+ * Provides Streams
+ * 
  * @author katelyn
  */
 public interface StreamProvider {

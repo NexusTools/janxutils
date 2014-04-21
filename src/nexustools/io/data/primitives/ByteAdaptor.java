@@ -22,12 +22,12 @@ public class ByteAdaptor extends PrimitiveAdaptor<Byte> {
 	}
 
 	@Override
-	public Byte createInstance(DataInputStream in) throws IOException {
+	public Byte createInstance(DataInputStream in, Class<? extends Byte> target) throws IOException {
 		return in.readByte();
 	}
 
 	@Override
-	public Class<?> getType() {
+	public Class<? extends Byte> getType() {
 		return Byte.class;
 	}
 

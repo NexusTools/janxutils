@@ -13,8 +13,6 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 import nexustools.io.data.primitives.PrimitiveAdaptor;
@@ -132,7 +130,7 @@ public abstract class Adaptor<T> {
 	 * 
 	 * Only adaptors that extend PrimitiveAdaptor can be primitive
 	 * 
-	 * @return
+	 * @return Whether or not this Adaptor extends {@link PrimitiveAdaptor}
 	 */
 	public final boolean isPrimitive() {
 		return this instanceof PrimitiveAdaptor;
@@ -143,9 +141,18 @@ public abstract class Adaptor<T> {
 	 * 
 	 * @return
 	 */
-	public abstract Class<?> getType();
+	public abstract Class<? extends T> getType();
 	
-	public static void writeMutable(Object obj, DataOutputStream out) throws IOException, UnsupportedOperationException, AdaptorException {
+	/**
+	 * Writes an object to a {@link DataOutputStream} along with type information
+	 * 
+	 * @param obj Object to write
+	 * @param out Stream to write to
+	 * @throws IOException
+	 * @throws UnsupportedOperationException
+	 * @throws AdaptorException
+	 */
+	public static void resolveAndWriteMutable(Object obj, DataOutputStream out) throws IOException, UnsupportedOperationException, AdaptorException {
 		if(obj == null) {
 			out.writeUTF8(null);
 			return;
@@ -155,20 +162,20 @@ public abstract class Adaptor<T> {
 		resolveAndWrite(obj, out);
 	}
 	
-	public static void writeMutable(Object obj, OutputStream out) throws IOException, UnsupportedOperationException, AdaptorException {
-		writeMutable(obj, new DataOutputStream(out));
+	public static void resolveAndWriteMutable(Object obj, OutputStream out) throws IOException, UnsupportedOperationException, AdaptorException {
+		resolveAndWriteMutable(obj, new DataOutputStream(out));
 	}
 
 	/**
 	 * Attempts to resolve an instance of a class from the input stream
 	 * 
-	 * @param in
+	 * @param in Stream to read from
 	 * @return
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 * @throws nexustools.io.data.AdaptorException
 	 */
-	public static Object readMutable(DataInputStream in) throws IOException, ClassNotFoundException, UnsupportedOperationException, AdaptorException {
+	public static Object resolveAndReadMutable(DataInputStream in) throws IOException, ClassNotFoundException, UnsupportedOperationException, AdaptorException {
 		String className = in.readUTF8();
 		if(className == null)
 			return null;
@@ -176,8 +183,19 @@ public abstract class Adaptor<T> {
 		return resolveAndReadInstance(Class.forName(className), in);
 	}
 	
-	public static Object readMutable(InputStream in) throws IOException, ClassNotFoundException, UnsupportedOperationException, AdaptorException {
-		return readMutable(new DataInputStream(in));
+	/**
+	 * Resolves an adaptor and attempts to read a new instance of
+	 * the type from the {@link DataInputStream} given
+	 * 
+	 * @param in Stream to read from
+	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws UnsupportedOperationException
+	 * @throws AdaptorException
+	 */
+	public static Object resolveAndReadMutable(InputStream in) throws IOException, ClassNotFoundException, UnsupportedOperationException, AdaptorException {
+		return resolveAndReadMutable(new DataInputStream(in));
 	}
 	
 	/**
@@ -197,13 +215,7 @@ public abstract class Adaptor<T> {
 		if(adaptor == null)
 			throw new UnsupportedOperationException("Unable to find adaptor for `" + target.getName() + "`");
 		
-		try {
-			Object newInstance = target.newInstance();
-			adaptor.read(newInstance, inStream);
-			return newInstance;
-		} catch (InstantiationException | IllegalAccessException ex) {
-			throw new AdaptorException("Cannot create instance of: " + target.getName(), ex);
-		}
+		return adaptor.readInstance(inStream, target);
 	}
 	
 	/**
@@ -277,19 +289,59 @@ public abstract class Adaptor<T> {
 		}
 	}
 	
-	public T readInstance(DataInputStream in) throws IOException{
-		T instance = createInstance(in);
+	public final T readInstance(DataInputStream in) throws IOException{
+		return readInstance(in, getType());
+	}
+	public final T createInstance(DataInputStream in) throws IOException{
+		return createInstance(in, getType());
+	}
+	
+	/**
+	 * Reads a new instance of the type for this adaptor, or a subclass
+	 *  
+	 * @param in Stream to read from
+	 * @param type Type to create
+	 * @return A new copy of type read from the DataInputStream
+	 * @throws IOException
+	 */
+	public T readInstance(DataInputStream in, Class<? extends T> type) throws IOException{
+		T instance = createInstance(in, type);
 		read(instance, in);
 		return instance;
 	}
-	public T createInstance(DataInputStream in) throws IOException{
+
+	/**
+	 * Creates a new instance of the type for this adaptor, or a subclass
+	 * 
+	 * @param in Stream to read from
+	 * @param type Type to create
+	 * @return A new uninitialized copy of the requested type
+	 * @throws IOException
+	 */
+	public T createInstance(DataInputStream in, Class<? extends T> type) throws IOException{
 		try {
-			return (T) getType().newInstance();
+			return (T) type.newInstance();
 		} catch (InstantiationException | IllegalAccessException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
+
+	/**
+	 * Writes target into a {@link DataOutputStream}
+	 * 
+	 * @param target Target to write
+	 * @param out Stream to write into
+	 * @throws IOException
+	 */
 	public abstract void write(T target, DataOutputStream out) throws IOException;
+
+	/**
+	 * Reads this object from a {@link DataOutputStream}
+	 * 
+	 * @param target Target to read
+	 * @param in Stream to read from
+	 * @throws IOException
+	 */
 	public abstract void read(T target, DataInputStream in) throws IOException;
 	
 }

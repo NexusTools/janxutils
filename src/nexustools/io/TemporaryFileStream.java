@@ -11,7 +11,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
- *
+ * A Temporary FileStream which deletes itself when 
+ * collected by the Garbage Collector or on Shutdown
+ * 
  * @author katelyn
  */
 public class TemporaryFileStream extends FileStream {

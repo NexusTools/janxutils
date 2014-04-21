@@ -13,7 +13,8 @@ import java.util.WeakHashMap;
 import nexustools.io.SubStream.Range;
 
 /**
- *
+ * A Stream that provides reading/writing from a {@link URL}.
+ * 
  * @author katelyn
  */
 public class URLStream extends LocalCacheStream {
