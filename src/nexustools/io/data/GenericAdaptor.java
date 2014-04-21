@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 
@@ -87,7 +85,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 			} else
 				superInstructions = null;
 			
-			ArrayList<Field> otherFields = new ArrayList();
+			ArrayList<Field> unknownFields = new ArrayList();
 			for(Field field : clazz.getDeclaredFields()) {
 				FieldStream fieldStream = field.getAnnotation(FieldStream.class);
 
@@ -109,13 +107,13 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 						continue;
 					
 					System.out.println("Added " + field.getName() + " to Process Queue");
-					otherFields.add(field);
+					unknownFields.add(field);
 				}
 			}
 			
 			
-			if(otherFields.size() > 0) {
-				System.out.println(otherFields.size() + " other fields to process");
+			if(unknownFields.size() > 0) {
+				System.out.println(unknownFields.size() + " other fields to process");
 				
 				ClassInstruction classInstruction = new ClassInstruction();
 				{
@@ -132,7 +130,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 				}
 				
 				int fieldID = 1;
-				for(Field field : otherFields) {
+				for(Field field : unknownFields) {
 					if(Modifier.isPublic(field.getModifiers()) &&
 							!classInstruction.publicFields)
 						continue;

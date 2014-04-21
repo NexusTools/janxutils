@@ -13,6 +13,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 import nexustools.io.data.primitives.PrimitiveAdaptor;
@@ -195,7 +197,13 @@ public abstract class Adaptor<T> {
 		if(adaptor == null)
 			throw new UnsupportedOperationException("Unable to find adaptor for `" + target.getName() + "`");
 		
-		return adaptor.readInstance(inStream);
+		try {
+			Object newInstance = target.newInstance();
+			adaptor.read(newInstance, inStream);
+			return newInstance;
+		} catch (InstantiationException | IllegalAccessException ex) {
+			throw new AdaptorException("Cannot create instance of: " + target.getName(), ex);
+		}
 	}
 	
 	/**
