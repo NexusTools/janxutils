@@ -16,7 +16,19 @@ import java.util.HashMap;
  */
 public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 	
-	private String mainKey;
+	private final String mainKey;
+	
+	public ArgumentMap() {
+		mainKey = "";
+	}
+	
+	public ArgumentMap(String[] args) {
+		this("", args);
+	}
+	
+	public ArgumentMap(Collection<String> args) {
+		this("", args);
+	}
 	
 	public ArgumentMap(String mainKey, String[] args) {
 		this.mainKey = mainKey;
