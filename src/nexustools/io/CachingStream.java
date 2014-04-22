@@ -15,29 +15,64 @@ import java.io.InputStream;
  * 
  * @author katelyn
  */
-public class LocalCacheStream extends Stream {
+public class CachingStream extends Stream {
 	
 	private final Stream localCache;
 	private SubStream writeStream;
 	private InputStream source;
 	
-	public LocalCacheStream(FileStream localCache, InputStream source) {
-		if(source == null) {
-			this.localCache = localCache;
-			this.writeStream = null;
-		} else {
-			this.localCache = localCache.createSubSectorStream();
-			this.writeStream = localCache.createSubSectorStream();
+	private String mimetype;
+	private long size;
+	
+	protected static class CacheInfo {
+		
+		public long size;
+		public String mimetype;
+		public final Stream cacheStream;
+		public final InputStream inStream;
+		public CacheInfo(Stream cacheStream, InputStream source) {
+			this.cacheStream = cacheStream;
+			this.inStream = source;
 		}
+		public CacheInfo(Stream cacheStream) {
+			this.cacheStream = cacheStream;
+			this.inStream = null;
+		}
+		public CacheInfo(InputStream source) {
+			this(null, source);
+		}
+
+		@Override
+		public String toString() {
+			return "CacheInfo[mimetype=" + mimetype + ",size=" + size + ",cacheStream=" + cacheStream+ ",inputStream=" + inStream + "]";
+		}
+		
+	}
+	
+	protected CachingStream(CacheInfo set) throws IOException {
+		this(set.cacheStream, set.inStream);
+		this.mimetype = set.mimetype;
+		this.size = set.size;
+	}
+	
+	public CachingStream(Stream cacheStream, InputStream source) throws IOException {
+		if(cacheStream == null)
+			cacheStream = new TemporaryFileStream();
+		if(source == null)
+			this.writeStream = null;
+		else
+			this.writeStream = cacheStream.createSubSectorStream();
+		this.localCache = cacheStream.createSubSectorStream();
 		this.source = source;
+		this.size = 0;
 	}
 	
-	public LocalCacheStream(String cachePath, InputStream source) throws IOException {
-		this(new FileStream(cachePath, source != null), source);
+	public CachingStream(String cachePath, InputStream source) throws IOException {
+		this(cachePath != null ? new FileStream(cachePath, source != null) : null, source);
 	}
 	
-	public LocalCacheStream(InputStream source) throws IOException {
-		this(new TemporaryFileStream(), source);
+	public CachingStream(InputStream source) throws IOException {
+		this((FileStream)null, source);
 	}
 
 	@Override
@@ -90,10 +125,21 @@ public class LocalCacheStream extends Stream {
 	
 	@Override
 	public long size() throws IOException {
+		if(size > 0)
+			return size;
+		
 		if(writeStream != null)
 			return writeStream.pos() + source.available();
 		
 		return localCache.size();
+	}
+
+	@Override
+	public String getMimeType() {
+		if(mimetype != null)
+			return mimetype;
+		
+		return super.getMimeType();
 	}
 
 	@Override

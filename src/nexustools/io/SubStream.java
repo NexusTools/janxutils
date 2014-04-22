@@ -128,6 +128,11 @@ public class SubStream extends Stream {
 	public long size() throws IOException {
 		return Math.min(stream.size() - range.getStart(), range.getSize());
 	}
+	
+	@Override
+	public String getMimeType() {
+		return stream.getMimeType();
+	}
 
 	@Override
 	public int read(byte[] buffer, int offset, int len) throws IOException {

@@ -146,9 +146,13 @@ public class FileStream extends Stream {
 			super.finalize();
 		}
 	}
+	
+	public void close() throws IOException {
+		randomAccessFile.close();
+	}
 
 	private void delete() throws IOException {
-		randomAccessFile.close();
+		close();
 		(new File(path)).delete();
 	}
 

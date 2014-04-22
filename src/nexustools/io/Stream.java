@@ -198,7 +198,9 @@ public abstract class Stream {
 			for(StreamProvider provider : fallbackProviders)
 				try {
 					return provider.open(url);
-				} catch(IOException ex) {}
+				} catch(IOException ex) {
+					ex.printStackTrace(System.err);
+				}
 			
 			throw new IOException("No handler found for URL: " + url);
 		} else
