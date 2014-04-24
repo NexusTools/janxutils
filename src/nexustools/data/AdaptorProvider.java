@@ -4,16 +4,14 @@
  * and open the template in the editor.
  */
 
-package nexustools.io.data;
+package nexustools.data;
 
 /**
  *
  * @author katelyn
  */
-public class AdaptorException extends Exception {
-
-	public AdaptorException(String string, java.lang.Exception ex) {
-		super(string, ex);
-	}
+public interface AdaptorProvider {
+	
+	public Adaptor[] getAdaptors();
 	
 }

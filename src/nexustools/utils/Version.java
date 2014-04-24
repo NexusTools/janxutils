@@ -4,9 +4,7 @@
  * and open the template in the editor.
  */
 
-package nexustools;
-
-import nexustools.io.data.ClassStream;
+package nexustools.utils;
 
 /**
  *

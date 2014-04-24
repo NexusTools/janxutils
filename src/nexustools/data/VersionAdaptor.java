@@ -4,13 +4,13 @@
  * and open the template in the editor.
  */
 
-package nexustools.io.data;
+package nexustools.data;
 
 import java.io.IOException;
-import nexustools.Version;
+import nexustools.utils.Version;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
-import nexustools.io.data.primitives.PrimitiveAdaptor;
+import nexustools.data.primitives.PrimitiveAdaptor;
 
 /**
  *

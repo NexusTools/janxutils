@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package nexustools.io.data;
+package nexustools.data;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
-import nexustools.io.data.primitives.PrimitiveAdaptor;
+import nexustools.data.primitives.PrimitiveAdaptor;
 
 /**
  *
@@ -104,16 +104,10 @@ public abstract class Adaptor<T> {
 		}
 		if(adaptor == null && allowFallback) {
 			try {
-				if(clazz.newInstance() == null)
-					throw new RuntimeException("newInstance returned null");
-			} catch (IllegalAccessException | InstantiationException | SecurityException ex) {
-				throw new AdaptorException(clazz.getName() + " has no accessible empty constructions, and cannot be used without a custom Adaptor", ex);
-			}
-			try {
 				adaptor = new GenericAdaptor<>(clazz);
 				((GenericAdaptor)adaptor).validate();
 			} catch(RuntimeException ex) {
-				throw new AdaptorException(clazz.getName() + " has no valid adaptors", ex);
+				throw new AdaptorException("Cannot create fallback adaptor for: " + clazz.getName(), ex);
 			}
 		}
 		
@@ -264,15 +258,16 @@ public abstract class Adaptor<T> {
 	}
 	
 	static {
+		System.out.println("Loading data adaptors");
 		// Primitives
-		register(new nexustools.io.data.primitives.StringAdaptor());
+		register(new nexustools.data.primitives.StringAdaptor());
 		
-		register(new nexustools.io.data.primitives.ByteAdaptor());
-		register(new nexustools.io.data.primitives.ShortAdaptor());
-		register(new nexustools.io.data.primitives.IntegerAdaptor());
+		register(new nexustools.data.primitives.ByteAdaptor());
+		register(new nexustools.data.primitives.ShortAdaptor());
+		register(new nexustools.data.primitives.IntegerAdaptor());
 		
-		register(new nexustools.io.data.primitives.FloatAdaptor());
-		register(new nexustools.io.data.primitives.DoubleAdaptor());
+		register(new nexustools.data.primitives.FloatAdaptor());
+		register(new nexustools.data.primitives.DoubleAdaptor());
 		
 		// NexusTools Primitives
 		register(new VersionAdaptor());
@@ -281,12 +276,17 @@ public abstract class Adaptor<T> {
 		register(new CollectionAdaptor());
 		register(new MapAdaptor());
 		
-		System.out.println("Locating Adaptors");
+		System.out.println("Registered " + adaptors.size() + " built-in adaptors");
+		int adaptorCount = adaptors.size();
+		
 		for(AdaptorProvider adaptorProvider : ServiceLoader.load(AdaptorProvider.class)) {
-			System.out.println(adaptorProvider.getClass().getName());
 			for(Adaptor adaptor : adaptorProvider.getAdaptors())
 				register(adaptor);
+			
+			System.out.println(adaptorProvider.getClass().getName() + " registered " +(adaptors.size()-adaptorCount) + " adaptors");
+			adaptorCount = adaptors.size();
 		}
+		System.out.println(adaptors.size() + " adaptors loaded");
 	}
 	
 	public final T readInstance(DataInputStream in) throws IOException{

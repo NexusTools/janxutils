@@ -14,7 +14,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.WeakHashMap;
-import nexustools.Hasher;
+import nexustools.utils.Hasher;
 import nexustools.io.SubStream.Range;
 
 /**

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package nexustools.io.data;
+package nexustools.data;
 
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;

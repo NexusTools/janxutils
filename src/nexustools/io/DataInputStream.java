@@ -9,11 +9,11 @@ package nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import nexustools.io.data.Adaptor;
-import static nexustools.StringUtils.UTF8;
-import static nexustools.StringUtils.UTF16;
-import static nexustools.StringUtils.ASCII;
-import nexustools.io.data.AdaptorException;
+import nexustools.data.Adaptor;
+import static nexustools.utils.StringUtils.UTF8;
+import static nexustools.utils.StringUtils.UTF16;
+import static nexustools.utils.StringUtils.ASCII;
+import nexustools.data.AdaptorException;
 
 /**
  *

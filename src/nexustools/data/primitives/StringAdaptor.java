@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package nexustools.io.data.primitives;
+package nexustools.data.primitives;
 
 import java.io.IOException;
 import nexustools.io.DataInputStream;
