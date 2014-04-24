@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import nexustools.utils.IOUtils;
 
 /**
  *
@@ -42,7 +43,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path) {
+				public Stream open(String path, boolean supportWriting) {
 					if(path.length() > 0)
 						return new MemoryStream(Integer.valueOf(path.split("@")[0]));
 					else
@@ -57,7 +58,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path) {
+				public Stream open(String path, boolean supportWriting) {
 					return Null();
 				}
 			});
@@ -69,8 +70,8 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path, String raw) throws IOException {
-					return FileStream.getStream(path);
+				public Stream openImpl(String path, String raw, boolean supportWriting) throws IOException {
+					return FileStream.getStream(path, supportWriting);
 				}
 				
 			});
@@ -84,10 +85,10 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path) throws IOException {
+				public Stream open(String path, boolean supportWriting) throws IOException {
 					Matcher matcher = substreamPattern.matcher(path);
 					if(matcher.matches())
-						return Stream.open(matcher.group(3)).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
+						return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
 					else
 						throw new IOException("Malformed substream:" + path);
 				}
@@ -100,7 +101,10 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path, String raw) throws IOException {
+				public Stream openImpl(String path, String raw, boolean supportWriting) throws IOException {
+					if(supportWriting)
+						throw new UnsupportedOperationException("Resources do not support writing.");
+					
 					URL resource = Stream.class.getResource(path);
 					if(resource == null)
 						throw new IOException("No such resource found: " + path);
@@ -117,7 +121,9 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path) throws IOException {
+				public Stream open(String path, boolean supportWriting) throws IOException {
+					if(supportWriting)
+						throw new UnsupportedOperationException("Input Streams do not support writing by their nature.");
 					return Stream.open(path);
 				}
 			});
@@ -133,7 +139,9 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path) throws IOException {
+				public Stream open(String path, boolean supportWriting) throws IOException {
+					if(supportWriting)
+						throw new UnsupportedOperationException("URLStreams do not support writing yet.");
 					return URLStream.getStream(path);
 				}
 				
@@ -177,6 +185,23 @@ public abstract class Stream {
 	 * @throws IOException
 	 */
 	public static Stream open(String url) throws IOException {
+		return open(url, false);
+	}
+
+	/**
+	 * Parse and attempt to return a new Stream
+	 * using a registered {@link StreamProvider}.
+	 * 
+	 * This method is also capable of unwrapping {@link InputStream}
+	 * and {@link DataInputStream}s returned by a Stream to return
+	 * the original Stream
+	 * 
+	 * @param url URL String to parse
+	 * @param supportWriting Whether or not the Stream needs to support writing
+	 * @return A Stream compatible with the URL String given
+	 * @throws IOException
+	 */
+	public static Stream open(String url, boolean supportWriting) throws IOException {
 		Matcher matcher;
 		while(true) {
 			matcher = wrapperPattern.matcher(url);
@@ -192,12 +217,12 @@ public abstract class Stream {
 			{
 				StreamProvider provider = protocols.get(matcher.group(1));
 				if(provider != null)
-					return provider.open(matcher.group(2));
+					return provider.open(matcher.group(2), supportWriting);
 			}
 			
 			for(StreamProvider provider : fallbackProviders)
 				try {
-					return provider.open(url);
+					return provider.open(url, supportWriting);
 				} catch(IOException ex) {
 					ex.printStackTrace(System.err);
 				}
@@ -266,6 +291,29 @@ public abstract class Stream {
 
 	public static DataOutputStream openDataOutputStream(String url) throws IOException {
 		return open(url).createDataOutputStream();
+	}
+
+	/**
+	 * Copy one stream to another.
+	 * 
+	 * @param from Stream to copy from
+	 * @param to Stream to copy to
+	 * @throws IOException
+	 */
+	public static void copy(String from, String to) throws IOException {
+		copy(Stream.open(from), Stream.open(to, true));
+	}
+
+	/**
+	 * Copy one stream to another.
+	 * 
+	 * @param from Stream to copy from
+	 * @param to Stream to copy to
+	 * @throws IOException
+	 */
+	public static void copy(Stream from, Stream to) throws IOException {
+		IOUtils.copyStream(from.createInputStream(),
+							to.createOutputStream());
 	}
 	
 	/**

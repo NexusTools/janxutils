@@ -27,9 +27,10 @@ public interface StreamProvider {
 	 * Opens a stream
 	 * 
 	 * @param path The path to try and open, if protocol() returned null this may be a full url
+	 * @param supportWriting
 	 * @return
 	 * @throws java.io.IOException
 	 */
-	public Stream open(String path) throws IOException;
+	public Stream open(String path, boolean supportWriting) throws IOException;
 	
 }

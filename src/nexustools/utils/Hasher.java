@@ -5,16 +5,12 @@
  */
 package nexustools.utils;
 
-import nexustools.utils.StringUtils;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -23,27 +19,15 @@ import java.util.logging.Logger;
 public class Hasher {
 
 	public static String getSHA256(String string) throws IOException {
-		try {
-			return getHash(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)), "SHA-256");
-		} catch (NoSuchAlgorithmException ex) {
-			throw new RuntimeException(ex);
-		}
+		return getSHA256(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)));
 	}
 
 	public static String getSHA1(String string) throws IOException {
-		try {
-			return getHash(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)), "SHA1");
-		} catch (NoSuchAlgorithmException ex) {
-			throw new RuntimeException(ex);
-		}
+		return getSHA1(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)));
 	}
 
 	public static String getMD5(String string) throws IOException {
-		try {
-			return getHash(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)), "MD5");
-		} catch (NoSuchAlgorithmException ex) {
-			throw new RuntimeException(ex);
-		}
+		return getMD5(new ByteArrayInputStream(string.getBytes(StringUtils.UTF8)));
 	}
 
 	public static String getSHA256(InputStream inStream) throws IOException {
@@ -70,23 +54,38 @@ public class Hasher {
 		}
 	}
 
+	/**
+	 * Reads an InputStream into a MessageDigest using the specified
+	 * algorithm, and outputs a hexadecimal representation.
+	 * 
+	 * @param inStream InputStream to read
+	 * @param algorithm Algorithm to use
+	 * @return
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 */
+	public static String getHash(InputStream inStream, String algorithm) throws IOException, NoSuchAlgorithmException {
+		return IOUtils.bytesToHex(getRawHash(inStream, algorithm));
+	}
+	
+	/**
+	 * Reads an InputStream into a MessageDigest using the specified
+	 * algorithm, and outputs the raw hash byte array.
+	 * 
+	 * @param inStream InputStream to read
+	 * @param algorithm Algorithm to use
+	 * @return
+	 * @throws IOException
+	 * @throws NoSuchAlgorithmException
+	 */
 	@SuppressWarnings("empty-statement")
-	public static String getHash(InputStream inStream, String type) throws IOException, NoSuchAlgorithmException {
-		MessageDigest md = MessageDigest.getInstance(type);
+	public static byte[] getRawHash(InputStream inStream, String algorithm) throws IOException, NoSuchAlgorithmException {
+		MessageDigest md = MessageDigest.getInstance(algorithm);
 		DigestInputStream in = new DigestInputStream(inStream, md);
-		int r;
-		byte[] b = new byte[8129 * 2];
-		while ((r = in.read(b)) > -1);
-
-		b = md.digest();
-
-		String ret = "";
-
-		for (byte q : b) {
-			ret += Integer.toString((q & 0xff) + 0x100, 16).substring(1);
-		}
-
-		return ret;
+		
+		byte[] b = new byte[8129];
+		while (in.read(b) > -1);
+		return md.digest();
 	}
 
 }

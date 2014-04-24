@@ -17,7 +17,7 @@ import java.net.URISyntaxException;
 public abstract class DecodedStreamProvider implements StreamProvider {
 
 	@Override
-	public final Stream open(String raw) throws IOException {
+	public final Stream open(String raw, boolean supportWriting) throws IOException {
 		String path;
 		try {
 			URI uri = new URI(null, null, raw, null);
@@ -25,9 +25,9 @@ public abstract class DecodedStreamProvider implements StreamProvider {
 		} catch (URISyntaxException ex) {
 			throw new IOException(ex);
 		}
-		return openImpl(path, raw);
+		return openImpl(path, raw, supportWriting);
 	}
 	
-	public abstract Stream openImpl(String path, String raw) throws IOException;
+	public abstract Stream openImpl(String path, String raw, boolean supportWriting) throws IOException;
 	
 }

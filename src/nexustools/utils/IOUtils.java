@@ -5,28 +5,12 @@
 package nexustools.utils;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import javax.net.ssl.HttpsURLConnection;
+
 /**
  *
  * @author Luke
  */
-public class FileUtils {
+public class IOUtils {
 
     public static void copyFile(File from, File to, String basedir) throws FileNotFoundException, IOException {
         if(from.isDirectory()){
@@ -41,6 +25,13 @@ public class FileUtils {
             copyStream(new FileInputStream(from), new FileOutputStream(to));
     }
 	
+	/**
+	 * Reads an InputStream and writes it to an OutputStream
+	 * 
+	 * @param in InputStream to read
+	 * @param out OutputStream to write
+	 * @throws IOException
+	 */
 	public static void copyStream(InputStream in, OutputStream out) throws IOException {
 		int r;
 		byte[] b = new byte[8129];
@@ -49,4 +40,16 @@ public class FileUtils {
 		}
 		out.flush();
 	}
+	
+	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+	public static String bytesToHex(byte[] bytes) {
+		char[] hexChars = new char[bytes.length * 2];
+		for ( int j = 0; j < bytes.length; j++ ) {
+			int v = bytes[j] & 0xFF;
+			hexChars[j * 2] = hexArray[v >>> 4];
+			hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+		}
+		return new String(hexChars);
+	}
+	
 }
