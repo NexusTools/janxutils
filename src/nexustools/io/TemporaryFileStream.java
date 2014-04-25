@@ -9,6 +9,7 @@ package nexustools.io;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import nexustools.utils.StringUtils;
 
 /**
  * A Temporary FileStream which deletes itself when 
@@ -18,14 +19,6 @@ import java.io.IOException;
  */
 public class TemporaryFileStream extends FileStream {
 	
-	private static char letters[] = new char[]{
-		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-		'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-		'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-		'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2',
-		'3', '4', '5', '6', '7', '8', '9', '-', '_'
-	};
 	private static String baseTMPFolder = null;
 	protected static synchronized String getTemporaryFileName(String prefix) {
 		StringBuilder randomFilename = new StringBuilder();
@@ -44,9 +37,7 @@ public class TemporaryFileStream extends FileStream {
 			randomFilename.append(prefix);
 			randomFilename.append('-');
 		}
-		for(int i=0; i<16; i++)
-			randomFilename.append(letters[(int)Math.floor(Math.random()*letters.length)]);
-		
+		randomFilename.append(StringUtils.randomString(16));
 		randomFilename.append('.');
 		randomFilename.append(System.currentTimeMillis());
 		return randomFilename.toString();
@@ -54,7 +45,7 @@ public class TemporaryFileStream extends FileStream {
 
 	public TemporaryFileStream(String name) throws FileNotFoundException, IOException {
 		super(getTemporaryFileName(name), true);
-		System.out.println("Created Temporary File: " + getFilePath());
+		System.out.println("Created Temporary File: " + getPath());
 		markDeleteOnExit();
 	}
 

@@ -41,7 +41,13 @@ public class FileStream extends Stream {
 		this(path, false);
 	}
 	
-	public String getFilePath() {
+	@Override
+	public String getScheme() {
+		return "file";
+	}
+	
+	@Override
+	public String getPath() {
 		return path;
 	}
 	
@@ -101,11 +107,6 @@ public class FileStream extends Stream {
 	@Override
 	public void flush() throws IOException {}
 
-	@Override
-	public String getURL() {
-		return "file:" + path;
-	}
-
 	private boolean markedForDeletion = false;
 	private static Thread deleteOnExitThread;
 	public void markDeleteOnExit() {
@@ -114,6 +115,7 @@ public class FileStream extends Stream {
 		
 		if(markedForDeletion)
 			return;
+		
 		markedForDeletion = true;
 		deleteOnExit.add(this);
 		if(deleteOnExitThread == null) {
@@ -121,10 +123,13 @@ public class FileStream extends Stream {
 
 				@Override
 				public void run() {
+					if(deleteOnExit.isEmpty())
+						return;
+					
 					System.out.println("Cleaning remaining deleteOnExit FileStreams...");
 					for(FileStream fStream : deleteOnExit)
 						try {
-							fStream.delete();
+							fStream.deleteAsMarked();
 						} catch (Throwable ex) {
 							ex.printStackTrace(System.err);
 						}
@@ -138,8 +143,10 @@ public class FileStream extends Stream {
 	@Override
 	protected void finalize() throws Throwable {
 		try {
-			if(markedForDeletion)
-				delete();
+			if(markedForDeletion) {
+				deleteAsMarked();
+				deleteOnExit.remove(this);
+			}
 		} catch (IOException ex) {
 			Logger.getLogger(FileStream.class.getName()).log(Level.SEVERE, null, ex);
 		} finally {
@@ -151,7 +158,7 @@ public class FileStream extends Stream {
 		randomAccessFile.close();
 	}
 
-	private void delete() throws IOException {
+	private void deleteAsMarked() throws IOException {
 		close();
 		(new File(path)).delete();
 	}
@@ -160,7 +167,7 @@ public class FileStream extends Stream {
 	public String getMimeType() {
 		try {
 			Method method = File.class.getMethod("probeContentType", String.class);
-			String type = (String)method.invoke(null, getFilePath());
+			String type = (String)method.invoke(null, getPath());
 			if(type != null)
 				return type;
 		} catch(Throwable t) {}

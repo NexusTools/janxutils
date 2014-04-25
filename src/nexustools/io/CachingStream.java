@@ -146,6 +146,16 @@ public class CachingStream extends Stream {
 	public long pos() {
 		return localCache.pos();
 	}
+	
+	@Override
+	public String getScheme() {
+		return localCache.getScheme();
+	}
+
+	@Override
+	public String getPath() {
+		return localCache.getPath();
+	}
 
 	@Override
 	public String getURL() {

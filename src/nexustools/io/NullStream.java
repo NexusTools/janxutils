@@ -42,6 +42,16 @@ public final class NullStream extends Stream {
 	protected NullStream() {}
 
 	@Override
+	public String getScheme() {
+		return "null";
+	}
+
+	@Override
+	public String getPath() {
+		return "";
+	}
+
+	@Override
 	public final SubStream createSubSectorStream(SubStream.Range range) {
 		return subInstance;
 	}

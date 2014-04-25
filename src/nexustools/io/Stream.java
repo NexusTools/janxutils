@@ -9,10 +9,15 @@ package nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import nexustools.utils.IOUtils;
@@ -33,7 +38,7 @@ public abstract class Stream {
 		return NullStream.getInstance();
 	}
 	
-	private static final HashMap<String, StreamProvider> protocols = new HashMap() {
+	private static final HashMap<String, StreamProvider> providers = new HashMap() {
 		{
 			put("memory", new StreamProvider() {
 
@@ -43,7 +48,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, boolean supportWriting) {
+				public Stream open(String path, String raw, boolean supportWriting) {
 					if(path.length() > 0)
 						return new MemoryStream(Integer.valueOf(path.split("@")[0]));
 					else
@@ -58,11 +63,11 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, boolean supportWriting) {
+				public Stream open(String path, String raw, boolean supportWriting) {
 					return Null();
 				}
 			});
-			put("file", new DecodedStreamProvider() {
+			put("file", new StreamProvider() {
 
 				@Override
 				public String protocol() {
@@ -70,7 +75,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
 					return FileStream.getStream(path, supportWriting);
 				}
 				
@@ -85,7 +90,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, boolean supportWriting) throws IOException {
+				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
 					Matcher matcher = substreamPattern.matcher(path);
 					if(matcher.matches())
 						return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
@@ -93,7 +98,7 @@ public abstract class Stream {
 						throw new IOException("Malformed substream:" + path);
 				}
 			});
-			put("resource", new DecodedStreamProvider() {
+			put("resource", new StreamProvider() {
 
 				@Override
 				public String protocol() {
@@ -101,7 +106,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream openImpl(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("Resources do not support writing.");
 					
@@ -121,7 +126,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, boolean supportWriting) throws IOException {
+				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("Input Streams do not support writing by their nature.");
 					return Stream.open(path);
@@ -139,10 +144,10 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, boolean supportWriting) throws IOException {
+				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("URLStreams do not support writing yet.");
-					return URLStream.getStream(path);
+					return URLStream.getStream(raw);
 				}
 				
 			});
@@ -166,7 +171,7 @@ public abstract class Stream {
 		if(protocol == null)
 			fallbackProviders.add(provider);
 		else
-			protocols.put(protocol, provider);
+			providers.put(protocol, provider);
 	}
 
 	private static final Pattern urlPattern = Pattern.compile("^(\\w+):(.+)$");
@@ -214,18 +219,17 @@ public abstract class Stream {
 		System.out.println("Opening Stream: " + url);
 		matcher = urlPattern.matcher(url);
 		if(matcher.matches()) {
+			String path = URLDecoder.decode(matcher.group(2), "UTF-8");//(new URI(null, null, matcher.group(2), null)).getPath();
 			{
-				StreamProvider provider = protocols.get(matcher.group(1));
+				StreamProvider provider = providers.get(matcher.group(1));
 				if(provider != null)
-					return provider.open(matcher.group(2), supportWriting);
+					return provider.open(path, url, supportWriting);
 			}
 			
 			for(StreamProvider provider : fallbackProviders)
 				try {
-					return provider.open(url, supportWriting);
-				} catch(IOException ex) {
-					ex.printStackTrace(System.err);
-				}
+					return provider.open(path, url, supportWriting);
+				} catch(UnsupportedOperationException ex) {} // Ignore incompatible streams
 			
 			throw new IOException("No handler found for URL: " + url);
 		} else
@@ -594,7 +598,16 @@ public abstract class Stream {
 	 * @see Stream.open
 	 * @return
 	 */
-	public abstract String getURL();
+	public String getURL() {
+		try {
+			return (new URI(getScheme(), null, getPath(), null)).toString();
+		} catch (URISyntaxException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+	
+	public abstract String getScheme();
+	public abstract String getPath();
 	
 	/**
 	 * Provides the default toString implementation for Streams

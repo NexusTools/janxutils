@@ -171,7 +171,7 @@ public class SubStream extends Stream {
 		if(!range.isSubRange())
 			return stream.getURL();
 		
-		return "substream:" + range.getStart() + "-" + range.getEnd() + "@" + stream.getURL();
+		return super.getURL();
 	}
 	
 	@Override
@@ -191,6 +191,16 @@ public class SubStream extends Stream {
 		} else
 			effectiveStream = this;
 		return effectiveStream;
+	}
+
+	@Override
+	public String getScheme() {
+		return "substream";
+	}
+
+	@Override
+	public String getPath() {
+		return range.getStart() + "-" + range.getEnd() + "@" + stream.getURL();
 	}
 
 	public Stream getUnderlyingString() {

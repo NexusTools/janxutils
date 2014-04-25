@@ -100,22 +100,31 @@ public class URLStream extends CachingStream {
 				if(eTag != null)
 					httpCon.setRequestProperty("If-None-Match", eTag);
 
-				httpCon.connect();
-				if(httpCon.getResponseCode() == 304) {
+				httpCon.setReadTimeout(500);
+				httpCon.setConnectTimeout(800);
+				int response;
+				try {
+					httpCon.connect();
+					response = httpCon.getResponseCode();
+				} catch(IOException ex) {
+					ex.printStackTrace(System.err);
+					System.out.println("Using cache...");
+					response = 304; // Pretend it was cached if the connection fails
+				}
+				if(response == 304) {
 					cacheSet = new CachingStream.CacheInfo(FileStream.getStream(cachePath));
 					cacheSet.mimetype = dataInputStream.readUTF8();
 					cacheSet.size = dataInputStream.readLong();
 					return cacheSet;
 				}
-			} else
+			} else {
+				httpCon.setReadTimeout(1200);
+				httpCon.setConnectTimeout(1600);
 				httpCon.connect();
+			}
 
 			eTag = con.getHeaderField("ETag");
-			if(eTag.equals(""))
-				eTag = null;
 			lastModified = con.getHeaderField("Last-Modified");
-			if(lastModified.equals(""))
-				lastModified = null;
 			if(cacheStream != null)
 				cacheStream.close();
 			if(eTag != null || lastModified != null) {

@@ -8,6 +8,8 @@ package nexustools.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.WeakHashMap;
+import nexustools.utils.StringUtils;
 
 /**
  * A expanding Stream that stores its contents in memory.
@@ -22,6 +24,7 @@ public class MemoryStream extends Stream {
 	private int pos = 0;
 	private int size = 0;
 	private byte[] buffer;
+	private final String id;
 	
 	private static int sizeForStream(InputStream in) {
 		try {
@@ -30,6 +33,8 @@ public class MemoryStream extends Stream {
 			return 64;
 		}
 	}
+	
+	private static final WeakHashMap<String, MemoryStream> instances = new WeakHashMap();
 	
 	public MemoryStream(InputStream inStream, short max) throws IOException {
 		this(sizeForStream(inStream));
@@ -51,6 +56,10 @@ public class MemoryStream extends Stream {
 	
 	public MemoryStream(int size) {
 		buffer = new byte[Math.max(8, size)];
+		String nid = StringUtils.randomString(32);
+		while(instances.containsKey(nid))
+			nid = StringUtils.randomString(32);
+		instances.put(id = nid, this);
 	}
 	
 	public MemoryStream() {
@@ -127,8 +136,13 @@ public class MemoryStream extends Stream {
 	}
 
 	@Override
-	public String getURL() {
-		return "memory:" + buffer.length + "@" + buffer;
+	public String getScheme() {
+		return "memory:";
+	}
+
+	@Override
+	public String getPath() {
+		return buffer.length + "@" + id;
 	}
 
 	public boolean isEmpty() {
