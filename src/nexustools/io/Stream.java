@@ -114,7 +114,11 @@ public abstract class Stream {
 					if(resource == null)
 						throw new IOException("No such resource found: " + path);
 					
-					return Stream.synthesize(resource.toExternalForm(), "resource:" + raw, "ResourceSynth");
+					try {
+						return Stream.synthesize(resource.toExternalForm(), "resource:" + raw, "ResourceSynth");
+					} catch (URISyntaxException ex) {
+						throw new RuntimeException(ex);
+					}
 				}
 				
 			});
@@ -216,7 +220,6 @@ public abstract class Stream {
 				break;
 		}
 		
-		System.out.println("Opening Stream: " + url);
 		matcher = urlPattern.matcher(url);
 		if(matcher.matches()) {
 			String path = URLDecoder.decode(matcher.group(2), "UTF-8");//(new URI(null, null, matcher.group(2), null)).getPath();
@@ -246,23 +249,26 @@ public abstract class Stream {
 	 * @return
 	 * @throws IOException
 	 */
-	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException {
-		Stream stream = open(effectiveURL);
-		while(stream instanceof SubStream)
-			stream = ((SubStream)stream).getEffectiveStream();
-		
+	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException, URISyntaxException {
+		Stream stream = open(effectiveURL).getEffectiveStream();
+		final URI reportedURI = new URI(reportedURL);
 		return new SubStream(stream) {
-
+			@Override
+			public String getScheme() {
+				return reportedURI.getScheme();
+			}
+			@Override
+			public String getPath() {
+				return reportedURI.getPath();
+			}
 			@Override
 			public String getURL() {
 				return reportedURL;
 			}
-
 			@Override
 			public String toString() {
 				return stringForStream(this, Stream.class.getName() + "$" + name);
 			}
-			
 		};
 	}
 
@@ -364,10 +370,11 @@ public abstract class Stream {
 	 * SubStreams can be used to read from the same Stream
 	 * at multiple locations without requiring multiple FDs.
 	 * 
+	 * @throws java.io.IOException
 	 * @see Stream.createSubSectorStream
 	 * @return
 	 */
-	public abstract long pos();
+	public abstract long pos() throws IOException;
 
 	/**
 	 * Seeks this Stream to another position within its content.
@@ -590,6 +597,18 @@ public abstract class Stream {
 	
 	public void storeMutableObject(Object target) throws IOException {
 		createDataOutputStream().writeMutableObject(target);
+	}
+	
+	/**
+	 * Returns the Effective Stream.
+	 * 
+	 * Subclasses can re-implement this to point to the real Stream they are
+	 * reading from, when the Stream itself isn't really what matters.
+	 * 
+	 * @return
+	 */
+	public Stream getEffectiveStream() {
+		return this;
 	}
 
 	/**

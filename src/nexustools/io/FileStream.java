@@ -25,20 +25,25 @@ public class FileStream extends Stream {
 	
 	private static final WeakArrayList<FileStream> deleteOnExit = new WeakArrayList();
 	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
-	private final RandomAccessFile randomAccessFile;
+	private RandomAccessFile randomAccessFile;
+	private final boolean writable;
 	private final String path;
-	private boolean writable;
-	private long pos;
 	
 	public FileStream(String path, boolean writable) throws FileNotFoundException, IOException {
-		randomAccessFile = new RandomAccessFile(path, writable ? "rw" : "r");
-		randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
 		this.writable = writable;
 		this.path = path;
+		ensureOpen();
 	}
 	
 	public FileStream(String path) throws FileNotFoundException, IOException {
 		this(path, false);
+	}
+	
+	protected final void ensureOpen() throws FileNotFoundException, IOException {
+		if(randomAccessFile == null) {
+			randomAccessFile = new RandomAccessFile(path, writable ? "rw" : "r");
+			randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
+		}
 	}
 	
 	@Override
@@ -55,13 +60,14 @@ public class FileStream extends Stream {
 		return getStream(filePath, false);
 	}
 	
-	public static Stream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
+	public static synchronized Stream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
 		FileStream fileStream;
 		if(writeable)
 			return new FileStream(filePath, true);
 		else {
 			fileStream = instanceCache.get(filePath);
 			if(fileStream == null) {
+				System.out.println("Opening FileStream: " + filePath);
 				fileStream = new FileStream(filePath);
 				instanceCache.put(filePath, fileStream);
 			}
@@ -72,31 +78,32 @@ public class FileStream extends Stream {
 
 	@Override
 	public void seek(long pos) throws IOException {
+		ensureOpen();
 		randomAccessFile.seek(pos);
 	}
 
 	@Override
-	public long pos() {
-		return pos;
+	public long pos() throws IOException {
+		ensureOpen();
+		return randomAccessFile.getFilePointer();
 	}
 
 	@Override
 	public long size() throws IOException {
+		ensureOpen();
 		return randomAccessFile.length();
 	}
 
 	@Override
 	public int read(byte[] buffer, int off, int len) throws IOException {
-		int read = randomAccessFile.read(buffer, off, len);
-		if(read > 0)
-			pos += read;
-		return read;
+		ensureOpen();
+		return randomAccessFile.read(buffer, off, len);
 	}
 
 	@Override
 	public void write(byte[] buffer, int off, int len) throws IOException {
+		ensureOpen();
 		randomAccessFile.write(buffer, off, len);
-		pos += len;
 	}
 
 	@Override
@@ -147,15 +154,22 @@ public class FileStream extends Stream {
 				deleteAsMarked();
 				deleteOnExit.remove(this);
 			}
-		} catch (IOException ex) {
-			Logger.getLogger(FileStream.class.getName()).log(Level.SEVERE, null, ex);
+		} catch (Throwable t) {
+			t.printStackTrace(System.err);
 		} finally {
 			super.finalize();
 		}
 	}
 	
-	public void close() throws IOException {
-		randomAccessFile.close();
+	public final boolean isOpen() {
+		return randomAccessFile != null;
+	}
+	
+	public final void close() throws IOException {
+		if(randomAccessFile != null) {
+			randomAccessFile.close();
+			randomAccessFile = null;
+		}
 	}
 
 	private void deleteAsMarked() throws IOException {

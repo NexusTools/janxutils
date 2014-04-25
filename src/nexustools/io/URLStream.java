@@ -26,9 +26,10 @@ public class URLStream extends CachingStream {
 	
 	private static final WeakHashMap<URL, URLStream> instanceCache = new WeakHashMap();
 	
-	protected static Stream getInstance(URL url) throws IOException {
+	protected static synchronized Stream getInstance(URL url) throws IOException {
 		URLStream urlStream = instanceCache.get(url);
 		if(urlStream == null) {
+			System.out.println("Opening URLStream: " + url);
 			urlStream = new URLStream(url);
 			instanceCache.put(url, urlStream);
 		}
@@ -156,19 +157,25 @@ public class URLStream extends CachingStream {
 		return cacheSet;
 	}
 
-	private final String url;
-	protected URLStream(CacheInfo cacheSet, String url) throws IOException {
-		super(cacheSet);
+	private final URL url;
+	protected URLStream(URL url) throws IOException {
+		super(getCacheSet(url));
 		this.url = url;
 	}
-	
-	protected URLStream(URL url) throws IOException {
-		this(getCacheSet(url), url.toExternalForm());
+
+	@Override
+	public String getScheme() {
+		return url.getProtocol();
+	}
+
+	@Override
+	public String getPath() {
+		return url.getPath();
 	}
 
 	@Override
 	public String getURL() {
-		return url;
+		return url.toExternalForm();
 	}
 	
 }

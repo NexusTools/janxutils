@@ -182,15 +182,19 @@ public class SubStream extends Stream {
 		return super.toString();
 	}
 	
+	/**
+	 * Returns the Effective Stream.
+	 * 
+	 * If the range for this SubStream is the full range of the underlying Stream,
+	 * the underlying Stream is returned, otherwise this Stream is returned.
+	 * 
+	 * @return
+	 */
+	@Override
 	public Stream getEffectiveStream() {
-		Stream effectiveStream;
-		if(!range.isSubRange()) {
-			effectiveStream = this.stream;
-			while(effectiveStream instanceof SubStream)
-				effectiveStream = ((SubStream)effectiveStream).getEffectiveStream();
-		} else
-			effectiveStream = this;
-		return effectiveStream;
+		if(!range.isSubRange())
+			return this.stream.getEffectiveStream();
+		return super.getEffectiveStream();
 	}
 
 	@Override
@@ -203,6 +207,11 @@ public class SubStream extends Stream {
 		return range.getStart() + "-" + range.getEnd() + "@" + stream.getURL();
 	}
 
+	/**
+	 * Returns the Stream this SubStream is a range of.
+	 * 
+	 * @return
+	 */
 	public Stream getUnderlyingString() {
 		return stream;
 	}

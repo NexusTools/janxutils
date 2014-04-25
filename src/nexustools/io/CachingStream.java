@@ -143,7 +143,7 @@ public class CachingStream extends Stream {
 	}
 
 	@Override
-	public long pos() {
+	public long pos() throws IOException {
 		return localCache.pos();
 	}
 	
