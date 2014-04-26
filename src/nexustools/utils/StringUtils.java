@@ -19,6 +19,10 @@ import static nexustools.io.StreamUtils.DefaultMemoryMax;
  */
 public class StringUtils {
 	
+	/* Since Java 1.7, there is also java.nio.charset.StandardCharsets.UTF_8 etc.,
+	* you might want to change this accordingly (or use those directly from the Methods)
+	* instead of getting the charsets via these String Methods.
+	*/
 	public static final Charset UTF8 = Charset.forName("UTF-8");
 	public static final Charset UTF16 = Charset.forName("UTF-16");
 	public static final Charset ASCII = Charset.forName("US-ASCII");
@@ -98,7 +102,10 @@ public class StringUtils {
 	public static String randomString(int len) {
 		char[] string = new char[len];
 		for(int i=0; i<len; i++)
-			string[i] = letters[(int)Math.floor(Math.random()*letters.length)];
+		/* You might want to consider using java.security.SecureRandom for this: final SecureRandom rand = new SecureRandom(); ... rand.nextDouble()
+		* Or, instead of Math.random() (which is thread-safe and hence slower for high throughput), "new java.util.Random()"
+		*/
+			string[i] = letters[(int)(Math.random()*letters.length)]; // Math.floor not required
 		return new String(string);
 	}
 	
