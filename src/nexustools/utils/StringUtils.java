@@ -8,6 +8,8 @@ package nexustools.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import nexustools.io.MemoryStream;
 import nexustools.io.Stream;
@@ -19,13 +21,32 @@ import static nexustools.io.StreamUtils.DefaultMemoryMax;
  */
 public class StringUtils {
 	
-	/* Since Java 1.7, there is also java.nio.charset.StandardCharsets.UTF_8 etc.,
-	* you might want to change this accordingly (or use those directly from the Methods)
-	* instead of getting the charsets via these String Methods.
-	*/
-	public static final Charset UTF8 = Charset.forName("UTF-8");
-	public static final Charset UTF16 = Charset.forName("UTF-16");
-	public static final Charset ASCII = Charset.forName("US-ASCII");
+	public static final Charset UTF8;
+	public static final Charset UTF16;
+	public static final Charset ASCII;
+	
+	static {
+		Charset utf8;
+		Charset utf16;
+		Charset ascii;
+		try {
+			/*
+			Hopefully this will throw if the properties don't exist
+			and use the fallback, if not the fallback is
+			probably faster than manualy reflecting anyway...
+			*/
+			utf8 = java.nio.charset.StandardCharsets.UTF_8;
+			utf16 = java.nio.charset.StandardCharsets.UTF_16;
+			ascii = java.nio.charset.StandardCharsets.US_ASCII;
+		} catch (Throwable t) {
+			utf8 = Charset.forName("UTF-8");
+			utf16 = Charset.forName("UTF-16");
+			ascii = Charset.forName("US-ASCII");
+		}
+		UTF8 = utf8;
+		UTF16 = utf16;
+		ASCII = ascii;
+	}
 	
 	public static String read(String url, Charset charset, short max) throws IOException {
 		return read(Stream.openInputStream(url), charset, max);
@@ -101,12 +122,21 @@ public class StringUtils {
 	};
 	public static String randomString(int len) {
 		char[] string = new char[len];
-		for(int i=0; i<len; i++)
-		/* You might want to consider using java.security.SecureRandom for this: final SecureRandom rand = new SecureRandom(); ... rand.nextDouble()
-		* Or, instead of Math.random() (which is thread-safe and hence slower for high throughput), "new java.util.Random()"
-		*/
-			string[i] = letters[(int)(Math.random()*letters.length)]; // Math.floor not required
+		java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+		for(int i=0; i<len; i++) {
+			string[i] = letters[(int)(secureRandom.nextDouble()*letters.length)]; // Math.floor not required
+		}
 		return new String(string);
+	}
+
+	public static String stringForException(Throwable ex) {
+		StringWriter errors = new StringWriter();
+		PrintWriter errorWriter = new PrintWriter(errors);
+		errorWriter.println("An unrecoverable error has occured:\n");
+		ex.printStackTrace(errorWriter);
+		errorWriter.flush();
+
+		return errors.toString();
 	}
 	
 }
