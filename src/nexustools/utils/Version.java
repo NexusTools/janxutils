@@ -12,7 +12,7 @@ package nexustools.utils;
  * 
  * http://en.wikipedia.org/wiki/Software_versioning
  */
-public class Version {
+public class Version implements Cloneable {
 	
 	/**
 	 * The development stage
@@ -81,6 +81,11 @@ public class Version {
 		builder.append(revision);
 		
 		return builder.toString();
+	}
+	
+	@Override
+	public Version clone() {
+		return new Version(major, minor, stage, revision);
 	}
 	
 }
