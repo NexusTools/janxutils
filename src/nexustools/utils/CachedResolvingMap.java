@@ -6,8 +6,6 @@
 
 package nexustools.utils;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,7 +22,6 @@ import java.util.Set;
 public final class CachedResolvingMap<K,V> extends AbstractResolvingMap<K,V> {
 	
 	private static class CacheEntry<K,V> implements Entry<K,V> {
-		
 		private final K key;
 		public final Entry<K,V> entry;
 		public final Internal<K,V> internal;
@@ -33,22 +30,18 @@ public final class CachedResolvingMap<K,V> extends AbstractResolvingMap<K,V> {
 			this.internal = internal;
 			this.entry = entry;
 		}
-
 		@Override
 		public K getKey() {
 			return entry.getKey();
 		}
-
 		@Override
 		public V getValue() {
 			return entry.getValue();
 		}
-
 		@Override
 		public V setValue(V value) {
 			return entry.setValue(value);
 		}
-
 		@Override
 		public boolean equals(Object obj) {
 			if (obj == null)
@@ -57,16 +50,12 @@ public final class CachedResolvingMap<K,V> extends AbstractResolvingMap<K,V> {
 				return false;
 			return Objects.equals(this.key, ((CacheEntry<?, ?>) obj).key);
 		}
-
 		@Override
 		public int hashCode() {
 			int hash = 7;
 			hash = 59 * hash + Objects.hashCode(this.key);
 			return hash;
 		}
-		
-		
-		
 	}
 	
 	private final HashMap<K, Internal> readMaps = new HashMap();

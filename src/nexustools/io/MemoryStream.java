@@ -8,6 +8,7 @@ package nexustools.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.WeakHashMap;
 import nexustools.utils.StringUtils;
 
@@ -43,6 +44,14 @@ public class MemoryStream extends Stream {
 	
 	public MemoryStream(InputStream inStream) throws IOException {
 		this(inStream, StreamUtils.DefaultMemoryMax);
+	}
+	
+	public MemoryStream(String source, Charset charset) throws IOException {
+		this(source.getBytes(charset));
+	}
+	
+	public MemoryStream(String source) throws IOException {
+		this(source, StringUtils.UTF8);
 	}
 	
 	public MemoryStream(byte[] buf, int pos, int len) throws IOException {

@@ -9,7 +9,6 @@ package nexustools.utils;
 import java.lang.ref.WeakReference;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -22,9 +21,7 @@ public class WeakArrayList<T> extends AbstractCollection<T> {
 	
 	private final ArrayList<WeakReference<T>> collection = new ArrayList();
 	
-	public WeakArrayList() {
-		
-	}
+	public WeakArrayList() {}
 
 	@Override
 	public boolean add(T e) {
