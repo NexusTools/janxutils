@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import nexustools.io.MemoryStream;
 import nexustools.io.Stream;
@@ -30,11 +31,6 @@ public class StringUtils {
 		Charset utf16;
 		Charset ascii;
 		try {
-			/*
-			Hopefully this will throw if the properties don't exist
-			and use the fallback, if not the fallback is
-			probably faster than manualy reflecting anyway...
-			*/
 			utf8 = java.nio.charset.StandardCharsets.UTF_8;
 			utf16 = java.nio.charset.StandardCharsets.UTF_16;
 			ascii = java.nio.charset.StandardCharsets.US_ASCII;
@@ -48,35 +44,35 @@ public class StringUtils {
 		ASCII = ascii;
 	}
 	
-	public static String read(String url, Charset charset, short max) throws IOException {
+	public static String read(String url, Charset charset, short max) throws IOException, URISyntaxException {
 		return read(Stream.openInputStream(url), charset, max);
 	}
 	
-	public static String read(String url, Charset charset) throws IOException {
+	public static String read(String url, Charset charset) throws IOException, URISyntaxException {
 		return read(url, charset, DefaultMemoryMax);
 	}
 	
-	public static String readUTF8(String url) throws IOException {
+	public static String readUTF8(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF8);
 	}
 	
-	public static String readUTF8(String url, short max) throws IOException {
+	public static String readUTF8(String url, short max) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF8, max);
 	}
 	
-	public static String readUTF16(String url) throws IOException {
+	public static String readUTF16(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF16);
 	}
 	
-	public static String readUTF16(String url, short max) throws IOException {
+	public static String readUTF16(String url, short max) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF16, max);
 	}
 	
-	public static String readASCII(String url) throws IOException {
+	public static String readASCII(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.ASCII);
 	}
 	
-	public static String readASCII(String url, short max) throws IOException {
+	public static String readASCII(String url, short max) throws IOException, URISyntaxException {
 		return read(url, StringUtils.ASCII, max);
 	}
 	
