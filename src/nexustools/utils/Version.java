@@ -33,7 +33,8 @@ public class Version {
 			for(Stage stage : Stage.values())
 				if(stage.ordinal() == ordinal)
 					return stage;
-			return null;
+			
+			throw new UnsupportedOperationException("No Stage exists for ordinal: " + ordinal);
 		}
 		
 		@Override

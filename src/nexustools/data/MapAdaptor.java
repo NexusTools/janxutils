@@ -5,11 +5,13 @@
  */
 package nexustools.data;
 
-import nexustools.io.DataInputStream;
-import nexustools.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import nexustools.io.DataInputStream;
+import nexustools.io.DataOutputStream;
 
 /**
  *
@@ -19,12 +21,23 @@ public class MapAdaptor extends Adaptor<Map> {
 
 	@Override
 	public void write(Map target, DataOutputStream out) throws IOException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		out.writeInt(target.size());
+		for (Iterator it = target.entrySet().iterator(); it.hasNext();) {
+			Object object = it.next();
+			if(object instanceof Map.Entry) {
+				Map.Entry entry = (Map.Entry)object;
+				out.writeMutableObject(entry.getKey());
+				out.writeMutableObject(entry.getValue());
+			} else
+				throw new UnsupportedOperationException("Cannot handle objects not of type Map.Entry");
+		}
 	}
 
 	@Override
 	public void read(Map target, DataInputStream in) throws IOException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		int size = in.readInt();
+		while(size-- > 0)
+			target.put(in.readMutableObject(), in.readMutableObject());
 	}
 
 	@Override
