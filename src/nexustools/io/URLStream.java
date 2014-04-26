@@ -52,6 +52,14 @@ public class URLStream extends CachingStream {
 		return getInstance(url).createSubSectorStream();
 	}
 	
+	public static Stream getStream(URI uri, Range range) throws IOException {
+		return getStream(uri.toURL(), range);
+	}
+	
+	public static Stream getStream(URI uri) throws IOException {
+		return getStream(uri.toURL());
+	}
+	
 	private static String cacheDir = null;
 	protected static CacheInfo getCacheSet(URL url) throws IOException {
 		URLConnection con = url.openConnection();

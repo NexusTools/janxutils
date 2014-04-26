@@ -6,6 +6,7 @@
 
 package nexustools.io;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,7 +49,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) {
+				public Stream open(String path, URI raw, boolean supportWriting) {
 					if(path.length() > 0)
 						return new MemoryStream(Integer.valueOf(path.split("@")[0]));
 					else
@@ -63,7 +64,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) {
+				public Stream open(String path, URI raw, boolean supportWriting) {
 					return Null();
 				}
 			});
@@ -75,7 +76,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					return FileStream.getStream(path, supportWriting);
 				}
 				
@@ -90,10 +91,14 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					Matcher matcher = substreamPattern.matcher(path);
 					if(matcher.matches())
-						return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
+						try {
+							return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
+						} catch (URISyntaxException ex) {
+							throw new IOException(ex);
+						}
 					else
 						throw new IOException("Malformed substream:" + path);
 				}
@@ -106,7 +111,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("Resources do not support writing.");
 					
@@ -130,10 +135,14 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("Input Streams do not support writing by their nature.");
-					return Stream.open(path);
+					try {
+						return Stream.open(path);
+					} catch (URISyntaxException ex) {
+						throw new IOException(ex);
+					}
 				}
 			});
 		}
@@ -148,7 +157,7 @@ public abstract class Stream {
 				}
 
 				@Override
-				public Stream open(String path, String raw, boolean supportWriting) throws IOException {
+				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("URLStreams do not support writing yet.");
 					return URLStream.getStream(raw);
@@ -178,8 +187,7 @@ public abstract class Stream {
 			providers.put(protocol, provider);
 	}
 
-	private static final Pattern urlPattern = Pattern.compile("^(\\w+):(.+)$");
-	private static final Pattern wrapperPattern = Pattern.compile("^([^\\(]+)\\((.+)\\)$");
+	private static final Pattern wrapperPattern = Pattern.compile("^[^\\(]+\\((.+)\\)$");
 
 	/**
 	 * Parse and attempt to return a new Stream
@@ -192,8 +200,9 @@ public abstract class Stream {
 	 * @param url URL String to parse
 	 * @return A Stream compatible with the URL String given
 	 * @throws IOException
+	 * @throws java.net.URISyntaxException
 	 */
-	public static Stream open(String url) throws IOException {
+	public static Stream open(String url) throws IOException, URISyntaxException {
 		return open(url, false);
 	}
 
@@ -205,38 +214,57 @@ public abstract class Stream {
 	 * and {@link DataInputStream}s returned by a Stream to return
 	 * the original Stream
 	 * 
-	 * @param url URL String to parse
+	 * @param uri URI String to parse
 	 * @param supportWriting Whether or not the Stream needs to support writing
 	 * @return A Stream compatible with the URL String given
 	 * @throws IOException
 	 */
-	public static Stream open(String url, boolean supportWriting) throws IOException {
-		Matcher matcher;
-		while(true) {
-			matcher = wrapperPattern.matcher(url);
-			if(matcher.matches())
-				url = matcher.group(2);
-			else
-				break;
+	public static Stream open(String uri, boolean supportWriting) throws IOException, URISyntaxException {
+		Matcher matcher = wrapperPattern.matcher(uri);
+		while(matcher.matches()) {
+			uri = matcher.group(1);
+			matcher = wrapperPattern.matcher(uri);
 		}
-		
-		matcher = urlPattern.matcher(url);
-		if(matcher.matches()) {
-			String path = URLDecoder.decode(matcher.group(2), "UTF-8");//(new URI(null, null, matcher.group(2), null)).getPath();
+		return open(new URI(uri), supportWriting);
+	}
+
+	/**
+	 * Parse and attempt to return a new Stream
+	 * using a registered {@link StreamProvider}.
+	 * 
+	 * This method is also capable of unwrapping {@link InputStream}
+	 * and {@link DataInputStream}s returned by a Stream to return
+	 * the original Stream
+	 * 
+	 * @param uri URI to open
+	 * @param supportWriting Whether or not the Stream needs to support writing
+	 * @return A Stream compatible with the URL String given
+	 * @throws IOException
+	 */
+	public static Stream open(URI uri, boolean supportWriting) throws IOException {
+		if(uri.getScheme() != null) {
 			{
-				StreamProvider provider = providers.get(matcher.group(1));
+				StreamProvider provider = providers.get(uri.getScheme());
 				if(provider != null)
-					return provider.open(path, url, supportWriting);
+					return provider.open(uri.getPath(), uri, supportWriting);
 			}
 			
 			for(StreamProvider provider : fallbackProviders)
 				try {
-					return provider.open(path, url, supportWriting);
+					return provider.open(uri.getPath(), uri, supportWriting);
 				} catch(UnsupportedOperationException ex) {} // Ignore incompatible streams
 			
-			throw new IOException("No handler found for URL: " + url);
+			throw new IOException("No handler found for URI: " + uri.toString());
 		} else
-			return FileStream.getStream(url);
+			return FileStream.getStream(uri.getPath());
+	}
+	
+	public static Stream open(File file) throws IOException {
+		return open(file, false);
+	}
+	
+	public static Stream open(File file, boolean supportWriting) throws IOException {
+		return FileStream.getStream(file.getAbsolutePath(), supportWriting);
 	}
 	
 	/**
@@ -275,31 +303,32 @@ public abstract class Stream {
 	/**
 	 * Opens a Stream and creates a new InputStream
 	 * 
+	 * @throws java.net.URISyntaxException
 	 * @see Stream.open
-	 * @param url URL String to open
+	 * @param uri URI String to open
 	 * @return
 	 * @throws IOException
 	 */
-	public static InputStream openInputStream(String url) throws IOException {
-		return open(url).createInputStream();
+	public static InputStream openInputStream(String uri) throws IOException, URISyntaxException {
+		return open(uri).createInputStream();
 	}
 
 	/**
 	 * Opens a Stream and returns a new {@link DataInputStream}
 	 * 
-	 * @param url URL String to open
+	 * @param uri URI String to open
 	 * @return
 	 * @throws IOException
 	 */
-	public static DataInputStream openDataInputStream(String url) throws IOException {
-		return open(url).createDataInputStream();
+	public static DataInputStream openDataInputStream(String uri) throws IOException, URISyntaxException {
+		return open(uri).createDataInputStream();
 	}
 
-	public static OutputStream openOutputStream(String url) throws IOException {
-		return open(url).createOutputStream();
+	public static OutputStream openOutputStream(String uri) throws IOException, URISyntaxException {
+		return open(uri).createOutputStream();
 	}
 
-	public static DataOutputStream openDataOutputStream(String url) throws IOException {
+	public static DataOutputStream openDataOutputStream(String url) throws IOException, URISyntaxException {
 		return open(url).createDataOutputStream();
 	}
 
@@ -309,8 +338,9 @@ public abstract class Stream {
 	 * @param from Stream to copy from
 	 * @param to Stream to copy to
 	 * @throws IOException
+	 * @throws java.net.URISyntaxException
 	 */
-	public static void copy(String from, String to) throws IOException {
+	public static void copy(String from, String to) throws IOException, URISyntaxException {
 		copy(Stream.open(from), Stream.open(to, true));
 	}
 

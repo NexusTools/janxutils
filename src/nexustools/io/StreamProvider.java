@@ -7,6 +7,7 @@
 package nexustools.io;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Provides Streams
@@ -32,6 +33,6 @@ public interface StreamProvider {
 	 * @return
 	 * @throws java.io.IOException
 	 */
-	public Stream open(String path, String raw, boolean supportWriting) throws IOException;
+	public Stream open(String path, URI raw, boolean supportWriting) throws IOException;
 	
 }
