@@ -105,16 +105,6 @@ public abstract class Adaptor<T> {
 		Map.Entry<Class<?>, Adaptor> match =  ClassUtils.bestMatch(clazz, adaptors.entrySet());
 		if(match != null)
 			adaptor = match.getValue();
-		if(adaptor == null) {
-			Class<?> bestMatch = null;
-			for(Map.Entry<Class<?>, Adaptor> set : adaptors.entrySet()) {
-				Class<?> test = set.getKey();
-				if(test.isAssignableFrom(clazz) && (bestMatch == null || bestMatch.isAssignableFrom(test))) {
-					adaptor = set.getValue();
-					bestMatch = test;
-				}
-			}
-		}
 		if(adaptor == null && allowFallback) {
 			try {
 				adaptor = new GenericAdaptor<>(clazz);
