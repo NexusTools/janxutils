@@ -6,8 +6,8 @@
 
 package nexustools.data.primitives;
 
-import nexustools.io.DataInputStream;
 import java.io.IOException;
+import nexustools.io.DataInputStream;
 import nexustools.data.Adaptor;
 
 /**

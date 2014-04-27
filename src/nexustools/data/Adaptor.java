@@ -16,6 +16,7 @@ import java.util.ServiceLoader;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 import nexustools.data.primitives.PrimitiveAdaptor;
+import nexustools.utils.ClassUtils;
 
 /**
  *
@@ -43,7 +44,7 @@ public abstract class Adaptor<T> {
 	 * 
 	 * @param type Type to test
 	 * @return true/false
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static boolean isMutable(Class<?> type) throws AdaptorException {
 		if(Modifier.isFinal(type.getModifiers()))
@@ -58,7 +59,7 @@ public abstract class Adaptor<T> {
 	 * 
 	 * @param type Type to test
 	 * @return true/false
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static boolean hasPrimitiveAdaptor(Class<?> type) throws AdaptorException {
 		Adaptor test = resolveAdaptor(type, false);
@@ -71,7 +72,7 @@ public abstract class Adaptor<T> {
 	 * 
 	 * @param clazz Class to use for resolving adaptor
 	 * @return Compatible Adaptor
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static Adaptor resolveAdaptor(Class<?> clazz) throws AdaptorException {
 		return resolveAdaptor(clazz, true);
@@ -84,7 +85,7 @@ public abstract class Adaptor<T> {
 	 * @param clazz Class to use for resolving adaptor
 	 * @param allowFallback Whether or not to provide a GenericAdaptor when no other adaptor can be found
 	 * @return Compatible Adaptor or null if allowFallback is disabled and no adaptor is found
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static Adaptor resolveAdaptor(Class<?> clazz, boolean allowFallback) throws AdaptorException {
 		Class<?> remap = classRemap.get(clazz);
@@ -92,16 +93,9 @@ public abstract class Adaptor<T> {
 			clazz = remap;
 		
 		Adaptor adaptor = adaptors.get(clazz);
-		if(adaptor == null) {
-			Class<?> bestMatch = null;
-			for(Map.Entry<Class<?>, Adaptor> set : adaptors.entrySet()) {
-				Class<?> test = set.getKey();
-				if(test.isAssignableFrom(clazz) && (bestMatch == null || bestMatch.isAssignableFrom(test))) {
-					adaptor = set.getValue();
-					bestMatch = test;
-				}
-			}
-		}
+		Map.Entry<Class<?>, Adaptor> match =  ClassUtils.bestMatch(clazz, adaptors.entrySet());
+		if(match != null)
+			adaptor = match.getValue();
 		if(adaptor == null && allowFallback) {
 			try {
 				adaptor = new GenericAdaptor<>(clazz);
@@ -202,7 +196,7 @@ public abstract class Adaptor<T> {
 	 * @return
 	 * @throws UnsupportedOperationException
 	 * @throws IOException
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static Object resolveAndReadInstance(Class<?> target, DataInputStream inStream) throws UnsupportedOperationException, IOException, AdaptorException {
 		Adaptor adaptor = resolveAdaptor(target);
@@ -220,7 +214,7 @@ public abstract class Adaptor<T> {
 	 * @param inStream
 	 * @throws UnsupportedOperationException
 	 * @throws IOException
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static void resolveAndRead(Object target, DataInputStream inStream) throws UnsupportedOperationException, IOException, AdaptorException {
 		Adaptor adaptor = resolveAdaptor(target.getClass());
@@ -237,7 +231,7 @@ public abstract class Adaptor<T> {
 	 * @param outStream
 	 * @throws UnsupportedOperationException
 	 * @throws IOException
-	 * @throws nexustools.io.data.AdaptorException
+	 * @throws nexustools.data.AdaptorException
 	 */
 	public static void resolveAndWrite(Object target, DataOutputStream outStream) throws UnsupportedOperationException, IOException, AdaptorException {
 		Adaptor adaptor = resolveAdaptor(target.getClass());

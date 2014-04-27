@@ -6,7 +6,6 @@
 
 package nexustools.data;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -15,9 +14,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import nexustools.io.DataInputStream;
 
 /**
  *
@@ -25,7 +21,7 @@ import nexustools.io.DataInputStream;
  */
 public final class ClassDefinition {
 	
-	private static WeakHashMap<Class<?>, ClassDefinition> instances = new WeakHashMap();
+	private static final WeakHashMap<Class<?>, ClassDefinition> instances = new WeakHashMap();
 	public static ClassDefinition getInstance(Class<?> type) {
 		ClassDefinition def = instances.get(type);
 		if(def == null) {
