@@ -1,7 +1,16 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * janxutils is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 3 or any later version.
+ * 
+ * janxutils is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with janxutils.  If not, see <http://www.gnu.org/licenses/>.
+ * 
  */
 
 package nexustools.data;
@@ -96,6 +105,16 @@ public abstract class Adaptor<T> {
 		Map.Entry<Class<?>, Adaptor> match =  ClassUtils.bestMatch(clazz, adaptors.entrySet());
 		if(match != null)
 			adaptor = match.getValue();
+		if(adaptor == null) {
+			Class<?> bestMatch = null;
+			for(Map.Entry<Class<?>, Adaptor> set : adaptors.entrySet()) {
+				Class<?> test = set.getKey();
+				if(test.isAssignableFrom(clazz) && (bestMatch == null || bestMatch.isAssignableFrom(test))) {
+					adaptor = set.getValue();
+					bestMatch = test;
+				}
+			}
+		}
 		if(adaptor == null && allowFallback) {
 			try {
 				adaptor = new GenericAdaptor<>(clazz);

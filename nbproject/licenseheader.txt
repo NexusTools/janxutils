@@ -12,21 +12,3 @@
  * along with janxutils.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
-package nexustools.data;
-
-/**
- *
- * @author katelyn
- */
-public class AdaptorException extends Exception {
-
-	public AdaptorException(String string, java.lang.Exception ex) {
-		super(string, ex);
-	}
-
-	AdaptorException(String string) {
-		super(string);
-	}
-	
-}
