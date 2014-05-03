@@ -128,16 +128,14 @@ public class StringUtils {
 	public static String randomString(int len) {
 		char[] string = new char[len];
 		java.security.SecureRandom secureRandom = new java.security.SecureRandom();
-		for(int i=0; i<len; i++) {
-			string[i] = letters[(int)(secureRandom.nextDouble()*letters.length)]; // Math.floor not required
-		}
+		for(int i=0; i<len; i++)
+			string[i] = letters[(int)(secureRandom.nextDouble()*letters.length)];
 		return new String(string);
 	}
 
 	public static String stringForException(Throwable ex) {
 		StringWriter errors = new StringWriter();
 		PrintWriter errorWriter = new PrintWriter(errors);
-		errorWriter.println("An unrecoverable error has occured:\n");
 		ex.printStackTrace(errorWriter);
 		errorWriter.flush();
 

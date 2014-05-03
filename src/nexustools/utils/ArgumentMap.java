@@ -84,6 +84,12 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 		return values.get(0);
 	}
 	
+	public void putArgumentValue(String key, String value) {
+		ArrayList<String> values = new ArrayList();
+		values.add(value);
+		put(key, values);
+	}
+	
 	public String getArgumentValue(Collection<String> keys) {
 		for(String key : keys) {
 			String arg = getArgumentValue(key);
