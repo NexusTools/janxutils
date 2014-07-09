@@ -13,10 +13,14 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.impl;
 
 import java.io.IOException;
 import java.util.Map;
+import nexustools.data.Adaptor;
+import nexustools.data.AdaptorException;
+import nexustools.data.analyze.ClassDefinition;
+import nexustools.data.analyze.FieldDefinition;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 
@@ -49,16 +53,16 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	@Override
 	public void write(T target, DataOutputStream out) throws IOException {
 		ClassDefinition targetDefinition = ClassDefinition.getInstance(target.getClass());
-		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.staticFields) {
+		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.write(target, out);
 		}
-		out.writeByte(targetDefinition.fieldMap.size());
-		for(Map.Entry<Byte, FieldDefinition.Adaptor> entry : targetDefinition.fieldMap.entrySet()) {
+		out.writeByte(targetDefinition.getFieldMap().size());
+		for(Map.Entry<Byte, FieldDefinition.Adaptor> entry : targetDefinition.getFieldMap().entrySet()) {
 			out.writeByte(entry.getKey());
 			entry.getValue().write(target, out);
 		}
-		out.writeByte(targetDefinition.mutableFields.size());
-		for(Map.Entry<String, FieldDefinition.Adaptor> entry : targetDefinition.mutableFields.entrySet()) {
+		out.writeByte(targetDefinition.getMutableFields().size());
+		for(Map.Entry<String, FieldDefinition.Adaptor> entry : targetDefinition.getMutableFields().entrySet()) {
 			out.writeUTF8(entry.getKey());
 			entry.getValue().write(target, out);
 		}
@@ -67,17 +71,17 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	@Override
 	public void read(T target, DataInputStream in) throws IOException {
 		ClassDefinition targetDefinition = ClassDefinition.getInstance(target.getClass());
-		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.staticFields) {
+		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.read(target, in);
 		}
 		
 		int fieldsLeft = (int) (in.readByte() & 0xff);
 		while(fieldsLeft-- > 0)
-			targetDefinition.fieldMap.get(in.readByte()).read(target, in);
+			targetDefinition.getFieldMap().get(in.readByte()).read(target, in);
 		
 		fieldsLeft = (int) (in.readByte() & 0xff);
 		while(fieldsLeft-- > 0)
-			targetDefinition.mutableFields.get(in.readUTF8()).read(target, in);
+			targetDefinition.getMutableFields().get(in.readUTF8()).read(target, in);
 	}
 
 	/**
@@ -87,9 +91,9 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	 * @throws nexustools.data.AdaptorException
 	 */
 	public void validate() throws AdaptorException {
-		if(definition.staticFields.isEmpty() &&
-				definition.fieldMap.isEmpty() &&
-				definition.mutableFields.isEmpty())
+		if(definition.getStaticFields().isEmpty() &&
+				definition.getFieldMap().isEmpty() &&
+				definition.getMutableFields().isEmpty())
 			throw new AdaptorException(getType().getName() + " has no usable fields");
 	}
 

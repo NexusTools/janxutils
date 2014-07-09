@@ -13,7 +13,7 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.impl;
 
 import java.io.IOException;
 import nexustools.utils.Version;

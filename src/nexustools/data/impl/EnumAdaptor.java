@@ -13,20 +13,12 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.impl;
 
 /**
  *
  * @author katelyn
  */
-public class AdaptorException extends Exception {
-
-	public AdaptorException(String string, java.lang.Exception ex) {
-		super(string, ex);
-	}
-
-	public AdaptorException(String string) {
-		super(string);
-	}
+public class EnumAdaptor {
 	
 }

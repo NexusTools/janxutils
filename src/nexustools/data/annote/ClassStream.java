@@ -13,7 +13,7 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.annote;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

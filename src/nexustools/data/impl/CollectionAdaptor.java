@@ -13,10 +13,12 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.impl;
 
 import java.io.IOException;
 import java.util.Collection;
+import nexustools.data.Adaptor;
+import nexustools.data.AdaptorException;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 import static nexustools.data.Adaptor.resolveAndWriteMutable;

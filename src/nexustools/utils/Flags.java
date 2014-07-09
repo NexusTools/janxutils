@@ -13,20 +13,13 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.utils;
 
 /**
  *
  * @author katelyn
+ * @param <T> Enum with possible options
  */
-public class AdaptorException extends Exception {
-
-	public AdaptorException(String string, java.lang.Exception ex) {
-		super(string, ex);
-	}
-
-	public AdaptorException(String string) {
-		super(string);
-	}
-	
+public class Flags<T extends Enum<T>> {
+    
 }

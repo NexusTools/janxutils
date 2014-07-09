@@ -13,7 +13,7 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.annote;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -71,5 +71,27 @@ public @interface FieldStream {
 	 * @return
 	 */
 	boolean neverNull() default false;
+	
+	/**
+	* This indicates the revision this field was added on,
+	* if more than 0, a revision is also added to the output stream.
+	* 
+	* Both this and {@link #depreciated} control the detected
+	* revision of a containing class.
+	*
+	* @return Current revision as long
+	*/
+	long revision() default 0;
+	
+	/**
+	* This indicates the revision this field was depreciated on,
+	* if less than Long.MAX_VALUE, a revision is also added to the output stream.
+	* 
+	* Both this and {@link #revision} control the detected
+	* revision of a containing class.
+	*
+	* @return Current revision as long
+	*/
+	long depreciated() default Long.MAX_VALUE;
 	
 }

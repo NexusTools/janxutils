@@ -13,10 +13,11 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.analyze;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import nexustools.data.AdaptorException;
 import nexustools.io.DataInputStream;
 import nexustools.io.DataOutputStream;
 

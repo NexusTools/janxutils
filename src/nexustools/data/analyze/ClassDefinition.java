@@ -13,7 +13,7 @@
  * 
  */
 
-package nexustools.data;
+package nexustools.data.analyze;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
+import nexustools.data.Adaptor;
+import nexustools.data.AdaptorException;
+import nexustools.data.annote.ClassStream;
+import nexustools.data.annote.FieldStream;
 
 /**
  *
@@ -50,6 +54,7 @@ public final class ClassDefinition {
 		boolean autogenFieldIDs = false;
 	}
 	
+	// TODO: Add revision capabilities
 	private final Class<?> type;
 	private final ClassDefinition superDefinition;
 	private final HashMap<String, FieldDefinition> fields = new HashMap();
@@ -65,6 +70,18 @@ public final class ClassDefinition {
 			superDefinition = null;
 		this.type = type;
 		process();
+	}
+
+	public ArrayList<FieldDefinition.Adaptor> getStaticFields() {
+		return staticFields;
+	}
+
+	public HashMap<String, FieldDefinition.Adaptor> getMutableFields() {
+		return mutableFields;
+	}
+
+	public HashMap<Byte, FieldDefinition.Adaptor> getFieldMap() {
+		return fieldMap;
 	}
 	
 	private void process() {
