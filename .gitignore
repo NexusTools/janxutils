@@ -4,3 +4,6 @@
 *.DS_Store
 *.DSStore
 *~
+/platform/janxutils-se/nbproject/private/
+/platform/janxutils-android/nbproject/private/
+/lib/nbproject/private/

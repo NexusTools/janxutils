@@ -26,8 +26,8 @@ import java.lang.annotation.Target;
  * 
  * Indicates a property should be read/written
  */
-@Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
 public @interface FieldStream {
 	
 	/**
@@ -90,8 +90,19 @@ public @interface FieldStream {
 	* Both this and {@link #revision} control the detected
 	* revision of a containing class.
 	*
-	* @return Current revision as long
+	* @return Revision this field was depreciated on as long
 	*/
 	long depreciated() default Long.MAX_VALUE;
+	
+	/**
+	* This allows you to specify a string defining revisioning overtime,
+	* the format of this string is still being decided.
+	* 
+	* It can be used to indicate if a field has been depreciated and brought back,
+	* as well as the types it has been overtime, and a method to use to translate.
+	*
+	* @return Definition as string
+	*/
+	//long depreciated() default Long.MAX_VALUE; // TODO: Implement
 	
 }
