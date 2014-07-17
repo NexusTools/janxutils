@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import nexustools.io.format.StreamProcessor;
 import nexustools.utils.IOUtils;
 
 /**
@@ -551,6 +552,12 @@ public abstract class Stream {
 		};
 	}
 	
+	public final InputStream cloneInputStream() throws IOException {
+		InputStream inStream = createInputStream();
+		inStream.skip(pos());
+		return inStream;
+	}
+	
 	/**
 	 * Creates a new {@link DataInputStream} for this Stream.
 	 * 
@@ -562,6 +569,10 @@ public abstract class Stream {
 	 */
 	public final DataInputStream createDataInputStream() throws IOException {
 		return new DataInputStream(createInputStream());
+	}
+	
+	public final DataInputStream cloneDataInputStream() throws IOException {
+		return new DataInputStream(cloneInputStream());
 	}
 	
 	/**
@@ -744,6 +755,44 @@ public abstract class Stream {
 			}
 		
 		return "application/octet-stream";
+	}
+	
+	public StreamProcessor createProcessor(String parser) throws IOException {
+		try {
+			return createProcessor(parser, false);
+		} catch(CloneNotSupportedException ex) {
+			throw new RuntimeException("CloneNotSupportedException thrown when it shouldn't have been", ex);
+		}
+	}
+	
+	public StreamProcessor createProcessor(String parser, boolean fromStart) throws IOException, CloneNotSupportedException {
+		InputStream inStream;
+		if(fromStart)
+			inStream = clone(true).createInputStream();
+		else
+			inStream = createInputStream();
+		return StreamProcessor.create(parser, inStream);
+	}
+	
+	@Override
+	public final Stream clone() throws CloneNotSupportedException {
+		return clone(true);
+	}
+	
+	public Stream clone(boolean autoSeek) throws CloneNotSupportedException {
+		try {
+			Stream stream;
+			try {
+				stream = Stream.open(toString());
+			} catch(IOException | URISyntaxException | RuntimeException t) {
+				stream = Stream.open(getURL());
+			}
+			if(autoSeek)
+				stream.seek(pos());
+			return stream;
+		} catch (URISyntaxException | IOException ex) {
+			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
+		}
 	}
 	
 }
