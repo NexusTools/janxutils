@@ -111,7 +111,7 @@ public abstract class Adaptor<T> {
 			adaptor = match.getValue();
 		if(adaptor == null && allowFallback) {
 			try {
-				adaptor = new GenericAdaptor<>(clazz);
+				adaptor = new GenericAdaptor(clazz);
 				((GenericAdaptor)adaptor).validate();
 			} catch(RuntimeException ex) {
 				throw new AdaptorException("Cannot create fallback adaptor for: " + clazz.getName(), ex);
@@ -328,7 +328,7 @@ public abstract class Adaptor<T> {
 	public T createInstance(DataInputStream in, Class<? extends T> type) throws IOException{
 		try {
 			return (T) type.newInstance();
-		} catch (InstantiationException | IllegalAccessException ex) {
+		} catch(ReflectiveOperationException ex) {
 			throw new RuntimeException(ex);
 		}
 	}

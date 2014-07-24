@@ -72,7 +72,11 @@ public final class DataInputStream extends java.io.DataInputStream {
 	public final Object readMutableObject() throws IOException {
 		try {
 			return Adaptor.resolveAndReadMutable(this);
-		} catch (AdaptorException | ClassNotFoundException | UnsupportedOperationException ex) {
+		} catch (AdaptorException ex) {
+			throw new IOException(ex);
+		} catch (ClassNotFoundException ex) {
+			throw new IOException(ex);
+		} catch (UnsupportedOperationException ex) {
 			throw new IOException(ex);
 		}
 	}

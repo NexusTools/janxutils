@@ -35,7 +35,9 @@ public class CollectionAdaptor extends Adaptor<Collection> {
 			out.writeInt(target.size());
 			for(Object obj : target)
 				resolveAndWriteMutable(obj, out);
-		} catch (UnsupportedOperationException | AdaptorException ex) {
+		} catch (UnsupportedOperationException ex) {
+			throw new IOException(ex);
+		} catch (AdaptorException ex) {
 			throw new IOException(ex);
 		}
 	}
@@ -47,7 +49,9 @@ public class CollectionAdaptor extends Adaptor<Collection> {
 		while(len > 0) {
 			try {
 				target.add(resolveAndReadMutable(in));
-			} catch (AdaptorException | ClassNotFoundException ex) {
+			} catch(ClassNotFoundException ex) {
+				throw new IOException(ex);
+			} catch (AdaptorException ex) {
 				throw new IOException(ex);
 			}
 			len --;

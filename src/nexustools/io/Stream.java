@@ -36,6 +36,24 @@ import nexustools.utils.IOUtils;
  */
 public abstract class Stream {
 	
+	public static final HashMap<String,String> mimeForExt = new HashMap() {
+		{
+			put("txt", "text/plain");
+			
+			put("css", "text/css");
+			put("js", "application/javascript");
+			put("html", "text/html");
+			put("htm", "text/html");
+			
+			put("png", "image/png");
+			put("jpg", "image/jpeg");
+			put("jpeg", "image/jpeg");
+			put("tiff", "image/tiff");
+			put("gif", "image/gif");
+			put("bmp", "image/bmp");
+		}
+	};
+	
 	/**
 	 * Returns the NullStream instance
 	 * 
@@ -728,31 +746,11 @@ public abstract class Stream {
 	 */
 	public String getMimeType() {
 		String extension = getExtension();
-		if(extension != null)
-			switch(extension) {
-				case "txt":
-					return "text/plain";
-					
-				case "html":
-					return "text/html";
-
-				case "png":
-					return "image/png";
-
-				case "jpg":
-				case "jpeg":
-					return "image/jpeg";
-
-				case "gif":
-					return "image/gif";
-
-				case "tiff":
-					return "image/tiff";
-
-				case "bmp":
-					return "image/bmp";
-					
-			}
+		if(extension != null) {
+			String mime = mimeForExt.get(extension);
+			if(mime != null)
+				return mime;
+		}
 		
 		return "application/octet-stream";
 	}
@@ -784,13 +782,19 @@ public abstract class Stream {
 			Stream stream;
 			try {
 				stream = Stream.open(toString());
-			} catch(IOException | URISyntaxException | RuntimeException t) {
+			} catch(IOException t) {
+				stream = Stream.open(getURL());
+			} catch(URISyntaxException t) {
+				stream = Stream.open(getURL());
+			} catch(RuntimeException t) {
 				stream = Stream.open(getURL());
 			}
 			if(autoSeek)
 				stream.seek(pos());
 			return stream;
-		} catch (URISyntaxException | IOException ex) {
+		} catch (URISyntaxException ex) {
+			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
+		}catch (IOException ex) {
 			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
 		}
 	}

@@ -51,7 +51,9 @@ public class DataOutputStream extends java.io.DataOutputStream {
 	public void writeMutableObject(Object object) throws IOException {
 		try {
 			Adaptor.resolveAndWriteMutable(object, this);
-		} catch (UnsupportedOperationException | AdaptorException ex) {
+		} catch (AdaptorException ex) {
+			throw new IOException(ex);
+		} catch (UnsupportedOperationException ex) {
 			throw new IOException(ex);
 		}
 	}

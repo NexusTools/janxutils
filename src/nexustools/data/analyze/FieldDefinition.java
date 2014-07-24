@@ -59,7 +59,7 @@ public class FieldDefinition {
 				public void read(Object target, DataInputStream in) throws IOException {
 					try {
 						field.set(target, in.readMutableObject());
-					} catch (IllegalArgumentException | IllegalAccessException ex) {
+					} catch (ReflectiveOperationException ex) {
 						throw new IOException(ex);
 					}
 				}
@@ -68,7 +68,7 @@ public class FieldDefinition {
 				public void write(Object target, DataOutputStream out) throws IOException {
 					try {
 						out.writeMutableObject(field.get(target));
-					} catch (IllegalArgumentException | IllegalAccessException ex) {
+					} catch (ReflectiveOperationException ex) {
 						throw new IOException(ex);
 					}
 				}
@@ -89,7 +89,7 @@ public class FieldDefinition {
 								dataAdaptor.read(value, in);
 							}
 							field.set(target, value);
-						} catch (IllegalArgumentException | IllegalAccessException ex) {
+						} catch (ReflectiveOperationException ex) {
 							throw new IOException();
 						}
 					}
@@ -98,7 +98,7 @@ public class FieldDefinition {
 					public void write(Object target, DataOutputStream out) throws IOException {
 						try {
 							dataAdaptor.write(field.get(target), out);
-						} catch (IllegalArgumentException | IllegalAccessException ex) {
+						} catch (ReflectiveOperationException ex) {
 							throw new IOException(ex);
 						}
 					}
@@ -121,7 +121,7 @@ public class FieldDefinition {
 							}
 
 							field.set(target, value);
-						} catch (IllegalArgumentException | IllegalAccessException ex) {
+						} catch (ReflectiveOperationException ex) {
 							throw new IOException();
 						}
 					}
@@ -137,7 +137,7 @@ public class FieldDefinition {
 								out.writeBoolean(true);
 
 							dataAdaptor.write(field.get(target), out);
-						} catch (IllegalArgumentException | IllegalAccessException ex) {
+						} catch (ReflectiveOperationException ex) {
 							throw new IOException(ex);
 						}
 					}
