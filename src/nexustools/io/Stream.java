@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import nexustools.io.format.StreamProcessor;
+import nexustools.io.format.StreamTokenizer;
 import nexustools.utils.IOUtils;
 
 /**
@@ -755,7 +755,7 @@ public abstract class Stream {
 		return "application/octet-stream";
 	}
 	
-	public StreamProcessor createProcessor(String parser) throws IOException {
+	public StreamTokenizer createProcessor(String parser) throws IOException {
 		try {
 			return createProcessor(parser, false);
 		} catch(CloneNotSupportedException ex) {
@@ -763,13 +763,13 @@ public abstract class Stream {
 		}
 	}
 	
-	public StreamProcessor createProcessor(String parser, boolean fromStart) throws IOException, CloneNotSupportedException {
+	public StreamTokenizer createProcessor(String parser, boolean fromStart) throws IOException, CloneNotSupportedException {
 		InputStream inStream;
 		if(fromStart)
 			inStream = clone(true).createInputStream();
 		else
 			inStream = createInputStream();
-		return StreamProcessor.create(parser, inStream);
+		return StreamTokenizer.create(parser, inStream);
 	}
 	
 	@Override

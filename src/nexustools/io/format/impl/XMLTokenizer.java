@@ -16,15 +16,15 @@
 package nexustools.io.format.impl;
 
 import java.util.Map;
-import nexustools.io.format.StreamProcessor;
-import nexustools.io.format.StreamProcessorException;
-import nexustools.io.format.impl.XMLProcessor.Token;
+import nexustools.io.format.StreamTokenizer;
+import nexustools.io.format.StreamTokenizerException;
+import nexustools.io.format.impl.XMLTokenizer.Token;
 
 /**
  *
  * @author katelyn
  */
-public class XMLProcessor extends StreamProcessor<Token, Object> {
+public class XMLTokenizer extends StreamTokenizer<Token, Object> {
 	
 	public static enum Token {
 		StartTag,
@@ -41,12 +41,12 @@ public class XMLProcessor extends StreamProcessor<Token, Object> {
 	}
 
 	@Override
-	public Map.Entry<Token, TokenObject<Object>> readToken() throws StreamProcessorException {
+	public Map.Entry<Token, TokenObject<Object>> readToken() throws StreamTokenizerException {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	public void writeToken(Token token, TokenObject<Object> data) throws StreamProcessorException {
+	public void writeToken(Token token, TokenObject<Object> data) throws StreamTokenizerException {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 

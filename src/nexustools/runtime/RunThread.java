@@ -22,7 +22,7 @@ import nexustools.concurrent.Prop;
  *
  * @author katelyn
  */
-class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends RunQueue<R, F, RunThread>> {
+public class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends RunQueue<R, F, RunThread>> {
 
 	public static enum Priority {
 		Low,
@@ -104,7 +104,7 @@ class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends RunQueue
 			public void perform(Accessor<NativeRunThread> accessor) {
 				NativeRunThread thread = accessor.internal();
 				if(thread == null)
-					accessor.init(new NativeRunThread());
+					accessor.internal(new NativeRunThread());
 				else
 					thread.interrupt();
 			}

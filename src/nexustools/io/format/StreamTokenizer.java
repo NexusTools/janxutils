@@ -17,12 +17,13 @@ package nexustools.io.format;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import nexustools.io.Stream;
-import nexustools.io.format.StreamProcessor.TokenObject;
+import nexustools.io.format.StreamTokenizer.TokenObject;
 
 /**
  * Each parser should implement its own methods for
@@ -31,7 +32,7 @@ import nexustools.io.format.StreamProcessor.TokenObject;
  * @author katelyn
  * @param <T> The token enum
  */
-public abstract class StreamProcessor <T extends Enum, D> implements Iterable<Map.Entry<T, TokenObject>> {
+public abstract class StreamTokenizer <T extends Enum, D> implements Iterable<Map.Entry<T, TokenObject>> {
 	
 	public class TokenObject <V> {
 		
@@ -45,23 +46,31 @@ public abstract class StreamProcessor <T extends Enum, D> implements Iterable<Ma
 		
 	}
 	
-	private static HashMap<String,StreamProcessorProvider> providers;
+	private static HashMap<String,StreamTokenizerProvider> providers = new HashMap();
 	
-	public static StreamProcessor create(String parser, Stream inStream) throws IOException {
-		return create(parser, inStream.createInputStream());
+	public static StreamTokenizer create(String format, Stream stream) throws IOException {
+		return create(format, stream.createInputStream(), stream.createOutputStream());
 	}
 
-	public static StreamProcessor create(String parser, InputStream inStream) {
+	public static StreamTokenizer create(String format, InputStream inStream, OutputStream outStream) {
 		return null;
+	}
+
+	public static StreamTokenizer create(String format, InputStream inStream) {
+		return create(format, inStream, null);
+	}
+
+	public static StreamTokenizer create(String format, OutputStream outStream) {
+		return create(format, null, outStream);
 	}
 	
 	/**
 	 * Reads a token from the stream
 	 * 
 	 * @return
-	 * @throws StreamProcessorException 
+	 * @throws StreamTokenizerException 
 	 */
-	public abstract Map.Entry<T, TokenObject<D>> readToken() throws StreamProcessorException;
+	public abstract Map.Entry<T, TokenObject<D>> readToken() throws StreamTokenizerException;
 	
 	/**
 	 * Writes a token and data to the stream,
@@ -69,9 +78,9 @@ public abstract class StreamProcessor <T extends Enum, D> implements Iterable<Ma
 	 * 
 	 * @param token
 	 * @param data
-	 * @throws StreamProcessorException 
+	 * @throws StreamTokenizerException 
 	 */
-	public abstract void writeToken(T token, TokenObject<D> data) throws StreamProcessorException;
+	public abstract void writeToken(T token, TokenObject<D> data) throws StreamTokenizerException;
 
 	@Override
 	public Iterator<Map.Entry<T, TokenObject>> iterator() {
@@ -86,7 +95,7 @@ public abstract class StreamProcessor <T extends Enum, D> implements Iterable<Ma
 						return false;
 					next = new AbstractMap.SimpleEntry<T, TokenObject>(token.getKey(), token.getValue());
 					return true;
-				} catch (StreamProcessorException ex) {
+				} catch (StreamTokenizerException ex) {
 					throw new RuntimeException("Uncaught error while parsing stream.", ex);
 				}
 			}

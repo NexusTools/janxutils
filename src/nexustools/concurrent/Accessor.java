@@ -160,7 +160,14 @@ public abstract class Accessor<T> {
 	 * @return 
 	 */
 	public abstract T internal();
-	public abstract void init(T object);
+	/**
+	 * Direct access to the internal variable, no lock checking.
+	 * This method should only be used by actors.
+	 * 
+	 * @return 
+	 */
+	public abstract T internal(T object);
+	
 	public abstract boolean isset();
 	public final boolean isnull() {
 		return !isset();

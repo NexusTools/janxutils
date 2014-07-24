@@ -386,6 +386,8 @@ public class ConcurrentList<T> extends Accessor<List<T>> implements List<T> {
 	}
 
 	@Override
-	public void init(List<T> object) {}
+	public List<T> internal(List<T> object) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
 	
 }

@@ -23,12 +23,12 @@ import nexustools.concurrent.ConcurrentList;
  *
  * @author katelyn
  */
-public class SimpleRunQueue<R extends Runnable, F extends QueueFuture<R>> extends RunQueue<R, F, RunThread> {
+public class DefaultRunQueue<R extends Runnable, F extends QueueFuture<R>> extends RunQueue<R, F, RunThread> {
 
 	final ConcurrentList<RunThread> activeThreads = new ConcurrentList();
 	final ConcurrentList<RunThread> idleThreads = new ConcurrentList();
 	private final ConcurrentList<F> tasks = new ConcurrentList();
-	public SimpleRunQueue(String name, int threads) {
+	public DefaultRunQueue(String name, int threads) {
 		super(name);
 		if(threads < 1)
 			threads = Runtime.getRuntime().availableProcessors();
@@ -39,13 +39,13 @@ public class SimpleRunQueue<R extends Runnable, F extends QueueFuture<R>> extend
 			threads --;
 		}
 	}
-	public SimpleRunQueue(String name) {
+	public DefaultRunQueue(String name) {
 		this(name, -1);
 	}
-	public SimpleRunQueue(int threads) {
+	public DefaultRunQueue(int threads) {
 		this(null, threads);
 	}
-	public SimpleRunQueue() {
+	public DefaultRunQueue() {
 		this(null, -1);
 	}
 
@@ -70,12 +70,12 @@ public class SimpleRunQueue<R extends Runnable, F extends QueueFuture<R>> extend
 	}
 
 	@Override
-	public void init(List<R> object) {
+	public boolean isset() {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	public boolean isset() {
+	public List<R> internal(List<R> object) {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 	

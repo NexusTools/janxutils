@@ -21,34 +21,43 @@ package nexustools.concurrent;
  */
 public class ReadWriteLock {
 	
-	public static interface UpgradeActor {
-		public boolean init(ReadWriteLock lock);
-		public void perform(ReadWriteLock lock);
-	}
-	public static interface Testable {
-		public boolean test();
-	}
-	public static abstract class UpgradeReader<R> implements UpgradeActor {
-		R value;
-		@Override
+	public static abstract class UpgradeActor {
+		Runnable runnable;
 		public boolean init(ReadWriteLock lock) {
 			lock.lock();
 			return true;
 		}
+		public abstract void perform(ReadWriteLock lock);
+		public final void setCleanup(Runnable run) {
+			runnable = run;
+		}
+	}
+	public static abstract class ProcessingActor extends UpgradeActor {
+		public abstract Runnable process();
+		public final void perform(ReadWriteLock lock) {
+			setCleanup(process());
+		}
+		
+	}
+	public static interface Testable {
+		public boolean test();
+	}
+	public static abstract class UpgradeReader<R> extends UpgradeActor {
+		R value;
 		@Override
 		public final void perform(ReadWriteLock lock) {
 			value = read();
 		}
 		public abstract R read();
 	}
-	public static abstract class UpgradeWriter implements UpgradeActor {
+	public static abstract class UpgradeWriter extends UpgradeActor {
 		@Override
 		public boolean init(ReadWriteLock lock) {
 			lock.lock(true);
 			return true;
 		}
 	}
-	public static abstract class IfUpgradeWriter implements UpgradeActor, Testable {
+	public static abstract class IfUpgradeWriter extends UpgradeActor implements Testable {
 		@Override
 		public final boolean init(ReadWriteLock lock) {
 			return upgradeTest(this, lock);
@@ -131,6 +140,10 @@ public class ReadWriteLock {
 		try {
 			if(initialized = actor.init(this))
 				actor.perform(this);
+			
+			Runnable cleanup = actor.runnable;
+			if(cleanup != null)
+				cleanup.run();
 		} finally {
 			leaveSection();
 		}

@@ -13,12 +13,22 @@
  * 
  */
 
-package nexustools.runtime.tasks;
+package nexustools.runtime;
 
 /**
  *
  * @author katelyn
  */
-public class RepeatingTask {
+public abstract class RunTask implements Runnable {
+	
+	/**
+	 * Used during the run method to check whether or
+	 * not this task has been cancelled.
+	 * 
+	 * @return 
+	 */
+	protected boolean isCancelled() {
+		return false; // TODO: Implement
+	}
 	
 }

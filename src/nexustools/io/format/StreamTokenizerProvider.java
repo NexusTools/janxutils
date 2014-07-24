@@ -13,20 +13,34 @@
  * 
  */
 
-package nexustools.runtime.tasks;
+package nexustools.io.format;
 
-import nexustools.runtime.RunQueue;
+import java.io.IOException;
+import java.io.InputStream;
+import nexustools.io.Stream;
 
 /**
  *
  * @author katelyn
  */
-class FallbackTaskQueue extends RunQueue {
-
-	private final Thread attachedTo;
-	FallbackTaskQueue(Thread cThread) {
-		super(cThread.getName());
-		attachedTo = cThread;
-	}
+public interface StreamTokenizerProvider {
+    
+	
+	/**
+	 * The format of data this parser is meant for
+	 * 
+	 * @return
+	 */
+	public String format();
+	
+	/**
+	 * Opens a stream
+	 * 
+	 * @param inStream The InputStream to create a parser using
+	 * @return
+	 * @throws java.io.IOException
+	 */
+	public Stream create(InputStream inStream) throws IOException;
+	
 	
 }

@@ -26,11 +26,12 @@ import nexustools.concurrent.ReadWriteLock.UpgradeWriter;
  */
 public class QueueFuture<R extends Runnable> {
 	
-	class ExecuteWriter extends IfUpgradeWriter {
+	class ExecuteStart extends IfUpgradeWriter {
 		boolean canExecute = false;
 
 		@Override
 		public void perform(ReadWriteLock lock) {
+			runThread = Thread.currentThread();
 			state = State.Executing;
 			canExecute = true;
 		}
@@ -38,6 +39,19 @@ public class QueueFuture<R extends Runnable> {
 		@Override
 		public boolean test() {
 			return state == State.WaitingInQueue;
+		}
+		
+	}
+	
+	class ExecuteComplete extends UpgradeWriter {
+		State toState;
+
+		@Override
+		public void perform(ReadWriteLock lock) {
+			if(state == State.Executing)
+				state = toState;
+			runThread = null;
+			runnable = null;
 		}
 		
 	}
@@ -54,6 +68,7 @@ public class QueueFuture<R extends Runnable> {
 	
 	private R runnable;
 	private State state;
+	private Thread runThread;
 	private final ReadWriteLock lock = new ReadWriteLock();
 	QueueFuture(R runnable) {
 		this(State.WaitingInQueue, runnable);
@@ -99,8 +114,9 @@ public class QueueFuture<R extends Runnable> {
 			@Override
 			public void perform(ReadWriteLock lock) {
 				state = State.Cancelled;
+				if(runThread != null)
+					runThread.interrupt();
 			}
-
 			@Override
 			public boolean test() {
 				return !(state == State.Complete || state == State.Aborted);
@@ -109,43 +125,20 @@ public class QueueFuture<R extends Runnable> {
 	}
 	
 	public void execute() {
+		ExecuteStart executeStart = new ExecuteStart();
+		if(!executeStart.canExecute)
+			return;
+			
+		final ExecuteComplete executeComplete = new ExecuteComplete();
 		try {
 			runnable.run();
-			complete();
-		} catch(Throwable t) {
-			error(t);
+			executeComplete.toState = State.Complete;
+		} catch(RuntimeException t) {
+			executeComplete.toState = State.Aborted;
+			t.printStackTrace();
 		} finally {
-			runnable = null;
+			lock.act(executeComplete);
 		}
-	}
-	
-	protected void complete() {
-		lock.act(new IfUpgradeWriter() {
-			@Override
-			public void perform(ReadWriteLock lock) {
-				state = State.Complete;
-			}
-
-			@Override
-			public boolean test() {
-				return state == State.Executing;
-			}
-		});
-	}
-	
-	protected void error(Throwable t) {
-		lock.act(new IfUpgradeWriter() {
-			@Override
-			public void perform(ReadWriteLock lock) {
-				state = State.Aborted;
-			}
-
-			@Override
-			public boolean test() {
-				return state == State.Executing;
-			}
-		});
-		t.printStackTrace();
 	}
 	
 }

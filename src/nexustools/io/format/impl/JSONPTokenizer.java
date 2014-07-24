@@ -16,15 +16,15 @@
 package nexustools.io.format.impl;
 
 import java.util.Map;
-import nexustools.io.format.impl.JSONProcessor.Token;
-import nexustools.io.format.StreamProcessor;
-import nexustools.io.format.StreamProcessorException;
+import nexustools.io.format.impl.JSONPTokenizer.Token;
+import nexustools.io.format.StreamTokenizer;
+import nexustools.io.format.StreamTokenizerException;
 
 /**
  *
  * @author katelyn
  */
-public class JSONProcessor extends StreamProcessor<Token, Object> {
+public class JSONPTokenizer extends StreamTokenizer<Token, Object> {
 	
 	public static enum Token {
 		StartArray,
@@ -39,41 +39,41 @@ public class JSONProcessor extends StreamProcessor<Token, Object> {
 	}
 	
 	protected static interface SyntaxValidator {
-		public void validate(String block) throws StreamProcessorException;
+		public void validate(String block) throws StreamTokenizerException;
 	}
 	
 	private final SyntaxValidator validator;
 	
 	// Non-strict parsing is the basis of YML
-	public JSONProcessor() {
+	public JSONPTokenizer() {
 		this(false);
 	}
 	
-	public JSONProcessor(boolean strict) {
+	public JSONPTokenizer(boolean strict) {
 		this(strict ? new SyntaxValidator() {
 			@Override
-			public void validate(String block) throws StreamProcessorException {
+			public void validate(String block) throws StreamTokenizerException {
 				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 			}
 		} : new SyntaxValidator() {
 			@Override
-			public void validate(String block) throws StreamProcessorException {
+			public void validate(String block) throws StreamTokenizerException {
 				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 			}
 		});
 	}
 	
-	protected JSONProcessor(SyntaxValidator validator) {
+	protected JSONPTokenizer(SyntaxValidator validator) {
 		this.validator = validator;
 	}
 
 	@Override
-	public Map.Entry<Token, TokenObject<Object>> readToken() throws StreamProcessorException {
+	public Map.Entry<Token, TokenObject<Object>> readToken() throws StreamTokenizerException {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	public void writeToken(Token token, TokenObject data) throws StreamProcessorException {
+	public void writeToken(Token token, TokenObject data) throws StreamTokenizerException {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 

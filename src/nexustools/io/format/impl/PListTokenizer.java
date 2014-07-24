@@ -13,20 +13,35 @@
  * 
  */
 
-package nexustools.runtime.tasks;
-
-import nexustools.runtime.RunQueue;
+package nexustools.io.format.impl;
 
 /**
  *
  * @author katelyn
  */
-public interface Task extends Runnable {
+public class PListTokenizer {
 	
-	public void onSchedule(long targetTime);
-	public void onStart(RunQueue queue) throws TaskException;
-	public void onError(Throwable t, RunQueue queue);
-	public void onComplete(RunQueue queue);
-	public String uniqueID();
+	public static enum Token {
+		StartDict,
+		StartArray,
+		EndArray,
+		EndDict,
+		
+		Comment,
+		Version,
+		KeyValuePair,
+		ValueElement,
+		
+		XMLDeclaration,
+		DDT
+	}
+	
+	public PListTokenizer() {
+		this(false);
+	}
+	
+	public PListTokenizer(boolean binary) {
+		
+	}
 	
 }

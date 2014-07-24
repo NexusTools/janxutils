@@ -19,9 +19,9 @@ package nexustools.io.format;
  *
  * @author katelyn
  */
-public class StreamProcessorException extends Exception {
+public class StreamTokenizerException extends Exception {
 	
-	public StreamProcessorException(String message) {
+	public StreamTokenizerException(String message) {
 		super(message);
 	}
 	

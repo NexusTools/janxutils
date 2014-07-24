@@ -19,29 +19,6 @@ package nexustools.io.format.impl;
  *
  * @author katelyn
  */
-public class PListProcessor {
-	
-	public static enum Token {
-		StartDict,
-		StartArray,
-		EndArray,
-		EndDict,
-		
-		Comment,
-		Version,
-		KeyValuePair,
-		ValueElement,
-		
-		XMLDeclaration,
-		DDT
-	}
-	
-	public PListProcessor() {
-		this(false);
-	}
-	
-	public PListProcessor(boolean binary) {
-		
-	}
+public class YMLTokenizer extends JSONPTokenizer {
 	
 }

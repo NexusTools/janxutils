@@ -77,7 +77,9 @@ public class Prop<T> extends Accessor<T> {
 				//if(!def.isnull(value))
 				//	return value;
 			}
-			return value = val;
+			T old = value;
+			value = val;
+			return old;
 		} finally {
 			lock.unlock();
 		}
@@ -153,8 +155,8 @@ public class Prop<T> extends Accessor<T> {
 	 * Clears the contents of this property.
 	 * This method is assured to be blocking.
 	 */
-	public void clear() {
-		set(null);
+	public T clear() {
+		return set(null);
 	}
 
 	@Override
@@ -163,8 +165,10 @@ public class Prop<T> extends Accessor<T> {
 	}
 
 	@Override
-	public void init(T object) {
-		value = object;
+	public T internal(T val) {
+		T old = value;
+		value = val;
+		return old;
 	}
 	
 }
