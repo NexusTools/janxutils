@@ -59,6 +59,10 @@ public class ConcurrentList<T> extends Accessor<List<T>> implements List<T> {
 			lock.unlock();
 		}
 	}
+	
+	public void iterate(IterationActor<T> iterator) {
+		act(iterator);
+	}
 
 	@Override
 	public Iterator<T> iterator() {
@@ -265,9 +269,14 @@ public class ConcurrentList<T> extends Accessor<List<T>> implements List<T> {
 
 	@Override
 	public ListIterator<T> listIterator() {
+		return listIterator(0);
+	}
+
+	@Override
+	public ListIterator<T> listIterator(int index) {
 		try {
 			lock.lock();
-			final ListIterator<T> it = list.listIterator();
+			final ListIterator<T> it = list.listIterator(index);
 			return new ListIterator<T>() {
 
 				@Override
@@ -366,12 +375,7 @@ public class ConcurrentList<T> extends Accessor<List<T>> implements List<T> {
 	}
 
 	@Override
-	public ListIterator<T> listIterator(int index) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	@Override
-	public List<T> subList(int fromIndex, int toIndex) {
+	public ConcurrentList<T> subList(int fromIndex, int toIndex) {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
