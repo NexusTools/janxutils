@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import net.nexustools.runtime.RunQueue;
 
 /**
  *
@@ -29,10 +28,6 @@ import net.nexustools.runtime.RunQueue;
  * @param <I>
  */
 public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements ListAccessor<I> {
-
-	public boolean contains(I object) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
 
 	public static enum Type {
 		ArrayList,
@@ -56,7 +51,7 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 		public void push(I object) {
 			list.add(object);
 		}
-		public void unshirt(I object) {
+		public void unshift(I object) {
 			insert(object, 0);
 		}
 		public void insert(I object, int at) {
@@ -131,6 +126,15 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 		public boolean contains(I object) {
 			return list.contains(object);
 		}
+		public I first() {
+			return list.get(0);
+		}
+		public I get(int at) {
+			return list.get(at);
+		}
+		public I last() {
+			return list.get(list.size()-1);
+		}
 	};
 	public PropList(I... items) {
 		this(Arrays.asList(items));
@@ -182,11 +186,11 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 			}
 		});
 	}
-	public void unshirt(final I object) {
+	public void unshift(final I object) {
 		write(new Writer<ListAccessor<I>>() {
 			@Override
 			public void write(ListAccessor<I> data) {
-				data.unshirt(object);
+				data.unshift(object);
 			}
 		});
 	}
@@ -304,6 +308,42 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 	@Override
 	protected ListAccessor<I> directAccessor() {
 		return directAccessor;
+	}
+	
+	public boolean contains(final I object) {
+		return read(new Reader<Boolean, ListAccessor<I>>() {
+			@Override
+			public Boolean read(ListAccessor<I> data) {
+				return data.contains(object);
+			}
+		});
+	}
+
+	public I first() {
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.first();
+			}
+		});
+	}
+
+	public I get(final int at) {
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.get(at);
+			}
+		});
+	}
+
+	public I last() {
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.last();
+			}
+		});
 	}
 	
 }

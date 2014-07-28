@@ -31,8 +31,12 @@ public interface ListAccessor<T> extends BaseAccessor, Iterable<T> {
 	 */
 	public boolean unique(T object);
 	
+	public T first();
+	public T get(int at);
+	public T last();
+	
 	public void push(T object);
-	public void unshirt(T object);
+	public void unshift(T object);
 	public void insert(T object, int at);
 	public void remove(T object);
 	public T remove(int at);

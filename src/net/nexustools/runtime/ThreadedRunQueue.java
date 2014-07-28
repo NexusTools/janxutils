@@ -66,6 +66,7 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 					return data.shift();
 				}
 				
+				System.out.println("No New Futures");
 				idleThreads.push(runThread);
 				return null;
 			}
@@ -74,17 +75,19 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 
 	@Override
 	protected F push(final F future) {
+		System.out.println("Pushing Future into Pool");
 		tasks.write(new Writer<ListAccessor<F>>() {
 			@Override
 			public void write(ListAccessor<F> data) {
-				if(tasks.unique(future))
-					idleThreads.read(new TestWriteReader<ListAccessor<RunThread>>() {
-						@Override
-						public Boolean read(ListAccessor<RunThread> data) {
-							data.pop().notifyTasksAvailable();
-							return true;
-						}
-					});
+				data.push(future);
+				idleThreads.read(new TestWriteReader<ListAccessor<RunThread>>() {
+					@Override
+					public Boolean read(ListAccessor<RunThread> data) {
+						System.out.println("Notifying Idle Thread of New Task");
+						data.last().notifyTasksAvailable();
+						return true;
+					}
+				});
 			}
 		});
 		return future;

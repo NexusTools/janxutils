@@ -16,20 +16,41 @@
 package net.nexustools.runtime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import net.nexustools.runtime.Provider.Provides;
 
 /**
  *
  * @author katelyn
  */
-public class Provider<T extends Provides> implements Iterable<T> {
+public class Provider<T> implements Iterable<T> {
 	
-	public static interface Provides {}
+	private static final HashMap<String, Provider> providers = new HashMap();
 	
-	private List<T> loaded;
-	public Provider() {}
+	static interface ImplProvidee<I> {
+		public I create();
+	}
+	
+	public static <I> I createImpl(String searchPath) {
+		Provider<ImplProvidee<I>> provider = instance(searchPath);
+		return provider.get().create();
+	}
+
+	private static <I> Provider<I> instance(String searchPath) {
+		Provider<I> provider;
+		synchronized(providers) {
+			provider = providers.get(searchPath);
+			if(provider == null) {
+				provider = new Provider(searchPath);
+				providers.put(searchPath, provider);
+			}
+		}
+		return provider;
+	}
+	
+	private final ArrayList<T> loaded = new ArrayList();
+	protected Provider(String searchPath) {}
 	
 	public T get() {
 		if(loaded == null) {
@@ -42,21 +63,20 @@ public class Provider<T extends Provides> implements Iterable<T> {
 	
 	@Override
 	public Iterator<T> iterator() {
-		if(loaded == null) // Not started yet
-			loaded = new ArrayList();
 		if(loaded instanceof ArrayList) // Not finished yet
 			return new Iterator<T>() {
+				
 				@Override
 				public boolean hasNext() {
-					throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+					return false;
 				}
 				@Override
 				public T next() {
-					throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+					return null;
 				}
 				@Override
 				public void remove() {
-					throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+					throw new UnsupportedOperationException();
 				}
 		};
 		return loaded.iterator();

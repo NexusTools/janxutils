@@ -14,7 +14,6 @@
  */
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.BaseAccessor;
 import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
@@ -39,6 +38,7 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 	class NativeRunThread extends Thread {
 
 		private F future;
+		private boolean killNext;
 
 		{
 			switch (priority.get()) {
@@ -52,12 +52,14 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 					setPriority(MAX_PRIORITY);
 					break;
 			}
+			System.out.println("Spawned: " + name);
 			setName(name);
 			start();
 		}
 
 		@Override
 		public void run() {
+			System.out.println("Entered: " + name);
 			// Make the queue this thread was created for current.
 			queue.read(new IfReader<Void, PropAccessor<Q>>() {
 				@Override
@@ -66,23 +68,41 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 					return null;
 				}
 			});
+			killNext = false;
 			do {
-				future = queue.read(new IfReader<F, PropAccessor<Q>>() {
+				if(thread.read(new Reader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
-					public F read(PropAccessor<Q> data) {
-						return data.get().nextFuture(RunThread.this);
+					public Boolean read(PropAccessor<NativeRunThread> data) {
+						future = queue.read(new IfReader<F, PropAccessor<Q>>() {
+							@Override
+							public F read(PropAccessor<Q> data) {
+								return data.get().nextFuture(RunThread.this);
+							}
+						});
+						if(future == null && killNext) {
+							System.out.println("Quit: " + name);
+							data.clear();
+							return true;
+						}
+						return false;
 					}
-				});
-				if (future == null) {
-					try { // Remain idle for about 5 minutes
+				}))
+					return;
+				try {
+					if (future == null) {
+						System.out.println("Went Idle: " + name);
 						Thread.sleep(60000 * 5);
-						
-						
-					} catch (InterruptedException ex) {
-						// Assume there are new futures
+						killNext = true;
+					} else {
+						System.out.println("Executing: " + name);
+						System.out.println(future);
+						killNext = false;
+						future.execute();
 					}
-				} else {
-					future.execute();
+				} catch (InterruptedException ex) {
+					System.out.println("Wokeup: " + name);
+				} catch (RuntimeException run) {
+					run.printStackTrace();
 				}
 			} while (true);
 		}
