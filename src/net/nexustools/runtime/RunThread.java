@@ -18,6 +18,8 @@ import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.Reader;
+import net.nexustools.concurrent.SoftWriter;
+import net.nexustools.concurrent.WriteReader;
 import net.nexustools.concurrent.Writer;
 
 /**
@@ -27,7 +29,7 @@ import net.nexustools.concurrent.Writer;
  * @param <F>
  * @param <Q>
  */
-public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
+class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
 
 	public static enum Priority {
 		Low,
@@ -70,7 +72,7 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 			});
 			killNext = false;
 			do {
-				if(thread.read(new Reader<Boolean, PropAccessor<NativeRunThread>>() {
+				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
 						future = queue.read(new IfReader<F, PropAccessor<Q>>() {
@@ -124,13 +126,14 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 	}
 
 	public void notifyTasksAvailable() {
-		thread.write(new Writer<PropAccessor<NativeRunThread>>() {
+		thread.write(new SoftWriter<PropAccessor<NativeRunThread>>() {
 			@Override
 			public void write(PropAccessor<NativeRunThread> data) {
-				if(data.isTrue())
-					data.get().interrupt();
-				else
-					data.set(new NativeRunThread());
+				data.set(new NativeRunThread());
+			}
+			@Override
+			public void soft(PropAccessor<NativeRunThread> data) {
+				data.get().interrupt();
 			}
 		});
 	}

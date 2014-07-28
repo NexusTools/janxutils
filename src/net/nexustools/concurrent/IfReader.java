@@ -25,8 +25,8 @@ public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<
 
 	@Override
 	public final R read(A data, Lockable lock) {
+		lock.lock();
 		try {
-			lock.lock();
 			if(test(data))
 				return read(data);
 			

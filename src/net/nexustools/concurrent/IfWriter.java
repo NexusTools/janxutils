@@ -25,7 +25,7 @@ public abstract class IfWriter<A extends BaseAccessor> implements BaseWriter<A>,
 
 	@Override
 	public final void write(A data, Lockable lock) {
-		if(lock.tryFastUpgradeTest(data, this))
+		if(lock.upgradeTest(data, this))
 			try {
 				write(data);
 			} finally {

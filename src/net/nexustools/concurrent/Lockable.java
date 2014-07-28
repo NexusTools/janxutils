@@ -50,7 +50,7 @@ public abstract class Lockable implements ConcurrentStage {
 	 * @param testable The test to run
 	 * @return Returns true if the test remained true after a full upgrade was completed.
 	 */
-	public <I> boolean tryFastUpgradeTest(I against, Testable<I> testable) {
+	public <I> boolean upgradeTest(I against, Testable<I> testable) {
 		lock();
 		if(testable.test(against)) {
 			if(!tryFastUpgrade()) {
@@ -68,7 +68,7 @@ public abstract class Lockable implements ConcurrentStage {
 	}
 	
 	public boolean tryFastUpgradeTest(Testable<Void> testable) {
-		return tryFastUpgradeTest(null, testable);
+		return upgradeTest(null, testable);
 	}
 	
 	/**

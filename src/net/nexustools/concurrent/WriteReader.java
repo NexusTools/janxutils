@@ -23,8 +23,8 @@ public abstract class WriteReader<R, A extends BaseAccessor> implements BaseRead
 
 	@Override
 	public final R read(A data, Lockable lock) {
+		lock.lock(true);
 		try {
-			lock.lock(true);
 			return read(data);
 		} finally {
 			lock.unlock();

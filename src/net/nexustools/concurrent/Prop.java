@@ -72,7 +72,7 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 		if(value instanceof Collection)
 			return ((Collection)value).size() > 0;
 
-		return false;
+		return true;
 	}
 	public Prop() {}
 	public Prop(T value) {
@@ -116,7 +116,12 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 	}
 
 	public boolean isTrue() {
-		return isTrueHeiristic(get());
+		return read(new Reader<Boolean, PropAccessor<T>>() {
+			@Override
+			public Boolean read(PropAccessor<T> data) {
+				return data.isTrue();
+			}
+		});
 	}
 
 	@Override

@@ -25,7 +25,12 @@ import java.util.concurrent.Semaphore;
  */
 public class ReadWriteLock extends Lockable {
 	
+	private static boolean verbose = false;
 	private static int defaultPermitCount = 20;
+
+	public static void setVerbose(boolean b) {
+		verbose = b;
+	}
 	
 	private abstract class SemiLocked extends FakeLock {
 		int unlock;
@@ -39,7 +44,8 @@ public class ReadWriteLock extends Lockable {
 		public void unlock() {
 			if(unlock > 0) {
 				semaphore.release(unlock);
-				//System.out.println("[" + Thread.currentThread().getName() + "] Released " + unlock + " Permits");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + unlock + " Permits");
 			}
 		}
 	}
@@ -72,7 +78,8 @@ public class ReadWriteLock extends Lockable {
 		@Override
 		public void lock(boolean exc) {
 			if(exc) {
-				//System.out.println("[" + Thread.currentThread().getName() + "] Acquiring " + sharedRem + " Permits");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + sharedRem + " Permits");
 				if(!semaphore.tryAcquire(sharedRem))
 					try {
 						semaphore.release();
@@ -82,7 +89,8 @@ public class ReadWriteLock extends Lockable {
 						exclusive.release();
 					}
 				pushFrame(new FullyLocked(sharedRem));
-				//System.out.println("[" + Thread.currentThread().getName() + "] Permits Obtained");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
 			} else
 				pushFrame(new SharedLock(0));
 		}
@@ -92,7 +100,8 @@ public class ReadWriteLock extends Lockable {
 			if(upgradeCount > 1)
 				return;
 			
-			//System.out.println("[" + Thread.currentThread().getName() + "] Waiting on " + sharedRem + " Permits");
+			if(verbose)
+				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting on " + sharedRem + " Permits");
 			try {
 				semaphore.release();
 				exclusive.acquireUninterruptibly();
@@ -101,7 +110,8 @@ public class ReadWriteLock extends Lockable {
 				exclusive.release();
 			}
 			update(sharedRem);
-			//System.out.println("[" + Thread.currentThread().getName() + "] Permits Obtained");
+			if(verbose)
+				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
 		}
 		@Override
 		public void downgrade() {
@@ -110,7 +120,8 @@ public class ReadWriteLock extends Lockable {
 			
 			upgradeCount --;
 			if(upgradeCount < 1) {
-				//System.out.println("[" + Thread.currentThread().getName() + "] Released " + sharedRem + " Permits");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + sharedRem + " Permits");
 	
 				semaphore.release(sharedRem);
 				update(initialUnlock);
@@ -119,6 +130,9 @@ public class ReadWriteLock extends Lockable {
 		@Override
 		public boolean tryFastUpgrade() {
 			if(upgradeCount > 0 || semaphore.tryAcquire(sharedRem)) {
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquired " + sharedRem + " Permits");
+	
 				update(sharedRem);
 				upgradeCount++;
 				return true;
@@ -128,12 +142,14 @@ public class ReadWriteLock extends Lockable {
 		@Override
 		public boolean tryLock(boolean ex) {
 			if(ex)
-				try {
-					return semaphore.tryAcquire(sharedRem);
-				} finally {
+				if(semaphore.tryAcquire(sharedRem)) {
 					pushFrame(new FullyLocked(sharedRem));
-				}
-			pushFrame(new SharedLock(0));
+					if(verbose)
+						System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
+				} else
+					return false;
+			else
+				pushFrame(new SharedLock(0));
 			return true; // Already have a shared lock
 		}
 	}
@@ -142,10 +158,12 @@ public class ReadWriteLock extends Lockable {
 		@Override
 		public void lock(boolean exc) {
 			if(exc) {
-				//System.out.println("[" + Thread.currentThread().getName() + "] Acquiring " + totalPermits + " Permits");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + totalPermits + " Permits");
 				if(!semaphore.tryAcquire(totalPermits))
 					try {
-						//System.out.println("[" + Thread.currentThread().getName() + "] Waiting for Other Threads");
+						if(verbose)
+							System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting for Other Threads");
 						exclusive.acquireUninterruptibly();
 						semaphore.acquireUninterruptibly(totalPermits);
 					} finally {
@@ -153,11 +171,13 @@ public class ReadWriteLock extends Lockable {
 					}
 				pushFrame(new FullyLocked(totalPermits));
 			} else {
-				//System.out.println("[" + Thread.currentThread().getName() + "] Acquiring 1 Permit");
+				if(verbose)
+					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring 1 Permit");
 				semaphore.acquireUninterruptibly();
 				pushFrame(new SharedLock(1));
 			}
-			//System.out.println("[" + Thread.currentThread().getName() + "] Permits Obtained");
+			if(verbose)
+				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
 		}
 
 		@Override
@@ -176,17 +196,15 @@ public class ReadWriteLock extends Lockable {
 		@Override
 		public boolean tryLock(boolean ex) {
 			if(ex)
-				try {
-					return semaphore.tryAcquire(sharedRem);
-				} finally {
-					pushFrame(new FullyLocked(sharedRem));
-				}
-			
-			try {
-				return semaphore.tryAcquire(totalPermits);
-			} finally {
+				if(semaphore.tryAcquire(totalPermits)) {
+					pushFrame(new FullyLocked(totalPermits));
+				} else
+					return false;
+			else if(semaphore.tryAcquire())
 				pushFrame(new SharedLock(0));
-			}
+			else
+				return false;
+			return true;
 		}
 
 		@Override
