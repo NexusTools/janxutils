@@ -15,14 +15,9 @@
 
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.BaseAccessor;
-import net.nexustools.concurrent.BaseActor;
-import net.nexustools.concurrent.BaseReader;
-import net.nexustools.concurrent.BaseWriter;
-import net.nexustools.concurrent.FakeLock;
+import java.util.ArrayList;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
-import net.nexustools.concurrent.ReadWriteLock;
 import net.nexustools.concurrent.Reader;
 import net.nexustools.concurrent.TestWriteReader;
 import net.nexustools.concurrent.Writer;
@@ -36,19 +31,21 @@ import net.nexustools.concurrent.Writer;
 public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture> extends RunQueue<R, F, RunThread> {
 	
 	private final String name;
-	private final PropList<RunThread> activeThreads = new PropList();
-	private final PropList<RunThread> idleThreads = new PropList();
+	private final PropList<RunThread> activeThreads;
+	private final PropList<RunThread> idleThreads;
 	private final PropList<F> tasks = new PropList();
 	public ThreadedRunQueue(String name, int threads) {
 		this.name = name;
 		if(threads < 1)
 			threads = Runtime.getRuntime().availableProcessors();
+		ArrayList<RunThread> runThreads = new ArrayList();
 		while(threads > 0) {
 			RunThread runThread = new RunThread(name + "[Worker" + threads + "]", this);
-			activeThreads.push(runThread);
-			idleThreads.push(runThread);
+			runThreads.add(runThread);
 			threads --;
 		}
+		activeThreads = new PropList(runThreads);
+		idleThreads = new PropList(runThreads);
 	}
 	public ThreadedRunQueue(String name) {
 		this(name, -1);
@@ -96,14 +93,6 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 	@Override
 	public String name() {
 		return name;
-	}
-
-	public void act(final BaseActor actor) {
-		push((R)new Runnable() {
-			public void run() {
-				actor.perform(FakeLock.instance);
-			}
-		});
 	}
 
 }

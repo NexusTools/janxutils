@@ -23,6 +23,5 @@ public interface ConcurrentStage<A extends BaseAccessor> {
 	
 	public void write(A data, BaseWriter<A> actor);
 	public <R> R read(A data, BaseReader<R, A> reader);
-	public void act(BaseActor actor);
 	
 }

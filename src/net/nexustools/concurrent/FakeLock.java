@@ -52,8 +52,8 @@ public class FakeLock extends Lockable {
 		writer.write(data, this);
 	}
 
-	public <R> R read(BaseAccessor data, BaseReader reader) {
-		return (R)reader.read(data, this);
+	public Object read(BaseAccessor data, BaseReader reader) {
+		return reader.read(data, this);
 	}
 	
 }

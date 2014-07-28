@@ -136,11 +136,9 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 		this(Arrays.asList(items));
 	}
 	public PropList(Collection<I> items) {
-		super(new ReadWriteLock(), RunQueue.current());
 		list = new ArrayList(items);
 	}
 	public PropList() {
-		super(new ReadWriteLock(), RunQueue.current());
 		list = new ArrayList();
 	}
 	public boolean isTrue() {

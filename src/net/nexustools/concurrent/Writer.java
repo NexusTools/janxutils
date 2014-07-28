@@ -23,8 +23,8 @@ public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
 
 	@Override
 	public final void write(A data, Lockable lock) {
+		lock.lock(true);
 		try {
-			lock.lock(true);
 			write(data);
 		} finally {
 			lock.unlock();

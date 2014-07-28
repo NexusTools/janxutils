@@ -24,22 +24,7 @@ import net.nexustools.runtime.RunQueue;
  */
 public abstract class PropConcurrency<A extends BaseAccessor> {
 	
-	protected final ReadWriteLock lock;
-	protected final ConcurrentStage<A> stage;
-	protected final RunQueue dispatchQueue;
-	
-	public PropConcurrency(ConcurrentStage stage, RunQueue runQueue) {
-		this.stage = stage;
-		if(stage instanceof ReadWriteLock)
-			lock = (ReadWriteLock)stage;
-		else
-			lock = new ReadWriteLock();
-		dispatchQueue = runQueue;
-	}
-	
-	public PropConcurrency(RunQueue runQueue) {
-		this(runQueue, runQueue);
-	}
+	protected final ReadWriteLock lock = new ReadWriteLock();
 	
 	protected abstract A directAccessor();
 	
@@ -49,10 +34,6 @@ public abstract class PropConcurrency<A extends BaseAccessor> {
 
 	public final <R> R read(BaseReader<R, A> reader) {
 		return (R)lock.read(directAccessor(), reader);
-	}
-	
-	public final void act(BaseActor actor) {
-		stage.act(actor);
 	}
 	
 }

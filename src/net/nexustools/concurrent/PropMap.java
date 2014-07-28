@@ -74,8 +74,7 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 			};
 		}
 	};
-	public PropMap(Type type, ConcurrentStage lock, RunQueue runQueue) {
-		super(lock, runQueue);
+	public PropMap(Type type) {
 		switch(this.type = type) {
 			case HashMap:
 				map = new HashMap();
@@ -88,15 +87,6 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 			default:
 				throw new UnsupportedOperationException();
 		}
-	}
-	public PropMap(Type type, RunQueue queue) {
-		this(type, queue, queue);
-	}
-	public PropMap(RunQueue queue) {
-		this(Type.HashMap, queue, queue);
-	}
-	public PropMap(Type type) {
-		this(type, new ReadWriteLock(), RunQueue.current());
 	}
 	public PropMap() {
 		this(Type.HashMap);

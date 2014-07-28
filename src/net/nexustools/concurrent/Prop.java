@@ -16,7 +16,6 @@
 package net.nexustools.concurrent;
 
 import java.util.Collection;
-import net.nexustools.runtime.RunQueue;
 
 /**
  *
@@ -41,6 +40,13 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 		}
 		public boolean isTrue() {
 			return isTrueHeiristic(get());
+		}
+		public T take() {
+			try {
+				return value;
+			} finally {
+				value = null;
+			}
 		}
 	};
 	public static <T> boolean isTrueHeiristic(T value) {
@@ -68,25 +74,8 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 
 		return false;
 	}
-	public Prop() {
-		super(new ReadWriteLock(), RunQueue.current());
-	}
-	public Prop(ConcurrentStage stage, RunQueue runQueue) {
-		super(stage, runQueue);
-	}
-	public Prop(T value, ConcurrentStage stage, RunQueue runQueue) {
-		super(stage, runQueue);
-		this.value = value;
-	}
-	public Prop(RunQueue runQueue) {
-		super(runQueue);
-	}
-	public Prop(T value, RunQueue runQueue) {
-		super(runQueue);
-		this.value = value;
-	}
+	public Prop() {}
 	public Prop(T value) {
-		this();
 		this.value = value;
 	}
 
@@ -133,6 +122,15 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 	@Override
 	protected PropAccessor<T> directAccessor() {
 		return directAccessor;
+	}
+
+	public T take() {
+		return read(new WriteReader<T, PropAccessor<T>>() {
+			@Override
+			public T read(PropAccessor<T> data) {
+				return data.take();
+			}
+		});
 	}
 	
 }

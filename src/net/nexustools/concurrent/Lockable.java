@@ -119,8 +119,8 @@ public abstract class Lockable implements ConcurrentStage {
 		return reader.read(data, this);
 	}
 
-	public void act(BaseActor actor) {
-		actor.perform(this);
+	public void invokeLater(Runnable run) {
+		run.run();
 	}
 	
 }
