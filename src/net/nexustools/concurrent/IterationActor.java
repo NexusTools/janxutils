@@ -16,7 +16,6 @@
 package net.nexustools.concurrent;
 
 import java.util.Iterator;
-import static javax.swing.text.html.HTML.Tag.I;
 
 /**
  *
@@ -26,7 +25,6 @@ public abstract class IterationActor<I> extends Accessor.Actor {
 
 	@Override
 	public final void perform(Accessor accessor) {
-		
 		iterate(((Iterable<I>)accessor).iterator());
 	}
 
