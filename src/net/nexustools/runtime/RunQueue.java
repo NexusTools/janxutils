@@ -28,16 +28,10 @@ import net.nexustools.concurrent.ReadWriteLock;
  */
 public abstract class RunQueue<R extends Runnable, F extends QueueFuture<R>, T extends RunThread> extends Accessor<List<R>> {
 	
-	private static Prop<RunQueue> defaultTaskQueue = new Prop(new Default<RunQueue>() {
-		@Override
-		public void populate(RunQueue accessor) {
-			//new SimpleRunQueue("MasterRunQueue");
-		}
-	});
 	private static ThreadLocal<RunQueue> currentRunQueue = new ThreadLocal();
 	public static RunQueue current() {
 		RunQueue cRunThread = currentRunQueue.get();
-		return cRunThread == null ? defaultTaskQueue.get() : cRunThread;
+		return cRunThread == null ? null : cRunThread;
 	}
 	
 	public void makeCurrent() {

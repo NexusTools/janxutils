@@ -59,10 +59,6 @@ public class Prop<T> extends Accessor<T> {
 		return false;
 	}
 	
-	public void watch() {
-		
-	}
-	
 	/**
 	 * Sets the value of this property.
 	 * This method is assured to be blocking.
