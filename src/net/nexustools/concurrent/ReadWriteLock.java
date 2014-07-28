@@ -26,7 +26,7 @@ import java.util.concurrent.Semaphore;
 public class ReadWriteLock extends Lockable {
 	
 	private static boolean verbose = false;
-	private static int defaultPermitCount = 20;
+	private static int defaultPermitCount = Runtime.getRuntime().availableProcessors();
 
 	public static void setVerbose(boolean b) {
 		verbose = b;
@@ -135,7 +135,8 @@ public class ReadWriteLock extends Lockable {
 		}
 		@Override
 		public boolean tryFastUpgrade() {
-			System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Trying Fast Upgrade");
+			if(verbose)
+				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Trying Fast Upgrade");
 			
 			if(upgradeCount > 0 || semaphore.tryAcquire(sharedRem)) {
 				if(verbose)
@@ -242,7 +243,7 @@ public class ReadWriteLock extends Lockable {
 	}
 	
 	public ReadWriteLock(int permits) {
-		semaphore = new Semaphore(totalPermits = permits, true);
+		semaphore = new Semaphore(totalPermits = Math.max(2, permits), true);
 		sharedRem = totalPermits-1;
 	}
 	

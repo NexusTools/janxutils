@@ -20,6 +20,7 @@ import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.Reader;
 import net.nexustools.concurrent.TestWriteReader;
+import net.nexustools.concurrent.WriteReader;
 import net.nexustools.concurrent.Writer;
 
 /**
@@ -58,7 +59,7 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 	}
 	@Override
 	public F nextFuture(final RunThread runThread) {
-		return tasks.read(new Reader<F, ListAccessor<F>>() {
+		return tasks.read(new WriteReader<F, ListAccessor<F>>() {
 			@Override
 			public F read(ListAccessor<F> data) {
 				if(data.isTrue()) {
