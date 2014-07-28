@@ -13,16 +13,32 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
+
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
+
+	@Override
+	public final R read(A data, Lockable lock) {
+		try {
+			lock.lock();
+			if(test(data))
+				return read(data);
+			
+			return null;
+		} finally {
+			lock.unlock();
+		}
+	}
 	
-	public F schedule(F future, long when) {
-		return future;
+	public abstract R read(A data);
+	public boolean test(A against) {
+		return against.isTrue();
 	}
 	
 }

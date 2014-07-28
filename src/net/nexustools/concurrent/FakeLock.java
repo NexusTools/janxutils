@@ -13,16 +13,47 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public class FakeLock extends Lockable {
+
+	public final static FakeLock instance = new FakeLock();
 	
-	public F schedule(F future, long when) {
-		return future;
+	protected FakeLock(){}
+
+	@Override
+	public void lock(boolean exclusive) {}
+
+	@Override
+	public void upgrade() {}
+
+	@Override
+	public void downgrade() {}
+
+	@Override
+	public boolean tryFastUpgrade() {
+		return true;
+	}
+
+	@Override
+	public boolean tryLock(boolean write) {
+		return true;
+	}
+
+	@Override
+	public void unlock() {}
+
+	@Override
+	public void write(BaseAccessor data, BaseWriter writer) {
+		writer.write(data, this);
+	}
+
+	public <R> R read(BaseAccessor data, BaseReader reader) {
+		return (R)reader.read(data, this);
 	}
 	
 }

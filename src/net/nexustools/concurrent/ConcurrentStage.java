@@ -13,16 +13,16 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface ConcurrentStage<A extends BaseAccessor> {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public void write(A data, BaseWriter<A> actor);
+	public <R> R read(A data, BaseReader<R, A> reader);
+	public void act(BaseActor actor);
 	
 }

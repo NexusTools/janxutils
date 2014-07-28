@@ -15,45 +15,27 @@
 
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.ReadWriteLock;
-import net.nexustools.concurrent.ReadWriteLock.IfUpgradeWriter;
-import net.nexustools.concurrent.ReadWriteLock.UpgradeReader;
-import net.nexustools.concurrent.ReadWriteLock.UpgradeWriter;
-
+import net.nexustools.concurrent.IfWriter;
+import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.utils.Testable;
 /**
  *
  * @author katelyn
  */
-public class QueueFuture<R extends Runnable> {
+public abstract class QueueFuture {
 	
-	class ExecuteStart extends IfUpgradeWriter {
-		boolean canExecute = false;
-
-		@Override
-		public void perform(ReadWriteLock lock) {
-			runThread = Thread.currentThread();
-			state = State.Executing;
-			canExecute = true;
-		}
-
-		@Override
-		public boolean test() {
-			return state == State.WaitingInQueue;
-		}
-		
-	}
-	
-	class ExecuteComplete extends UpgradeWriter {
-		State toState;
-
-		@Override
-		public void perform(ReadWriteLock lock) {
-			if(state == State.Executing)
-				state = toState;
-			runThread = null;
-			runnable = null;
-		}
-		
+	public static QueueFuture wrap(State state, final Runnable run) {
+		return new QueueFuture(state) {
+			@Override
+			public void execute(Testable<Void> isCancelled) {
+				run.run();
+			}
+			@Override
+			public Object unique() {
+				return run;
+			}
+		};
 	}
 	
 	public static enum State {
@@ -66,43 +48,26 @@ public class QueueFuture<R extends Runnable> {
 		Cancelled
 	}
 	
-	private R runnable;
-	private State state;
-	private Thread runThread;
-	private final ReadWriteLock lock = new ReadWriteLock();
-	QueueFuture(R runnable) {
-		this(State.WaitingInQueue, runnable);
+	private final Prop<State> state;
+	private final Prop<Thread> runThread = new Prop();
+	QueueFuture(State state) {
+		this.state = new Prop(state);
 	}
-	QueueFuture(State state, R runnable) {
-		this.runnable = runnable;
-		this.state = state;
+
+	@Override
+	public final int hashCode() {
+		return unique().hashCode();
+	}
+
+	@Override
+	public final boolean equals(Object obj) {
+		return unique().equals(obj);
 	}
 	
-	protected Runnable get() {
-		return lock.read(new UpgradeReader<Runnable>() {
-			@Override
-			public Runnable read() {
-				return runnable;
-			}
-		});
-	}
+	public abstract Object unique();
 	
 	public State state() {
-		return lock.read(new UpgradeReader<State>() {
-			@Override
-			public State read() {
-				return state;
-			}
-		});
-	}
-	
-	protected void setState(final State state) {
-		lock.act(new UpgradeWriter() {
-			@Override
-			public void perform(ReadWriteLock lock) {
-				QueueFuture.this.state = state;
-			}
-		});
+		return state.get();
 	}
 	
 	public boolean isExecutable() {
@@ -110,35 +75,32 @@ public class QueueFuture<R extends Runnable> {
 	}
 	
 	public void cancel() {
-		lock.act(new IfUpgradeWriter() {
+		state.write(new IfWriter<PropAccessor<State>>() {
 			@Override
-			public void perform(ReadWriteLock lock) {
-				state = State.Cancelled;
-				if(runThread != null)
-					runThread.interrupt();
+			public void write(PropAccessor<State> data) {
+				state.set(State.Cancelled);
+				runThread.write(new IfWriter<PropAccessor<Thread>>() {
+					@Override
+					public void write(PropAccessor<Thread> data) {
+						data.get().interrupt();
+					}
+				});
 			}
 			@Override
-			public boolean test() {
+			public boolean test(PropAccessor<State> against) {
+				State state = against.get();
 				return !(state == State.Complete || state == State.Aborted);
 			}
 		});
 	}
 	
-	public void execute() {
-		ExecuteStart executeStart = new ExecuteStart();
-		if(!executeStart.canExecute)
-			return;
-			
-		final ExecuteComplete executeComplete = new ExecuteComplete();
-		try {
-			runnable.run();
-			executeComplete.toState = State.Complete;
-		} catch(RuntimeException t) {
-			executeComplete.toState = State.Aborted;
-			t.printStackTrace();
-		} finally {
-			lock.act(executeComplete);
-		}
+	public final void execute() {
+		execute(new Testable<Void>() {
+			public boolean test(Void against) {
+				return state() == State.Executing;
+			}
+		});
 	}
+	public abstract void execute(Testable<Void> isCancelled);
 	
 }

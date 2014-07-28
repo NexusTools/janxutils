@@ -13,16 +13,15 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
+ * @param <A> The Writer to perform with
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface BaseWriter<A extends BaseAccessor> {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public void write(A data, Lockable lock);
 	
 }

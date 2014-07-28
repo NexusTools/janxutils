@@ -13,16 +13,17 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
+
+	@Override
+	public Boolean def() {
+		return false;
 	}
 	
 }

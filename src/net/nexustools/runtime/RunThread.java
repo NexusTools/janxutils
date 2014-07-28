@@ -14,15 +14,21 @@
  */
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.Accessor;
-import net.nexustools.concurrent.Accessor.IfReader;
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.concurrent.Reader;
+import net.nexustools.concurrent.Writer;
 
 /**
  *
  * @author katelyn
+ * @param <R>
+ * @param <F>
+ * @param <Q>
  */
-public class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends RunQueue<R, F, RunThread>> {
+public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
 
 	public static enum Priority {
 		Low,
@@ -53,25 +59,25 @@ public class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends R
 		@Override
 		public void run() {
 			// Make the queue this thread was created for current.
-			queue.read(new IfReader<Accessor<Q>, Void>() {
+			queue.read(new IfReader<Void, PropAccessor<Q>>() {
 				@Override
-				public Void read(Accessor<Q> value) {
-					value.internal().makeCurrent();
+				public Void read(PropAccessor<Q> data) {
+					data.get().makeCurrent();
 					return null;
 				}
 			});
 			do {
-				future = queue.read(new IfReader<Accessor<Q>, F>() {
+				future = queue.read(new IfReader<F, PropAccessor<Q>>() {
 					@Override
-					public F read(Accessor<Q> value) {
-						return value.internal().nextFuture(RunThread.this);
+					public F read(PropAccessor<Q> data) {
+						return data.get().nextFuture(RunThread.this);
 					}
 				});
 				if (future == null) {
 					try { // Remain idle for about 5 minutes
 						Thread.sleep(60000 * 5);
-						// Assume this thread isn't needed anymore
-						thread.clear();
+						
+						
 					} catch (InterruptedException ex) {
 						// Assume there are new futures
 					}
@@ -79,7 +85,6 @@ public class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends R
 					future.execute();
 				}
 			} while (true);
-			//readWrite.unlock();
 		}
 	}
 
@@ -98,19 +103,18 @@ public class RunThread<R extends Runnable, F extends QueueFuture<R>, Q extends R
 		this.priority = new Prop(priority);
 	}
 
-	public void start() {
-		thread.act(new Accessor.IfActor<Accessor<NativeRunThread>>() {
+	public void notifyTasksAvailable() {
+		thread.write(new Writer<PropAccessor<NativeRunThread>>() {
 			@Override
-			public void perform(Accessor<NativeRunThread> accessor) {
-				NativeRunThread thread = accessor.internal();
-				if(thread == null)
-					accessor.internal(new NativeRunThread());
+			public void write(PropAccessor<NativeRunThread> data) {
+				if(data.isTrue())
+					data.get().interrupt();
 				else
-					thread.interrupt();
+					data.set(new NativeRunThread());
 			}
 		});
 	}
-
+	
 	public void connect(Q q) {
 		queue.set(q);
 	}

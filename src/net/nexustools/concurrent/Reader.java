@@ -13,16 +13,26 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
+
+	@Override
+	public final R read(A data, Lockable lock) {
+		try {
+			lock.lock();
+			return read(data);
+		} finally {
+			lock.unlock();
+		}
 	}
+	
+	public abstract R read(A data);
+	
+	
 	
 }

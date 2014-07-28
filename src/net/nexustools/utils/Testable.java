@@ -13,21 +13,14 @@
  * 
  */
 
-package net.nexustools.concurrent;
-
-import java.util.Iterator;
+package net.nexustools.utils;
 
 /**
  *
  * @author katelyn
  */
-public abstract class IterationActor<I> extends Accessor.Actor {
-
-	@Override
-	public final void perform(Accessor accessor) {
-		iterate(((Iterable<I>)accessor).iterator());
-	}
-
-	public abstract void iterate(Iterator<I> it);
+public interface Testable<I> {
+	
+	public boolean test(I against);
 	
 }

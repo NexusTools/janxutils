@@ -13,16 +13,16 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
+ * @param <R> The data this reader reads
+ * @param <A> The Accessor to fetch the data to read from
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface BaseReader<R, A extends BaseAccessor> {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public R read(A data, Lockable lock);
 	
 }

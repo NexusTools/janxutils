@@ -15,9 +15,7 @@
 
 package net.nexustools.utils.log;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
-import net.nexustools.concurrent.ConcurrentList;
+import net.nexustools.concurrent.PropList;
 
 /**
  *
@@ -25,7 +23,7 @@ import net.nexustools.concurrent.ConcurrentList;
  */
 public class Logger {
 	
-	private static final ConcurrentList<String> classesToSkip = new ConcurrentList();
+	private static final PropList<String> classesToSkip = new PropList();
 	public static final long lifetime = System.currentTimeMillis();
 	
 	static {
@@ -46,7 +44,7 @@ public class Logger {
 	}
 	
 	public static void addSkippableClass(Class<?> clazz) {
-		classesToSkip.add(clazz.getName());
+		classesToSkip.push(clazz.getName());
 	}
 	
 	public static enum Level {

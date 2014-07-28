@@ -13,16 +13,23 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
+
+	@Override
+	public final void write(A data, Lockable lock) {
+		try {
+			lock.lock(true);
+			write(data);
+		} finally {
+			lock.unlock();
+		}
 	}
+	public abstract void write(A data);
 	
 }

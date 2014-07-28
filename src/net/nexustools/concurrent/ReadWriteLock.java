@@ -19,155 +19,36 @@ package net.nexustools.concurrent;
  *
  * @author katelyn
  */
-public class ReadWriteLock {
-	
-	public static abstract class UpgradeActor {
-		Runnable runnable;
-		public boolean init(ReadWriteLock lock) {
-			lock.lock();
-			return true;
-		}
-		public abstract void perform(ReadWriteLock lock);
-		public final void setCleanup(Runnable run) {
-			runnable = run;
-		}
-	}
-	public static abstract class ProcessingActor extends UpgradeActor {
-		public abstract Runnable process();
-		public final void perform(ReadWriteLock lock) {
-			setCleanup(process());
-		}
-		
-	}
-	public static interface Testable {
-		public boolean test();
-	}
-	public static abstract class UpgradeReader<R> extends UpgradeActor {
-		R value;
-		@Override
-		public final void perform(ReadWriteLock lock) {
-			value = read();
-		}
-		public abstract R read();
-	}
-	public static abstract class UpgradeWriter extends UpgradeActor {
-		@Override
-		public boolean init(ReadWriteLock lock) {
-			lock.lock(true);
-			return true;
-		}
-	}
-	public static abstract class IfUpgradeWriter extends UpgradeActor implements Testable {
-		@Override
-		public final boolean init(ReadWriteLock lock) {
-			return upgradeTest(this, lock);
-		}
-	}
-	
-	public static boolean upgradeTest(Testable uIf, ReadWriteLock lock) {
-		lock.lock();
-		if(uIf.test()) {
-			if(!lock.tryFastUpgrade()) {
-				lock.upgrade();
-				if(!uIf.test())
-					return false;
-			}
-			return true;
-		}
-		return false;
-	}
-	
-	public void lock() {
-		lock(false);
-	}
-	
-	public void lock(boolean write) {
-		
-	}
-	
-	/**
-	 * Upgrade from a read lock to a write lock,
-	 * this process may involve temporarily unlocking.
-	 * 
-	 * Unlike lock, this method will not add weight
-	 * and so unlock doesn't need to be called again.
-	 * 
-	 * @return true if upgraded without unlocking, false otherwise
-	 */
-	public boolean upgrade() {
-		return false;
-	}
-	
-	public void downgrade() {
-	}
-	
-	public boolean tryLock(boolean write) {
-		return false;
-	}
-	
-	/**
-	 * Attempts to both aquire an upgrade without blocking,
-	 * and prevent unlocking at any point.
-	 * 
-	 * @return true if a write lock was aquired without waiting and without unlocking
-	 */
-	public boolean tryFastUpgrade() {
-		return false;
-	}
-	
-	/**
-	 * Allows upgrading in the fastest possible manner concurrently.
-	 * 
-	 * Using the provided UpgradeHelper, this method runs a test
-	 * while locking in a read-only manner, which if returns true attempts
-	 * to gain a write lock very fast, and than perform the desired action.
-	 * 
-	 * If a write lock can be gained without losing the current lock or waiting,
-	 * than the action can be performed immediately since that means nothing else
-	 * is working with any sensative parts this lock protects.
-	 * 
-	 * Otherwise a write lock is made by waiting and the test is done again to
-	 * make sure no other threads have already done what this is attempting to do.
-	 * 
-	 * This method is assured to be blocking.
-	 * 
-	 * @param actor
-	 * @return 
-	 */
-	public boolean act(UpgradeActor actor) {
-		boolean initialized = false;
-		enterSection();
-		try {
-			if(initialized = actor.init(this))
-				actor.perform(this);
-			
-			Runnable cleanup = actor.runnable;
-			if(cleanup != null)
-				cleanup.run();
-		} finally {
-			leaveSection();
-		}
-		return initialized;
-	}
-	
-	public <R> R read(UpgradeReader<R> reader) {
-		act(reader);
-		return reader.value;
-	}
-	
-	public void enterSection() {
-		
-	}
-	
-	public void leaveSection() {
-		
+public class ReadWriteLock extends Lockable {
+
+	@Override
+	public void lock(boolean exclusive) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
-	/**
-	 * Unlocks the last lock requested.
-	 */
-	public void unlock() {
-	
+	@Override
+	public void upgrade() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
-	
+
+	@Override
+	public void downgrade() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public boolean tryFastUpgrade() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public boolean tryLock(boolean write) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public void unlock() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
 }

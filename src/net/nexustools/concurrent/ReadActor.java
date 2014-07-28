@@ -13,16 +13,23 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class ReadActor implements BaseActor {
+
+	public final void perform(Lockable lock) {
+		lock.lock();
+		try {
+			perform();
+		} finally {
+			lock.unlock();
+		}
 	}
+	
+	public abstract void perform();
 	
 }

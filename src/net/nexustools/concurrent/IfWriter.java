@@ -13,16 +13,29 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
+
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class IfWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
+
+	@Override
+	public final void write(A data, Lockable lock) {
+		if(lock.tryFastUpgradeTest(data, this))
+			try {
+				write(data);
+			} finally {
+				lock.unlock();
+			}
+	}
+	public abstract void write(A data);
+
+	public boolean test(A against) {
+		return against.isTrue();
 	}
 	
 }

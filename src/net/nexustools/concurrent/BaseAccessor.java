@@ -13,16 +13,16 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface BaseAccessor {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public boolean isTrue();
+	public boolean isset();
+	public void clear();
 	
 }

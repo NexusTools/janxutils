@@ -15,23 +15,22 @@
 
 package net.nexustools.runtime;
 
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.List;
-import net.nexustools.concurrent.Accessor;
-import net.nexustools.concurrent.Prop;
-import net.nexustools.concurrent.ReadWriteLock;
+import net.nexustools.concurrent.ConcurrentStage;
+import net.nexustools.concurrent.PropList;
 
 /**
  *
  * @author katelyn
+ * @param <R>
+ * @param <F>
+ * @param <T>
  */
-public abstract class RunQueue<R extends Runnable, F extends QueueFuture<R>, T extends RunThread> extends Accessor<List<R>> {
+public abstract class RunQueue<R extends Runnable, F extends QueueFuture, T extends RunThread> implements ConcurrentStage {
 	
-	private static ThreadLocal<RunQueue> currentRunQueue = new ThreadLocal();
+	private static final ThreadLocal<RunQueue> currentRunQueue = new ThreadLocal();
 	public static RunQueue current() {
 		RunQueue cRunThread = currentRunQueue.get();
-		return cRunThread == null ? null : cRunThread;
+		return cRunThread == null ? DefaultRunQueue.instance() : cRunThread;
 	}
 	
 	public void makeCurrent() {
@@ -42,31 +41,15 @@ public abstract class RunQueue<R extends Runnable, F extends QueueFuture<R>, T e
 		current().push(runnable);
 	}
 	
-	private final String name;
 	private static RunQueueScheduler schedulerThread = new RunQueueScheduler();
-	private static final HashMap<Class<? extends Runnable>, HashMap<String, WeakReference<QueueFuture<Runnable>>>> uniqueMap = new HashMap();
-	private static final ReadWriteLock uniqueMapLock = new ReadWriteLock();
-	protected RunQueue(String name) {
-		if(name == null)
-			name = getClass().getSimpleName();
-		this.name = name;
-	}
-	protected RunQueue() {
-		this(null);
-	}
-	
-	public final String name() {
-		return name;
-	}
-	
+	protected RunQueue() {}
+	public abstract String name();
 	protected F wrap(R runnable, QueueFuture.State state) {
-		return (F)new QueueFuture<R>(state, runnable);
+		return (F)QueueFuture.wrap(state, runnable);
 	}
-	
 	public final F push(R runnable) {
-		F future = wrap(runnable, QueueFuture.State.Scheduled);
-		push(future);
-		return future;
+		F future = wrap(runnable, QueueFuture.State.WaitingInQueue);
+		return push(future);
 	}
 	public final F schedule(R runnable, long when) {
 		F future = wrap(runnable, QueueFuture.State.Scheduled);
@@ -74,23 +57,6 @@ public abstract class RunQueue<R extends Runnable, F extends QueueFuture<R>, T e
 		return future;
 	}
 	public abstract F nextFuture(T runThread);
-	protected void registerUnique(F future, final String unique) {
-		final Class<? extends Runnable> futureClass = future.get().getClass();
-		uniqueMapLock.act(new ReadWriteLock.UpgradeWriter() {
-			@Override
-			public void perform(ReadWriteLock lock) {
-				HashMap<String, WeakReference<QueueFuture<Runnable>>> classMap = uniqueMap.get(futureClass);
-				if(classMap == null) {
-					classMap = new HashMap();
-					uniqueMap.put(futureClass, classMap);
-				}
-				WeakReference<QueueFuture<Runnable>> ref = classMap.get(unique);
-				QueueFuture<Runnable> cFuture = ref.get();
-				if(cFuture != null)
-					cFuture.cancel();
-			}
-		});
-	}
-	protected abstract void push(F future);
+	protected abstract F push(F future);
 	
 }

@@ -15,156 +15,124 @@
 
 package net.nexustools.concurrent;
 
-import java.util.Objects;
+import java.util.Collection;
+import net.nexustools.runtime.RunQueue;
 
 /**
  *
  * @author katelyn
+ * @param <T>
  */
-public class Prop<T> extends Accessor<T> {
-	
+public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAccessor<T> {
+
 	private T value;
-	protected final ConcurrentList<Watcher> watchers = new ConcurrentList();
-	public Prop(T val) {
-		value = val;
-	}
-//	public Prop(Default d) {
-//		super(d);
-//	}
-	public Prop() {}
-
-	@Override
-	public int hashCode() {
-		if(value == null)
-			return 0;
-		return value.hashCode();
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		try {
-			if(obj == null) {
-				return value == null;
-			}
-			if(value == null)
-				return false;
-			if(obj instanceof Prop) {
-				return Objects.equals(this.value, ((Prop)obj).get());
-			} else if(value.getClass().isAssignableFrom(obj.getClass())) {
-				return Objects.equals(this.value, value);
-			}
-		} finally {
-			lock.unlock();
+	private final PropAccessor<T> directAccessor = new PropAccessor<T>() {
+		public T get() {
+			return value;
 		}
+		public void set(T val) {
+			value = val;
+		}
+		public boolean isset() {
+			return value != null;
+		}
+		public void clear() {
+			value = null;
+		}
+		public boolean isTrue() {
+			return isTrueHeiristic(get());
+		}
+	};
+	public static <T> boolean isTrueHeiristic(T value) {
+		if(value == null)
+			return false;
+
+		if(value instanceof String)
+			return ((String)value).length() > 0;
+		if(value instanceof Boolean)
+			return ((Boolean)value);
+		if(value instanceof Double)
+			return ((Double)value) != 0;
+		if(value instanceof Float)
+			return ((Float)value) != 0;
+		if(value instanceof Byte)
+			return ((Byte)value) != 0;
+		if(value instanceof Short)
+			return ((Short)value) != 0;
+		if(value instanceof Integer)
+			return ((Integer)value) != 0;
+		if(value instanceof Long)
+			return ((Long)value) != 0;
+		if(value instanceof Collection)
+			return ((Collection)value).size() > 0;
+
 		return false;
 	}
-	
-	/**
-	 * Sets the value of this property.
-	 * This method is assured to be blocking.
-	 * 
-	 * @param val
-	 * @return 
-	 */
-	public T set(T val) {
-		try {
-			if(!lock.tryFastUpgrade()) {
-				lock.upgrade();
-				//if(!def.isnull(value))
-				//	return value;
-			}
-			T old = value;
-			value = val;
-			return old;
-		} finally {
-			lock.unlock();
-		}
+	public Prop() {
+		super(new ReadWriteLock(), RunQueue.current());
 	}
-	
-	/**
-	 * Gets the value of this property, using a provided
-	 * Default to create a default property if needed.
-	 * This method is assured to be blocking.
-	 * 
-	 * @param def The default implementation
-	 * @return 
-	 */
-//	public T get(Default<T> def) {
-//		try {
-//			lock.lock();
-//			if(def.isnull(value)) {
-//				if(!lock.tryFastUpgrade()) {
-//					lock.upgrade();
-//					if(!def.isnull(value))
-//						return value;
-//				}
-//				
-//				return value = def.create();
-//			}
-//			return value;
-//		} finally {
-//			lock.unlock();
-//		}
-//	}
-	
-	/**
-	 * Gets the value of this property, might use a
-	 * Default provided to the constructor.
-	 * This method is assured to be blocking.
-	 * 
-	 * @return 
-	 */
-	public T get() {
-		try {
-			lock.lock();
-//			if(def != null) {
-//				if(!lock.tryFastUpgrade()) {
-//					lock.upgrade();
-//					if(def == null)
-//						return value;
-//				}
-//				
-//				Default<T> d = def;
-//				def = null;
-//				lock.downgrade();
-//				return get(d);
-//			}
-			
-			return value;
-		} finally {
-			lock.unlock();
-		}
+	public Prop(ConcurrentStage stage, RunQueue runQueue) {
+		super(stage, runQueue);
 	}
-	
-	/**
-	 * Checks if this property has a value set, or if its null.
-	 * This method is assured to be blocking.
-	 * 
-	 * @return 
-	 */
-	@Override
+	public Prop(T value, ConcurrentStage stage, RunQueue runQueue) {
+		super(stage, runQueue);
+		this.value = value;
+	}
+	public Prop(RunQueue runQueue) {
+		super(runQueue);
+	}
+	public Prop(T value, RunQueue runQueue) {
+		super(runQueue);
+		this.value = value;
+	}
+	public Prop(T value) {
+		this();
+		this.value = value;
+	}
+
 	public boolean isset() {
-		return get() != null;
+		return read(new Reader<Boolean, PropAccessor<T>>() {
+			@Override
+			public Boolean read(PropAccessor<T> data) {
+				return data.isset();
+			}
+		});
 	}
 
-	/**
-	 * Clears the contents of this property.
-	 * This method is assured to be blocking.
-	 */
-	public T clear() {
-		return set(null);
+	public void clear() {
+		write(new Writer<PropAccessor<T>>() {
+			@Override
+			public void write(PropAccessor<T> data) {
+				data.clear();
+			}
+		});
+	}
+
+	public T get() {
+		return read(new Reader<T, PropAccessor<T>>() {
+			@Override
+			public T read(PropAccessor<T> data) {
+				return data.get();
+			}
+		});
+	}
+
+	public void set(final T value) {
+		write(new Writer<PropAccessor<T>>() {
+			@Override
+			public void write(PropAccessor<T> data) {
+				data.set(value);
+			}
+		});
+	}
+
+	public boolean isTrue() {
+		return isTrueHeiristic(get());
 	}
 
 	@Override
-	public T internal() {
-		return value;
-	}
-
-	@Override
-	public T internal(T val) {
-		T old = value;
-		value = val;
-		return old;
+	protected PropAccessor<T> directAccessor() {
+		return directAccessor;
 	}
 	
 }

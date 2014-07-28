@@ -15,27 +15,45 @@
 
 package net.nexustools.runtime;
 
-import java.util.List;
-import net.nexustools.concurrent.Accessor;
-import net.nexustools.concurrent.ConcurrentList;
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.BaseActor;
+import net.nexustools.concurrent.BaseReader;
+import net.nexustools.concurrent.BaseWriter;
+import net.nexustools.concurrent.FakeLock;
+import net.nexustools.concurrent.IfReader;
+import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.ReadWriteLock;
+import net.nexustools.concurrent.Reader;
+import net.nexustools.concurrent.TestWriteReader;
+import net.nexustools.concurrent.Writer;
 
 /**
  *
  * @author katelyn
+ * @param <R>
+ * @param <F>
  */
-public class DefaultRunQueue<R extends Runnable, F extends QueueFuture<R>> extends RunQueue<R, F, RunThread> {
+public class DefaultRunQueue<R extends Runnable, F extends QueueFuture> extends RunQueue<R, F, RunThread> {
 
-	final ConcurrentList<RunThread> activeThreads = new ConcurrentList();
-	final ConcurrentList<RunThread> idleThreads = new ConcurrentList();
-	private final ConcurrentList<F> tasks = new ConcurrentList();
+	private static DefaultRunQueue instance = new DefaultRunQueue();
+	public static DefaultRunQueue instance() {
+		return instance;
+	}
+	
+	private final String name;
+	private final ReadWriteLock lock = new ReadWriteLock();
+	private final PropList<RunThread> activeThreads = new PropList();
+	private final PropList<RunThread> idleThreads = new PropList();
+	private final PropList<F> tasks = new PropList();
 	public DefaultRunQueue(String name, int threads) {
-		super(name);
+		this.name = name;
 		if(threads < 1)
 			threads = Runtime.getRuntime().availableProcessors();
 		while(threads > 0) {
 			RunThread runThread = new RunThread(name + "[Worker" + threads + "]", this);
-			activeThreads.add(runThread);
-			idleThreads.add(runThread);
+			activeThreads.push(runThread);
+			idleThreads.push(runThread);
 			threads --;
 		}
 	}
@@ -48,35 +66,59 @@ public class DefaultRunQueue<R extends Runnable, F extends QueueFuture<R>> exten
 	public DefaultRunQueue() {
 		this(null, -1);
 	}
-
 	@Override
-	public F nextFuture(RunThread runThread) {
-		return tasks.read(new IfReader<Accessor<List<F>>, F>() {
+	public F nextFuture(final RunThread runThread) {
+		return tasks.read(new Reader<F, ListAccessor<F>>() {
 			@Override
-			public F read(Accessor<List<F>> value) {
-				return value.internal().remove(0);
+			public F read(ListAccessor<F> data) {
+				if(data.isTrue()) {
+					idleThreads.remove(runThread);
+					return data.shift();
+				}
+				
+				idleThreads.push(runThread);
+				return null;
 			}
 		});
 	}
 
 	@Override
-	protected void push(F future) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	protected F push(final F future) {
+		tasks.write(new Writer<ListAccessor<F>>() {
+			@Override
+			public void write(ListAccessor<F> data) {
+				if(tasks.unique(future))
+					idleThreads.read(new TestWriteReader<ListAccessor<RunThread>>() {
+						@Override
+						public Boolean read(ListAccessor<RunThread> data) {
+							data.pop().notifyTasksAvailable();
+							return true;
+						}
+					});
+			}
+		});
+		return future;
 	}
 
 	@Override
-	public List<R> internal() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public String name() {
+		return name;
 	}
 
-	@Override
-	public boolean isset() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public void write(BaseAccessor data, BaseWriter actor) {
+		lock.write(data, actor);
 	}
 
-	@Override
-	public List<R> internal(List<R> object) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public Object read(BaseAccessor data, BaseReader reader) {
+		return lock.read(data, reader);
 	}
-	
+
+	public void act(final BaseActor actor) {
+		push((R)new Runnable() {
+			public void run() {
+				actor.perform(FakeLock.instance);
+			}
+		});
+	}
+
 }

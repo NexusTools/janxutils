@@ -13,16 +13,19 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.concurrent;
+
+import net.nexustools.utils.Pair;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public V get(K key);
+	public V take(K key);
+	public void put(K key, V value);
+	public boolean has(K key);
 	
 }
