@@ -69,17 +69,23 @@ public class ReadWriteLock extends Lockable {
 	private class SharedLock extends SemiLocked {
 
 		private int upgradeCount = 0;
-		private final int initialUnlock;
-		public SharedLock(int unlock) {
-			super(unlock);
-			initialUnlock = unlock;
+		private final int initialPermits;
+		public SharedLock(int initial) {
+			super(initial);
+			initialPermits = initial;
 		}
 		
 		@Override
 		public void lock(boolean exc) {
+			if(upgradeCount > 0) {
+				pushFrame(new FullyLocked(0));
+				return;
+			}
+			
 			if(exc) {
 				if(verbose)
 					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + sharedRem + " Permits");
+				
 				if(!semaphore.tryAcquire(sharedRem))
 					try {
 						semaphore.release();
@@ -105,11 +111,11 @@ public class ReadWriteLock extends Lockable {
 			try {
 				semaphore.release();
 				exclusive.acquireUninterruptibly();
-				semaphore.acquireUninterruptibly(sharedRem);
+				semaphore.acquireUninterruptibly(totalPermits);
 			} finally {
 				exclusive.release();
 			}
-			update(sharedRem);
+			update(totalPermits);
 			if(verbose)
 				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
 		}
@@ -124,16 +130,18 @@ public class ReadWriteLock extends Lockable {
 					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + sharedRem + " Permits");
 	
 				semaphore.release(sharedRem);
-				update(initialUnlock);
+				update(initialPermits);
 			}
 		}
 		@Override
 		public boolean tryFastUpgrade() {
+			System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Trying Fast Upgrade");
+			
 			if(upgradeCount > 0 || semaphore.tryAcquire(sharedRem)) {
 				if(verbose)
 					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquired " + sharedRem + " Permits");
 	
-				update(sharedRem);
+				update(totalPermits);
 				upgradeCount++;
 				return true;
 			}
@@ -141,6 +149,11 @@ public class ReadWriteLock extends Lockable {
 		}
 		@Override
 		public boolean tryLock(boolean ex) {
+			if(upgradeCount > 0) {
+				pushFrame(new FullyLocked(0));
+				return true;
+			}
+			
 			if(ex)
 				if(semaphore.tryAcquire(sharedRem)) {
 					pushFrame(new FullyLocked(sharedRem));
@@ -215,7 +228,7 @@ public class ReadWriteLock extends Lockable {
 	};
 	
 	private final Semaphore semaphore;
-	private final Semaphore exclusive = new Semaphore(1);
+	private final Semaphore exclusive = new Semaphore(1, true);
 	private final ThreadLocal<ArrayList<Lockable>> frames = new ThreadLocal() {
 		@Override
 		protected Object initialValue() {
@@ -229,7 +242,7 @@ public class ReadWriteLock extends Lockable {
 	}
 	
 	public ReadWriteLock(int permits) {
-		semaphore = new Semaphore(totalPermits = permits);
+		semaphore = new Semaphore(totalPermits = permits, true);
 		sharedRem = totalPermits-1;
 	}
 	
