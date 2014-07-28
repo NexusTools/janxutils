@@ -19,14 +19,16 @@ package net.nexustools.utils;
  *
  * @author katelyn
  */
-public class Set<I, V> {
+public class Pair<I, V> {
 	
 	public I i;
 	public V v;
 	
-	public Set(I i, V v) {
+	public Pair(I i, V v) {
 		this.i = i;
 		this.v = v;
 	}
+	
+	public Pair() {}
 	
 }
