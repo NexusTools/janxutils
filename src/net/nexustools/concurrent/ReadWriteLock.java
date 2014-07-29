@@ -236,12 +236,11 @@ public class ReadWriteLock extends Lockable {
 			return new ArrayList<Lockable>();
 		}
 	};
-	private final int totalPermits;
 	
+	private final int totalPermits;
 	public ReadWriteLock() {
 		this(defaultPermitCount);
 	}
-	
 	public ReadWriteLock(int permits) {
 		semaphore = new Semaphore(totalPermits = Math.max(2, permits));
 		sharedRem = totalPermits-1;
