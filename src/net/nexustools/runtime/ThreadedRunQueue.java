@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.Reader;
+import net.nexustools.concurrent.TestReader;
 import net.nexustools.concurrent.TestWriteReader;
 import net.nexustools.concurrent.WriteReader;
 import net.nexustools.concurrent.Writer;
@@ -76,15 +77,13 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 
 	@Override
 	protected F push(final F future) {
-		System.out.println("Pushing Future into Pool");
 		tasks.write(new Writer<ListAccessor<F>>() {
 			@Override
 			public void write(ListAccessor<F> data) {
 				data.push(future);
-				idleThreads.read(new TestWriteReader<ListAccessor<RunThread>>() {
+				idleThreads.read(new TestReader<ListAccessor<RunThread>>() {
 					@Override
 					public Boolean read(ListAccessor<RunThread> data) {
-						System.out.println("Notifying Idle Thread of New Task");
 						data.last().notifyTasksAvailable();
 						return true;
 					}
