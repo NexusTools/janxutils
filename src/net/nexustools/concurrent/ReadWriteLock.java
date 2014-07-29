@@ -90,7 +90,7 @@ public class ReadWriteLock extends Lockable {
 					try {
 						semaphore.release();
 						exclusive.acquireUninterruptibly();
-						semaphore.acquireUninterruptibly(sharedRem);
+						semaphore.acquireUninterruptibly(totalPermits);
 					} finally {
 						exclusive.release();
 					}
@@ -229,7 +229,7 @@ public class ReadWriteLock extends Lockable {
 	};
 	
 	private final Semaphore semaphore;
-	private final Semaphore exclusive = new Semaphore(1, true);
+	private final Semaphore exclusive = new Semaphore(1);
 	private final ThreadLocal<ArrayList<Lockable>> frames = new ThreadLocal() {
 		@Override
 		protected Object initialValue() {
@@ -243,7 +243,7 @@ public class ReadWriteLock extends Lockable {
 	}
 	
 	public ReadWriteLock(int permits) {
-		semaphore = new Semaphore(totalPermits = Math.max(2, permits), true);
+		semaphore = new Semaphore(totalPermits = Math.max(2, permits));
 		sharedRem = totalPermits-1;
 	}
 	
