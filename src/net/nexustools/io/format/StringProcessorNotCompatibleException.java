@@ -15,32 +15,10 @@
 
 package net.nexustools.io.format;
 
-import java.io.IOException;
-import java.io.InputStream;
-import net.nexustools.io.Stream;
-
 /**
  *
  * @author katelyn
  */
-public interface StreamTokenizerProvider {
-    
-	
-	/**
-	 * The format of data this parser is meant for
-	 * 
-	 * @return
-	 */
-	public String format();
-	
-	/**
-	 * Opens a stream
-	 * 
-	 * @param inStream The InputStream to create a parser using
-	 * @return
-	 * @throws java.io.IOException
-	 */
-	public Stream create(InputStream inStream) throws IOException;
-	
+public class StringProcessorNotCompatibleException extends Exception {
 	
 }

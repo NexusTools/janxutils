@@ -29,7 +29,7 @@ import net.nexustools.concurrent.Writer;
  * @param <F>
  * @param <Q>
  */
-class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
+public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
 
 	public static enum Priority {
 		Low,

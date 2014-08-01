@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import java.util.Map;
 import net.nexustools.utils.Pair;
 
 /**
@@ -27,5 +28,6 @@ public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
 	public V take(K key);
 	public void put(K key, V value);
 	public boolean has(K key);
+	public Map<K, V> copy();
 	
 }

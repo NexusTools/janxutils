@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
-import net.nexustools.runtime.RunQueue;
 import net.nexustools.utils.Pair;
 
 /**
@@ -73,6 +72,10 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 				}
 			};
 		}
+
+		public Map<K, V> copy() {
+			return new HashMap(map);
+		}
 	};
 	public PropMap(Type type) {
 		switch(this.type = type) {
@@ -94,39 +97,95 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 
 	@Override
 	protected MapAccessor<K, V> directAccessor() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return directAccessor;
 	}
 
 	public boolean isTrue() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return read(new Reader<Boolean, MapAccessor<K, V>>() {
+			@Override
+			public Boolean read(MapAccessor<K, V> data) {
+				return data.isTrue();
+			}
+		});
 	}
 
 	public boolean isset() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return read(new Reader<Boolean, MapAccessor<K, V>>() {
+			@Override
+			public Boolean read(MapAccessor<K, V> data) {
+				return data.isset();
+			}
+		});
 	}
 
 	public void clear() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		write(new Writer<MapAccessor<K, V>>() {
+			@Override
+			public void write(MapAccessor<K, V> data) {
+				data.clear();
+			}
+		});
 	}
 
 	public Iterator<Pair<K, V>> iterator() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return new Iterator<Pair<K, V>>() {
+			final Iterator<Map.Entry<K, V>> copy = copy().entrySet().iterator();
+			public boolean hasNext() {
+				return copy.hasNext();
+			}
+			public Pair<K, V> next() {
+				Map.Entry<K, V> entry = copy.next();
+				return new Pair(entry.getKey(), entry.getValue());
+			}
+			public void remove() {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+		};
 	}
 	
-	public V get(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public V get(final K key) {
+		return read(new Reader<V, MapAccessor<K, V>>() {
+			@Override
+			public V read(MapAccessor<K, V> data) {
+				return data.get(key);
+			}
+		});
 	}
 
-	public V take(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public V take(final K key) {
+		return read(new WriteReader<V, MapAccessor<K, V>>() {
+			@Override
+			public V read(MapAccessor<K, V> data) {
+				return data.take(key);
+			}
+		});
 	}
 
-	public void put(K key, V value) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public void put(final K key, final V value) {
+		write(new Writer<MapAccessor<K, V>>() {
+			@Override
+			public void write(MapAccessor<K, V> data) {
+				data.put(key, value);
+			}
+		});
 	}
 
-	public boolean has(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public boolean has(final K key) {
+		return read(new Reader<Boolean, MapAccessor<K, V>>() {
+			@Override
+			public Boolean read(MapAccessor<K, V> data) {
+				return data.has(key);
+			}
+		});
+	}
+	
+	public Map<K, V> copy() {
+		return read(new Reader<Map<K, V>, MapAccessor<K, V>>() {
+			@Override
+			public Map<K, V> read(MapAccessor<K, V> data) {
+				return data.copy();
+			}
+		});
 	}
 	
 }

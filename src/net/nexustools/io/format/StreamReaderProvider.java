@@ -13,35 +13,34 @@
  * 
  */
 
-package net.nexustools.io.format.impl;
+package net.nexustools.io.format;
+
+import java.io.IOException;
+import java.io.InputStream;
+import net.nexustools.io.Stream;
 
 /**
  *
  * @author katelyn
  */
-public class PListTokenizer {
+public interface StreamReaderProvider {
+    
 	
-	public static enum Token {
-		StartDict,
-		StartArray,
-		EndArray,
-		EndDict,
-		
-		Comment,
-		Version,
-		KeyValuePair,
-		ValueElement,
-		
-		XMLDeclaration,
-		DDT
-	}
+	/**
+	 * The format of data this parser is meant for
+	 * 
+	 * @return
+	 */
+	public String format();
 	
-	public PListTokenizer() {
-		this(false);
-	}
+	/**
+	 * Opens a stream
+	 * 
+	 * @param inStream The InputStream to create a parser using
+	 * @return
+	 * @throws java.io.IOException
+	 */
+	public Stream create(InputStream inStream) throws IOException;
 	
-	public PListTokenizer(boolean binary) {
-		
-	}
 	
 }

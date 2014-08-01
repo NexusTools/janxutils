@@ -13,12 +13,19 @@
  * 
  */
 
-package net.nexustools.io.format.impl;
+package net.nexustools.io.format;
 
 /**
  *
  * @author katelyn
  */
-public class HTMLTokenizer {
+public class StreamReaderException extends Exception {
+	
+	public StreamReaderException(String message) {
+		super(message);
+	}
+	public StreamReaderException(Throwable message) {
+		super(message);
+	}
 	
 }

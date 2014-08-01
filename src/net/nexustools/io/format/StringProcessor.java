@@ -19,10 +19,6 @@ package net.nexustools.io.format;
  *
  * @author katelyn
  */
-public class StreamTokenizerException extends Exception {
-	
-	public StreamTokenizerException(String message) {
-		super(message);
-	}
-	
+public interface StringProcessor<O> {
+	public O process(StringReader reader) throws StringProcessorNotCompatibleException;
 }

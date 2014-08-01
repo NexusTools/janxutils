@@ -13,12 +13,38 @@
  * 
  */
 
-package net.nexustools.io.format.impl;
+package net.nexustools.concurrent;
+
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public class YMLTokenizer extends JSONPTokenizer {
+public abstract class SoftWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
+
+	@Override
+	public final R read(A data, Lockable lock) {
+		lock.lock();
+		try {
+			if(lock.upgradeTest(data, this))
+				try {
+					return read(data);
+				} finally {
+					lock.unlock();
+				}
+			else
+				return soft(data);
+		} finally {
+			lock.unlock();
+		}
+	}
+	
+	public abstract R soft(A data);
+	public abstract R read(A data);
+
+	public boolean test(A against) {
+		return !against.isTrue();
+	}
 	
 }
