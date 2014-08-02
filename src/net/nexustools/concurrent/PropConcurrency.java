@@ -26,11 +26,11 @@ public abstract class PropConcurrency<A extends BaseAccessor> {
 	
 	protected abstract A directAccessor();
 	
-	public final void write(BaseWriter<A> actor) {
+	public final void write(BaseWriter<? extends A> actor) {
 		lock.write(directAccessor(), actor);
 	}
 
-	public final <R> R read(BaseReader<R, A> reader) {
+	public final <R> R read(BaseReader<R, ? extends A> reader) {
 		return (R)lock.read(directAccessor(), reader);
 	}
 	

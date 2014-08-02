@@ -105,5 +105,10 @@ public class CacheProp<T, U> extends Prop<T> {
 	protected boolean needsUpdate(PropAccessor<T> data) {
 		return !data.isset();
 	}
+	
+	public void update() {
+		clear();
+		get();
+	}
 
 }
