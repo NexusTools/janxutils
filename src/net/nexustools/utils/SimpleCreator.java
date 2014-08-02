@@ -13,25 +13,18 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.utils;
 
 /**
- * A concurrent stage to act upon.
- * 
+ *
  * @author katelyn
  */
-public abstract class PropConcurrency<A extends BaseAccessor> {
-	
-	protected final ReadWriteLock lock = new ReadWriteLock();
-	
-	protected abstract A directAccessor();
-	
-	public final void write(BaseWriter<A> actor) {
-		lock.write(directAccessor(), actor);
-	}
+public abstract class SimpleCreator<C, U> implements Creator<C, U> {
 
-	public final <R> R read(BaseReader<R, A> reader) {
-		return (R)lock.read(directAccessor(), reader);
+	public final C create(U using) {
+		return create();
 	}
+	
+	public abstract C create();
 	
 }

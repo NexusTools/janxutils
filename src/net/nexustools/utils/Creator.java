@@ -19,8 +19,8 @@ package net.nexustools.utils;
  *
  * @author katelyn
  */
-public interface Creator<C> {
+public interface Creator<C, U> {
 	
-	public C create();
+	public C create(U using);
 	
 }

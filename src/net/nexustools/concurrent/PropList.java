@@ -29,24 +29,7 @@ import java.util.ListIterator;
  */
 public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements ListAccessor<I> {
 
-	public static enum Type {
-		ArrayList,
-		WeakArrayList,
-		LinkedList
-	}
-	
-	public static Collection forType(Type type) {
-		switch(type) {
-			case ArrayList:
-				return new ArrayList();
-				
-			default:
-				throw new UnsupportedOperationException();
-		}
-	}
-	
 	private List<I> list;
-	private Collection type;
 	private final ListAccessor<I> directAccessor = new ListAccessor<I>() {
 		public void push(I object) {
 			list.add(object);

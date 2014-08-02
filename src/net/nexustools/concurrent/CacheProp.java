@@ -16,18 +16,31 @@
 package net.nexustools.concurrent;
 
 import java.util.concurrent.Semaphore;
+import net.nexustools.utils.Creator;
+import net.nexustools.utils.SimpleCreator;
 
 /**
  *
  * @author katelyn
  * @param <T>
+ * @param <U>
  */
-public abstract class CacheProp<T> extends Prop<T> {
+public class CacheProp<T, U> extends Prop<T> {
 	
 	private final Semaphore cacheLock = new Semaphore(1);
+	private final Creator<T, U> creator;
+	private final U creatorUsing;
 	private String genID;
 
-	public CacheProp() {}
+	public CacheProp(Creator<T, U> creator, U creatorUsing) {
+		this.creator = creator;
+		this.creatorUsing = creatorUsing;
+	}
+
+	public CacheProp(SimpleCreator<T, U> creator) {
+		this.creator = creator;
+		this.creatorUsing = null;
+	}
 
 	@Override
 	public T get() {
@@ -55,7 +68,7 @@ public abstract class CacheProp<T> extends Prop<T> {
 				} finally {
 					lock.unlock();
 				}
-				T newData = create();
+				T newData = creator.create(creatorUsing);
 				cacheLock.acquireUninterruptibly();
 				try {
 					if(myGenID.equals(genID)) {
@@ -73,8 +86,6 @@ public abstract class CacheProp<T> extends Prop<T> {
 			}
 		});
 	}
-	
-	protected abstract T create();
 	
 	/**
 	 * Clears the internal cache, and aborts any current cache processor.

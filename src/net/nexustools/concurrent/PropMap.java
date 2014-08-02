@@ -17,6 +17,7 @@ package net.nexustools.concurrent;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.nexustools.utils.Pair;
@@ -30,7 +31,7 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 	public static enum Type {
 		HashMap,
 		WeakHashMap,
-		LinkedMap
+		LinkedHashMap
 	}
 	
 	private final Type type;
@@ -85,6 +86,10 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 				
 			case WeakHashMap:
 				map = new WeakHashMap();
+				break;
+				
+			case LinkedHashMap:
+				map = new LinkedHashMap();
 				break;
 				
 			default:
