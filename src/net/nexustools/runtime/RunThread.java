@@ -17,10 +17,8 @@ package net.nexustools.runtime;
 import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
-import net.nexustools.concurrent.Reader;
 import net.nexustools.concurrent.SoftWriter;
 import net.nexustools.concurrent.WriteReader;
-import net.nexustools.concurrent.Writer;
 
 /**
  *
@@ -55,6 +53,7 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 					break;
 			}
 			System.out.println("Spawned: " + name);
+			setDaemon(true);
 			setName(name);
 			start();
 		}

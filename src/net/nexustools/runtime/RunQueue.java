@@ -16,7 +16,6 @@
 package net.nexustools.runtime;
 
 import net.nexustools.concurrent.ConcurrentStage;
-import net.nexustools.concurrent.PropList;
 
 /**
  *

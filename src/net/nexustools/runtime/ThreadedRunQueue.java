@@ -40,7 +40,7 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 			threads = Runtime.getRuntime().availableProcessors();
 		ArrayList<RunThread> runThreads = new ArrayList();
 		while(threads > 0) {
-			RunThread runThread = new RunThread(name + "[Worker" + threads + "]", this);
+			RunThread runThread = new RunThread(name + '-' + threads, this);
 			runThreads.add(runThread);
 			threads --;
 		}
