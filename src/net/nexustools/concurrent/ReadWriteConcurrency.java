@@ -24,5 +24,6 @@ public interface ReadWriteConcurrency<A extends BaseAccessor> {
 	public A directAccessor();
 	public void write(BaseWriter<A> actor);
 	public <R> R read(BaseReader<R, A> reader);
+	public Lockable<A> lockable();
 	
 }

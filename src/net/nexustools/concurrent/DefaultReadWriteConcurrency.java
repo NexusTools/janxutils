@@ -22,7 +22,7 @@ package net.nexustools.concurrent;
  */
 public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implements ReadWriteConcurrency<A> {
 	
-	final Lockable lock;
+	final Lockable<A> lock;
 	
 	protected DefaultReadWriteConcurrency() {
 		this(new ReadWriteLock());
@@ -37,6 +37,10 @@ public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implem
 
 	public final <R> R read(BaseReader<R, A> reader) {
 		return (R)lock.read(directAccessor(), reader);
+	}
+
+	public Lockable<A> lockable() {
+		return lock;
 	}
 	
 }
