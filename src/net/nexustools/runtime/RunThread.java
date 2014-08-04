@@ -27,7 +27,7 @@ import net.nexustools.concurrent.WriteReader;
  * @param <F>
  * @param <Q>
  */
-public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQueue<R, F, RunThread>> {
+public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 
 	public static enum Priority {
 		Low,
@@ -37,7 +37,7 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 
 	class NativeRunThread extends Thread {
 
-		private F future;
+		private QueueFuture future;
 		private boolean killNext;
 
 		{
@@ -74,9 +74,9 @@ public class RunThread<R extends Runnable, F extends QueueFuture, Q extends RunQ
 				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
-						future = queue.read(new IfReader<F, PropAccessor<Q>>() {
+						future = queue.read(new IfReader<QueueFuture, PropAccessor<Q>>() {
 							@Override
-							public F read(PropAccessor<Q> data) {
+							public QueueFuture read(PropAccessor<Q> data) {
 								return data.get().nextFuture(RunThread.this);
 							}
 						});

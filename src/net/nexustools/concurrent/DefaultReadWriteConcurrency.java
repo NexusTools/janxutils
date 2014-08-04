@@ -16,23 +16,27 @@
 package net.nexustools.concurrent;
 
 /**
- *
+ * A concurrent stage to act upon.
+ * 
  * @author katelyn
  */
-public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
-
-	@Override
-	public final R read(A data, Lockable<A> lock) {
-		try {
-			lock.lock();
-			return read(data);
-		} finally {
-			lock.unlock();
-		}
+public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implements ReadWriteConcurrency<A> {
+	
+	final Lockable lock;
+	
+	protected DefaultReadWriteConcurrency() {
+		this(new ReadWriteLock());
+	}
+	protected DefaultReadWriteConcurrency(Lockable lock) {
+		this.lock = lock;
 	}
 	
-	public abstract R read(A data);
-	
-	
+	public final void write(BaseWriter<A> actor) {
+		lock.write(directAccessor(), actor);
+	}
+
+	public final <R> R read(BaseReader<R, A> reader) {
+		return (R)lock.read(directAccessor(), reader);
+	}
 	
 }

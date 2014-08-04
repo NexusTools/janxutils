@@ -26,7 +26,7 @@ import net.nexustools.utils.Pair;
  *
  * @author katelyn
  */
-public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements MapAccessor<K,V> {
+public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> implements MapAccessor<K,V> {
 
 	public static enum Type {
 		HashMap,
@@ -101,7 +101,7 @@ public class PropMap<K,V> extends PropConcurrency<MapAccessor<K,V>> implements M
 	}
 
 	@Override
-	protected MapAccessor<K, V> directAccessor() {
+	public MapAccessor<K, V> directAccessor() {
 		return directAccessor;
 	}
 

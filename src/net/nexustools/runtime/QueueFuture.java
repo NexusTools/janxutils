@@ -25,19 +25,6 @@ import net.nexustools.utils.Testable;
  */
 public abstract class QueueFuture {
 	
-	public static QueueFuture wrap(State state, final Runnable run) {
-		return new QueueFuture(state) {
-			@Override
-			public void execute(Testable<Void> isCancelled) {
-				run.run();
-			}
-			@Override
-			public Object unique() {
-				return run;
-			}
-		};
-	}
-	
 	public static enum State {
 		Scheduled,
 		WaitingInQueue,
@@ -53,18 +40,6 @@ public abstract class QueueFuture {
 	QueueFuture(State state) {
 		this.state = new Prop(state);
 	}
-
-	@Override
-	public final int hashCode() {
-		return unique().hashCode();
-	}
-
-	@Override
-	public final boolean equals(Object obj) {
-		return unique().equals(obj);
-	}
-	
-	public abstract Object unique();
 	
 	public State state() {
 		return state.get();

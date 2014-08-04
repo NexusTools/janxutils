@@ -46,14 +46,5 @@ public class FakeLock extends Lockable {
 
 	@Override
 	public void unlock() {}
-
-	@Override
-	public void write(BaseAccessor data, BaseWriter writer) {
-		writer.write(data, this);
-	}
-
-	public Object read(BaseAccessor data, BaseReader reader) {
-		return reader.read(data, this);
-	}
 	
 }

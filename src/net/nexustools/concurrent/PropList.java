@@ -27,7 +27,7 @@ import java.util.ListIterator;
  * @author katelyn
  * @param <I>
  */
-public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements ListAccessor<I> {
+public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> implements ListAccessor<I> {
 
 	private List<I> list;
 	private final ListAccessor<I> directAccessor = new ListAccessor<I>() {
@@ -289,7 +289,7 @@ public class PropList<I> extends PropConcurrency<ListAccessor<I>> implements Lis
 	}
 
 	@Override
-	protected ListAccessor<I> directAccessor() {
+	public ListAccessor<I> directAccessor() {
 		return directAccessor;
 	}
 	

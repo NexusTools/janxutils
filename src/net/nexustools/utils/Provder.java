@@ -13,25 +13,14 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.utils;
 
 /**
- * A concurrent stage to act upon.
- * 
+ *
  * @author katelyn
  */
-public abstract class PropConcurrency<A extends BaseAccessor> {
+public interface Provder<C> {
 	
-	protected final ReadWriteLock lock = new ReadWriteLock();
-	
-	protected abstract A directAccessor();
-	
-	public final void write(BaseWriter<? extends A> actor) {
-		lock.write(directAccessor(), actor);
-	}
-
-	public final <R> R read(BaseReader<R, ? extends A> reader) {
-		return (R)lock.read(directAccessor(), reader);
-	}
+	public C provide();
 	
 }

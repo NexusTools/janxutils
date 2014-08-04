@@ -22,7 +22,7 @@ import java.util.Collection;
  * @author katelyn
  * @param <T>
  */
-public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAccessor<T> {
+public class Prop<T> extends DefaultReadWriteConcurrency<PropAccessor<T>> implements PropAccessor<T> {
 
 	private T value;
 	private final PropAccessor<T> directAccessor = new PropAccessor<T>() {
@@ -75,6 +75,10 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 		return true;
 	}
 	public Prop() {}
+	Prop(Lockable lock, T value) {
+		super(lock);
+		this.value = value;
+	}
 	public Prop(T value) {
 		this.value = value;
 	}
@@ -125,7 +129,7 @@ public class Prop<T> extends PropConcurrency<PropAccessor<T>> implements PropAcc
 	}
 
 	@Override
-	protected PropAccessor<T> directAccessor() {
+	public PropAccessor<T> directAccessor() {
 		return directAccessor;
 	}
 

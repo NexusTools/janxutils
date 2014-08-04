@@ -22,7 +22,7 @@ package net.nexustools.concurrent;
 public abstract class WriteReader<R, A extends BaseAccessor> implements BaseReader<R, A> {
 
 	@Override
-	public final R read(A data, Lockable lock) {
+	public final R read(A data, Lockable<A> lock) {
 		lock.lock(true);
 		try {
 			return read(data);

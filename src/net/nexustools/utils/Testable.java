@@ -21,6 +21,17 @@ package net.nexustools.utils;
  */
 public interface Testable<I> {
 	
+	public static final Testable TRUE = new Testable() {
+		public boolean test(Object against) {
+			return true;
+		}
+	};
+	public static final Testable FALSE = new Testable() {
+		public boolean test(Object against) {
+			return false;
+		}
+	};
+	
 	public boolean test(I against);
 	
 }

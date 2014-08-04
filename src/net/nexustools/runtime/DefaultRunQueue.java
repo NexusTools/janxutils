@@ -26,7 +26,7 @@ import net.nexustools.concurrent.ReadWriteLock;
  * @param <R>
  * @param <F>
  */
-public class DefaultRunQueue<R extends Runnable, F extends QueueFuture> extends ThreadedRunQueue<R, F> {
+public class DefaultRunQueue<R extends Runnable> extends ThreadedRunQueue<R> {
 
 	private static DefaultRunQueue instance = new DefaultRunQueue();
 	public static DefaultRunQueue instance() {

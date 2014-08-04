@@ -19,20 +19,10 @@ package net.nexustools.concurrent;
  *
  * @author katelyn
  */
-public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
-
-	@Override
-	public final R read(A data, Lockable<A> lock) {
-		try {
-			lock.lock();
-			return read(data);
-		} finally {
-			lock.unlock();
-		}
-	}
+public interface ReadWriteConcurrency<A extends BaseAccessor> {
 	
-	public abstract R read(A data);
-	
-	
+	public A directAccessor();
+	public void write(BaseWriter<A> actor);
+	public <R> R read(BaseReader<R, A> reader);
 	
 }

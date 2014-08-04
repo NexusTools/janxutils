@@ -24,7 +24,7 @@ import net.nexustools.utils.Testable;
 public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
 
 	@Override
-	public final R read(A data, Lockable lock) {
+	public final R read(A data, Lockable<A> lock) {
 		lock.lock();
 		try {
 			if(test(data))

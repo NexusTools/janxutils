@@ -13,26 +13,25 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.runtime;
+
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
+public class NormalQueueFuture<R extends Runnable> extends QueueFuture {
+
+	private final R runnable;
+	public NormalQueueFuture(R runnable, State state) {
+		super(state);
+		this.runnable = runnable;
+	}
 
 	@Override
-	public final R read(A data, Lockable<A> lock) {
-		try {
-			lock.lock();
-			return read(data);
-		} finally {
-			lock.unlock();
-		}
+	public void execute(Testable<Void> isCancelled) {
+		runnable.run();
 	}
-	
-	public abstract R read(A data);
-	
-	
 	
 }

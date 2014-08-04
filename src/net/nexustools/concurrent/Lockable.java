@@ -21,7 +21,7 @@ import net.nexustools.utils.Testable;
  *
  * @author katelyn
  */
-public abstract class Lockable implements ConcurrentStage {
+public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStage<A> {
 	
 	public final void lock() {
 		lock(false);
@@ -102,20 +102,17 @@ public abstract class Lockable implements ConcurrentStage {
 	 * @param data
 	 * @param actor 
 	 */
-	public void write(BaseAccessor data, BaseWriter actor) {
+	public final void write(A data, BaseWriter<A> actor) {
 		actor.write(data, this);
 	}
 	/**
 	 * Runs a Reader using this Lockable.
 	 * 
-	 * @param <R>
-	 * @param <T>
-	 * @param <A>
 	 * @param data
 	 * @param reader
 	 * @return  
 	 */
-	public Object read(BaseAccessor data, BaseReader reader) {
+	public final <R> R read(A data, BaseReader<R, A> reader) {
 		return reader.read(data, this);
 	}
 

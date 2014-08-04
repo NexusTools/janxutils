@@ -23,7 +23,7 @@ import java.util.concurrent.Semaphore;
  *
  * @author katelyn
  */
-public class ReadWriteLock extends Lockable {
+public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	
 	private static boolean verbose = false;
 	private static int defaultPermitCount = Runtime.getRuntime().availableProcessors();

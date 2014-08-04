@@ -15,9 +15,9 @@
 
 package net.nexustools.concurrent;
 
-import java.util.concurrent.Semaphore;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.SimpleCreator;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -25,81 +25,155 @@ import net.nexustools.utils.SimpleCreator;
  * @param <T>
  * @param <U>
  */
-public class CacheProp<T, U> extends Prop<T> {
+public class CacheProp<T, U> {
 	
-	private final Semaphore cacheLock = new Semaphore(1);
+	private final Prop<T> prop;
+	private final Lockable cacheLock;
+	private final Lockable sourceLock;
 	private final Creator<T, U> creator;
 	private final U creatorUsing;
 	private String genID;
+	
+	public static BoundLocks locksForProps(Lockable propLock, Prop... reliesOn) {
+		Lockable[] locks = new Lockable[reliesOn.length+1];
+		locks[0] = propLock;
+		int i = 1;
+		for(Prop prop : reliesOn)
+			locks[i++] = prop.lock;
+		return new BoundLocks(locks);
+	}
 
-	public CacheProp(Creator<T, U> creator, U creatorUsing) {
+	public CacheProp(Lockable cacheLock, Lockable propLock, Lockable sourceLock, T def, Creator<T, U> creator, U creatorUsing) {
 		this.creator = creator;
 		this.creatorUsing = creatorUsing;
+		this.prop = new Prop(propLock, def);
+		this.sourceLock = sourceLock;
+		this.cacheLock = cacheLock;
 	}
 
-	public CacheProp(SimpleCreator<T, U> creator) {
-		this.creator = creator;
-		this.creatorUsing = null;
+	public CacheProp(Lockable cacheLock, Lockable propLock, Lockable sourceLock, T def, SimpleCreator<T, U> creator) {
+		this(cacheLock, propLock, sourceLock, def, creator, null);
 	}
 
-	@Override
+	public CacheProp(Lockable cacheLock, Lockable propLock, T def, Creator<T, U> creator, U creatorUsing, Prop<T>... sourceProps) {
+		this(cacheLock, propLock, locksForProps(propLock, sourceProps), def, creator, creatorUsing);
+	}
+
+	public CacheProp(Lockable cacheLock, Lockable propLock, T def, SimpleCreator<T, U> creator, Prop<T>... sourceProps) {
+		this(cacheLock, propLock, locksForProps(propLock, sourceProps), def, creator, null);
+	}
+
+	public CacheProp(Lockable cacheLock, Lockable propLock, Creator<T, U> creator, U creatorUsing, Prop<T>... sourceProps) {
+		this(cacheLock, propLock, null, creator, creatorUsing, sourceProps);
+	}
+
+	public CacheProp(Lockable cacheLock, Lockable propLock, SimpleCreator<T, U> creator, Prop<T>... sourceProps) {
+		this(cacheLock, propLock, null, creator, null, sourceProps);
+	}
+	
+	public CacheProp(T def, Creator<T, U> creator, U creatorUsing, Prop<T>... sourceProps) {
+		this(new ReadWriteLock(), new ReadWriteLock(), def, creator, creatorUsing, sourceProps);
+	}
+	
+	public CacheProp(T def, SimpleCreator<T, U> creator, Prop<T>... sourceProps) {
+		this(def, creator, null, sourceProps);
+	}
+	
+	public CacheProp(Creator<T, U> creator, U creatorUsing, Prop<T>... sourceProps) {
+		this(new ReadWriteLock(), new ReadWriteLock(), creator, creatorUsing, sourceProps);
+	}
+	
+	public CacheProp(SimpleCreator<T, U> creator, Prop<T>... sourceProps) {
+		this(creator, null, sourceProps);
+	}
+	
+	public void set(T value) {
+		sourceLock.lock();
+		try {
+			prop.clear();
+			cacheLock.lock(true);
+			try {
+				// Reset active generation
+				genID = null;
+			} finally {
+				cacheLock.unlock();
+			}
+		} finally {
+			sourceLock.unlock();
+		}
+	}
+	
+	public T getInternal() {
+		return prop.get();
+	}
+
 	public T get() {
-		return read(new BaseReader<T, PropAccessor<T>>() {
-			public T read(PropAccessor<T> data, Lockable lock) {
+		return prop.read(new BaseReader<T, PropAccessor<T>>() {
+
+			public T read(PropAccessor<T> data, Lockable<PropAccessor<T>> lock) {
 				lock.lock();
 				try {
 					if(!needsUpdate(data))
 						return data.get();
-				} finally {
-					lock.unlock();
-				}
-				String myGenID = net.nexustools.utils.StringUtils.randomString(32);
-				cacheLock.acquireUninterruptibly();
-				try {
-					genID = myGenID;
-				} finally {
-					cacheLock.release();
-				}
-				// Check if another thread already finished
-				lock.lock(true);
-				try {
-					if(!needsUpdate(data))
-						return data.get();
-				} finally {
-					lock.unlock();
-				}
-				T newData = creator.create(creatorUsing);
-				cacheLock.acquireUninterruptibly();
-				try {
-					if(myGenID.equals(genID)) {
-						lock.lock(true);
-						try {
-							data.set(newData);
-						} finally {
-							lock.unlock();
-						}
+					
+					final String myGenID;
+					cacheLock.lock(true);
+					try {
+						// Check if another thread already finished
+						if(!needsUpdate(data))
+							return data.get();
+
+						myGenID = net.nexustools.utils.StringUtils.randomString(32);
+						genID = myGenID;
+					} finally {
+						cacheLock.unlock();
 					}
+
+					return doUpdate(lock, data, new Testable<Void>() {
+						public boolean test(Void against) {
+							return myGenID.equals(genID);
+						}
+					});
 				} finally {
-					cacheLock.release();
+					lock.unlock();
 				}
-				return newData;
 			}
 		});
 	}
 	
+	protected T doUpdate(Lockable lock, PropAccessor<T> data, Testable<Void> test) {
+		T newData;
+		sourceLock.lock(); // Lock all sources for reading
+		try {
+			newData = creator.create(creatorUsing);
+			cacheLock.lock(true);
+			try {
+				if(test.test(null)) {
+					lock.upgrade();
+					try {
+						init(newData);
+						data.set(newData);
+					} finally {
+						lock.downgrade();
+					}
+				}
+				genID = null;
+			} finally {
+				cacheLock.unlock();
+			}
+		} finally {
+			sourceLock.unlock();
+		}
+		return newData;
+	}
+	
+	protected void init(T object) {}
+	
 	/**
 	 * Clears the internal cache, and aborts any current cache processor.
 	 */
-	@Override
 	public void clear() {
-		cacheLock.acquireUninterruptibly();
-		try {
-			// Reset active generation
-			genID = null;
-			super.clear();
-		} finally {
-			cacheLock.release();
-		}
+		set(null);
 	}
 
 	protected boolean needsUpdate(PropAccessor<T> data) {
@@ -107,8 +181,22 @@ public class CacheProp<T, U> extends Prop<T> {
 	}
 	
 	public void update() {
-		clear();
-		get();
+		sourceLock.lock();
+		try {
+			prop.write(new BaseWriter<PropAccessor<T>>() {
+				public void write(PropAccessor<T> data, Lockable lock) {
+					lock.lock(true);
+					try {
+						data.clear();
+						doUpdate(lock, data, Testable.TRUE);
+					} finally {
+						lock.unlock();
+					}
+				}
+			});
+		} finally {
+			sourceLock.unlock();
+		}
 	}
 
 }

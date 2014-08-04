@@ -23,6 +23,6 @@ package net.nexustools.concurrent;
  */
 public interface BaseReader<R, A extends BaseAccessor> {
 	
-	public R read(A data, Lockable lock);
+	public R read(A data, Lockable<A> lock);
 	
 }

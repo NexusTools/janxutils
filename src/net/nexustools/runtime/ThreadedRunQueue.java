@@ -28,12 +28,12 @@ import net.nexustools.concurrent.Writer;
  * @param <R>
  * @param <F>
  */
-public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture> extends RunQueue<R, F, RunThread> {
+public abstract class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	
 	private final String name;
 	private final PropList<RunThread> idleThreads;
 	//private final PropList<RunThread> knownThreads;
-	private final PropList<F> tasks = new PropList();
+	private final PropList<QueueFuture> tasks = new PropList();
 	public ThreadedRunQueue(String name, int threads) {
 		this.name = name;
 		if(threads < 1)
@@ -57,10 +57,10 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 		this(null, -1);
 	}
 	@Override
-	public F nextFuture(final RunThread runThread) {
-		return tasks.read(new WriteReader<F, ListAccessor<F>>() {
+	public QueueFuture nextFuture(final RunThread runThread) {
+		return tasks.read(new WriteReader<QueueFuture, ListAccessor<QueueFuture>>() {
 			@Override
-			public F read(ListAccessor<F> data) {
+			public QueueFuture read(ListAccessor<QueueFuture> data) {
 				if(data.isTrue()) {
 					idleThreads.remove(runThread);
 					return data.shift();
@@ -74,10 +74,10 @@ public abstract class ThreadedRunQueue<R extends Runnable, F extends QueueFuture
 	}
 
 	@Override
-	protected F push(final F future) {
-		tasks.write(new Writer<ListAccessor<F>>() {
+	protected QueueFuture push(final QueueFuture future) {
+		tasks.write(new Writer<ListAccessor<QueueFuture>>() {
 			@Override
-			public void write(ListAccessor<F> data) {
+			public void write(ListAccessor<QueueFuture> data) {
 				data.push(future);
 				idleThreads.read(new TestReader<ListAccessor<RunThread>>() {
 					@Override
