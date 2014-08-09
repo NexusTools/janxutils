@@ -182,8 +182,8 @@ public abstract class Stream {
 		for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
 			registerProvider(provider);
 		
-		bindSynthProtocol("temp", uriForPath(System.getProperty("java.io.tmpdir")));
-		bindSynthProtocol("home", uriForPath(System.getProperty("user.home")));
+		bindSynthScheme("temp", uriForPath(System.getProperty("java.io.tmpdir")));
+		bindSynthScheme("home", uriForPath(System.getProperty("user.home")));
 	}
 	
 	public static void initAppAliases(String name, String organization) {
@@ -210,24 +210,24 @@ public abstract class Stream {
 			configPath += File.separator + organization;
 		configPath += File.separator + name;
 		
-		bindSynthProtocol("config", uriForPath(configPath));
+		bindSynthScheme("config", uriForPath(configPath));
 		
 		configPath += File.separator;
-		bindSynthProtocol("maps", uriForPath(configPath + "Maps"));
-		bindSynthProtocol("music", uriForPath(configPath + "Music"));
-		bindSynthProtocol("sounds", uriForPath(configPath + "Sounds"));
-		bindSynthProtocol("assets", uriForPath(configPath + "Assets"));
-		bindSynthProtocol("graphics", uriForPath(configPath + "Graphics"));
-		bindSynthProtocol("sprites", uriForPath(configPath + "Sprites"));
-		bindSynthProtocol("worlds", uriForPath(configPath + "Worlds"));
-		bindSynthProtocol("saves", uriForPath(configPath + "Saves"));
+		bindSynthScheme("maps", uriForPath(configPath + "Maps"));
+		bindSynthScheme("music", uriForPath(configPath + "Music"));
+		bindSynthScheme("sounds", uriForPath(configPath + "Sounds"));
+		bindSynthScheme("assets", uriForPath(configPath + "Assets"));
+		bindSynthScheme("graphics", uriForPath(configPath + "Graphics"));
+		bindSynthScheme("sprites", uriForPath(configPath + "Sprites"));
+		bindSynthScheme("worlds", uriForPath(configPath + "Worlds"));
+		bindSynthScheme("saves", uriForPath(configPath + "Saves"));
 		
 		if(overwriteTemp) {
 			String tempPath = System.getProperty("java.io.tmpdir");
 			if(!tempPath.endsWith(File.separator))
 				tempPath += File.separator;
 			tempPath += organization + File.separator + name;
-			bindSynthProtocol("temp", uriForPath(tempPath));
+			bindSynthScheme("temp", uriForPath(tempPath));
 		}
 	}
 	
@@ -421,7 +421,7 @@ public abstract class Stream {
 							to.createOutputStream());
 	}
 
-	public static void bindSynthProtocol(final String scheme, String path) {
+	public static void bindSynthScheme(final String scheme, String path) {
 		final String uriForPath = path.endsWith("/") ? path : path + "/";
 		providers.put(scheme, new StreamProvider() {
 			@Override
