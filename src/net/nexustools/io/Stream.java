@@ -284,6 +284,7 @@ public abstract class Stream {
 		if(matcher.matches())
 			uri = matcher.group(1) + ":///" + matcher.group(2);
 		
+		uri = uri.replace(" ", "%20");
 		matcher = wrapperPattern.matcher(uri);
 		while(matcher.matches()) {
 			uri = matcher.group(1);
