@@ -1,0 +1,17 @@
+{
+    "txt": "text/plain",
+
+    "css": "text/css",
+    "js": "application/javascript",
+    "html": "text/html",
+    "htm": "text/html",
+
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "tiff": "image/tiff",
+    "gif": "image/gif",
+    "bmp": "image/bmp",
+    
+    "todo": "Add Magic Mime Entries"
+}

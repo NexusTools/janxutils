@@ -36,11 +36,10 @@ public interface StreamReaderProvider {
 	/**
 	 * Opens a stream
 	 * 
-	 * @param inStream The InputStream to create a parser using
 	 * @return
 	 * @throws java.io.IOException
 	 */
-	public Stream create(InputStream inStream) throws IOException;
+	public StreamReader create(Stream stream) throws IOException;
 	
 	
 }

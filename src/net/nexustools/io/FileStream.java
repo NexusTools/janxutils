@@ -39,7 +39,7 @@ public class FileStream extends Stream {
 	public FileStream(String path, boolean writable) throws FileNotFoundException, IOException {
 		this.writable = writable;
 		this.path = path;
-		ensureOpen();
+		//ensureOpen();
 	}
 	
 	public FileStream(String path) throws FileNotFoundException, IOException {
@@ -49,6 +49,13 @@ public class FileStream extends Stream {
 	protected final void ensureOpen() throws FileNotFoundException, IOException {
 		if(randomAccessFile == null) {
 			randomAccessFile = new RandomAccessFile(path, writable ? "rw" : "r");
+			if(writable) {
+				String parentPath = path.substring(0, path.lastIndexOf("/"));
+				System.out.println(parentPath);
+				File parentFile = new File(parentPath);
+				if(!parentFile.exists() && !parentFile.mkdirs())
+					throw new IOException(getURL() + ": Unable to create directory structure");
+			}
 			randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
 		}
 	}

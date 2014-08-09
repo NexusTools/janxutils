@@ -13,22 +13,19 @@
  * 
  */
 
-package net.nexustools.utils;
+package net.nexustools.io.format;
 
 /**
  *
  * @author katelyn
  */
-public abstract class SimpleCreator<C, U> implements Creator<C, U>, Provider<C> {
-
-	public final C create(U using) {
-		return create();
-	}
-	
-	public abstract C create();
-	
-	public final C provide() {
-		return create();
-	}
-	
+public interface StringParser<O> {
+	/**
+	 * Parse an object out of a <code>StringReader</code>.
+	 * 
+	 * @param reader
+	 * @return
+	 * @throws StringParserException 
+	 */
+	public O parse(StringReader reader) throws StringParserException;
 }

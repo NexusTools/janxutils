@@ -17,12 +17,13 @@ package net.nexustools.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import static net.nexustools.utils.StringUtils.UTF8;
-import static net.nexustools.utils.StringUtils.UTF16;
-import static net.nexustools.utils.StringUtils.ASCII;
 import net.nexustools.data.Adaptor;
 import net.nexustools.data.AdaptorException;
+import static net.nexustools.utils.StringUtils.ASCII;
+import static net.nexustools.utils.StringUtils.UTF16;
+import static net.nexustools.utils.StringUtils.UTF8;
 
 /**
  *
@@ -34,6 +35,12 @@ public class DataOutputStream extends java.io.DataOutputStream {
 	public DataOutputStream(OutputStream out) {
 		super(out);
 		outStream = out;
+	}
+	public DataOutputStream(Stream stream) throws IOException {
+		this(stream.createOutputStream());
+	}
+	public DataOutputStream(String uri) throws URISyntaxException, URISyntaxException, IOException {
+		this(Stream.open(uri, true));
 	}
 
 	public void writeObject(Object object, Class<?> type) throws IOException {

@@ -19,6 +19,6 @@ package net.nexustools.data;
  *
  * @author katelyn
  */
-class SubPartitionsNotSupported extends RuntimeException {
+public class SubPartitionsNotSupported extends RuntimeException {
 	
 }

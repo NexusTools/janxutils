@@ -19,6 +19,10 @@ package net.nexustools.io.format;
  *
  * @author katelyn
  */
-public interface StringProcessor<O> {
-	public O process(StringReader reader) throws StringProcessorNotCompatibleException;
+public class StringParserException extends StreamReaderException {
+	
+	public StringParserException(String msg) {
+		super(msg);
+	}
+	
 }

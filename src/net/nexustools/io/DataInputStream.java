@@ -17,6 +17,7 @@ package net.nexustools.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import net.nexustools.data.Adaptor;
 import static net.nexustools.utils.StringUtils.UTF8;
@@ -36,6 +37,12 @@ public final class DataInputStream extends java.io.DataInputStream {
 	public DataInputStream(InputStream in) {
 		super(in);
 		inStream = in;
+	}
+	public DataInputStream(Stream stream) throws IOException {
+		this(stream.createInputStream());
+	}
+	public DataInputStream(String uri) throws URISyntaxException, URISyntaxException, IOException {
+		this(Stream.open(uri));
 	}
 	
 	/**

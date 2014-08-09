@@ -26,12 +26,12 @@ import java.net.URI;
 public interface StreamProvider {
 	
 	/**
-	 * The protocol this is meant to open
+	 * The scheme this provider is meant to open,
 	 * null indicates that this acts as a fallback
 	 * 
 	 * @return
 	 */
-	public String protocol();
+	public String scheme();
 	
 	/**
 	 * Opens a stream

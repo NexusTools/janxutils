@@ -29,21 +29,21 @@ public abstract class StringProcessingReader<O> extends StreamReader<O> {
 	private int readPos;
 	private final InputStreamReader reader;
 	private final StringBuffer buffer = new StringBuffer();
-	private final ArrayList<StringProcessor<O>> processors = new ArrayList();
+	private final ArrayList<StringParser<O>> processors = new ArrayList();
 	public StringProcessingReader(InputStreamReader reader) {
 		this.reader = reader;
 	}
 	
-	protected void add(StringProcessor<O> processor) {
+	protected void add(StringParser<O> processor) {
 		processors.add(processor);
 	}
 
 	@Override
 	public O readNext() throws StreamReaderException {
-		for(StringProcessor<O> processor : processors) {
+		for(StringParser<O> processor : processors) {
 			final int startPos = readPos;
 			try {
-				O read = processor.process(new StringReader() {
+				O read = processor.parse(new StringReader() {
 					int markPos;
 					public String read(int length) {
 						int rem = length - (buffer.length()-readPos);
@@ -73,7 +73,7 @@ public abstract class StringProcessingReader<O> extends StreamReader<O> {
 				
 				readPos = 0;
 				return read;
-			} catch (StringProcessorNotCompatibleException ex) {}
+			} catch (StringParserException ex) {}
 			readPos = startPos;
 		}
 		return null;

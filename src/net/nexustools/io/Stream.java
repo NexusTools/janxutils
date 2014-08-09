@@ -22,12 +22,12 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.nexustools.io.format.StreamReader;
 import net.nexustools.utils.IOUtils;
 
 /**
@@ -38,6 +38,7 @@ public abstract class Stream {
 	
 	public static final HashMap<String,String> mimeForExt = new HashMap() {
 		{
+			// TODO: Read mimes from mime.json
 			put("txt", "text/plain");
 			
 			put("css", "text/css");
@@ -67,12 +68,10 @@ public abstract class Stream {
 	private static final HashMap<String, StreamProvider> providers = new HashMap() {
 		{
 			put("memory", new StreamProvider() {
-
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "memory";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) {
 					if(path.length() > 0)
@@ -82,39 +81,31 @@ public abstract class Stream {
 				}
 			});
 			put("null", new StreamProvider() {
-
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "null";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) {
 					return Null();
 				}
 			});
 			put("file", new StreamProvider() {
-
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "file";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					return FileStream.getStream(path, supportWriting);
 				}
-				
 			});
 			put("substream", new StreamProvider() {
-
 				final Pattern substreamPattern = Pattern.compile("^(\\d+)\\-(\\d+)@(.+)$");
-				
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "substream";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					Matcher matcher = substreamPattern.matcher(path);
@@ -129,36 +120,29 @@ public abstract class Stream {
 				}
 			});
 			put("resource", new StreamProvider() {
-
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "resource";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("Resources do not support writing.");
-					
 					URL resource = Stream.class.getResource(path);
 					if(resource == null)
 						throw new IOException("No such resource found: " + path);
-					
 					try {
-						return Stream.synthesize(resource.toExternalForm(), "resource:" + raw, "ResourceSynth");
+						return Stream.synthesize(resource.toExternalForm(), raw.toString(), "ResourceSynth", false);
 					} catch (URISyntaxException ex) {
 						throw new RuntimeException(ex);
 					}
 				}
-				
 			});
 			put("input", new StreamProvider() {
-				
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return "input";
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
@@ -175,26 +159,76 @@ public abstract class Stream {
 	private final static ArrayList<StreamProvider> fallbackProviders = new ArrayList() {
 		{
 			add(new StreamProvider() {
-
 				@Override
-				public String protocol() {
+				public String scheme() {
 					return null;
 				}
-
 				@Override
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					if(supportWriting)
 						throw new UnsupportedOperationException("URLStreams do not support writing yet.");
 					return URLStream.getStream(raw);
 				}
-				
 			});
 		}
 	};
 	
+	public static String uriForPath(String filePath) {
+		URI uri = (new File(filePath)).toURI();
+		return uri.toString();
+	}
+	
 	static {
 		for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
 			registerProvider(provider);
+		
+		bindSynthProtocol("temp", uriForPath(System.getProperty("java.io.tmpdir")));
+		bindSynthProtocol("home", uriForPath(System.getProperty("user.home")));
+	}
+	
+	public static void initAppAliases(String name, String organization) {
+		initAppAliases(name, organization, true);
+	}
+	
+	public static void initAppAliases(String name, String organization, boolean overwriteTemp) {
+		String userHome = System.getProperty("user.home");
+		if(!userHome.endsWith(File.separator))
+			userHome += File.separator;
+		
+		boolean hasOrg = false;
+		String configPath = userHome + "Library" + File.separator + "Application Support";
+		if(!(new File(configPath)).isDirectory()) {
+			configPath = userHome + "Application Data";
+			if(!(new File(configPath)).isDirectory())
+				configPath = userHome + ".config";
+			else {
+				configPath = userHome + "." + organization.toLowerCase();
+				hasOrg = true;
+			}
+		}
+		if(!hasOrg)
+			configPath += File.separator + organization;
+		configPath += File.separator + name;
+		
+		bindSynthProtocol("config", uriForPath(configPath));
+		
+		configPath += File.separator;
+		bindSynthProtocol("maps", uriForPath(configPath + "Maps"));
+		bindSynthProtocol("music", uriForPath(configPath + "Music"));
+		bindSynthProtocol("sounds", uriForPath(configPath + "Sounds"));
+		bindSynthProtocol("assets", uriForPath(configPath + "Assets"));
+		bindSynthProtocol("graphics", uriForPath(configPath + "Graphics"));
+		bindSynthProtocol("sprites", uriForPath(configPath + "Sprites"));
+		bindSynthProtocol("worlds", uriForPath(configPath + "Worlds"));
+		bindSynthProtocol("saves", uriForPath(configPath + "Saves"));
+		
+		if(overwriteTemp) {
+			String tempPath = System.getProperty("java.io.tmpdir");
+			if(!tempPath.endsWith(File.separator))
+				tempPath += File.separator;
+			tempPath += organization + File.separator + name;
+			bindSynthProtocol("temp", uriForPath(tempPath));
+		}
 	}
 	
 	/**
@@ -205,7 +239,7 @@ public abstract class Stream {
 	 * @param provider
 	 */
 	public static void registerProvider(StreamProvider provider) {
-		String protocol = provider.protocol();
+		String protocol = provider.scheme();
 		if(protocol == null)
 			fallbackProviders.add(provider);
 		else
@@ -213,6 +247,7 @@ public abstract class Stream {
 	}
 
 	private static final Pattern wrapperPattern = Pattern.compile("^[^\\(]+\\((.+)\\)$");
+	private static final Pattern lazyPattern = Pattern.compile("^(\\w+)\\:/?([^/]+.+)$");
 
 	/**
 	 * Parse and attempt to return a new Stream
@@ -245,7 +280,11 @@ public abstract class Stream {
 	 * @throws IOException
 	 */
 	public static Stream open(String uri, boolean supportWriting) throws IOException, URISyntaxException {
-		Matcher matcher = wrapperPattern.matcher(uri);
+		Matcher matcher = lazyPattern.matcher(uri);
+		if(matcher.matches())
+			uri = matcher.group(1) + ":///" + matcher.group(2);
+		
+		matcher = wrapperPattern.matcher(uri);
 		while(matcher.matches()) {
 			uri = matcher.group(1);
 			matcher = wrapperPattern.matcher(uri);
@@ -302,8 +341,8 @@ public abstract class Stream {
 	 * @return
 	 * @throws IOException
 	 */
-	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException, URISyntaxException {
-		Stream stream = open(effectiveURL).getEffectiveStream();
+	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name, boolean writeable) throws IOException, URISyntaxException {
+		Stream stream = open(effectiveURL, writeable).getEffectiveStream();
 		final URI reportedURI = new URI(reportedURL);
 		return new SubStream(stream) {
 			@Override
@@ -380,6 +419,24 @@ public abstract class Stream {
 		IOUtils.copyStream(from.createInputStream(),
 							to.createOutputStream());
 	}
+
+	public static void bindSynthProtocol(final String scheme, String path) {
+		final String uriForPath = path.endsWith("/") ? path : path + "/";
+		providers.put(scheme, new StreamProvider() {
+			@Override
+			public String scheme() {
+				return scheme;
+			}
+			@Override
+			public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
+				try {
+					return Stream.synthesize(uriForPath + URLEncoder.encode(path.substring(1), "UTF-8").replace("+", "%20").replace("%2F", "/"), raw.toString(), "Alias[" + scheme + "]", supportWriting);
+				} catch (URISyntaxException ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+		});
+	}
 	
 	/**
 	 * Read bytes from this Stream
@@ -449,7 +506,7 @@ public abstract class Stream {
 
 	/**
 	 * Returns the remaining number of bytes from the current
-	 * location to the end of this contnet.
+	 * location to the end of this content.
 	 * 
 	 * Not all Streams know how much content they content
 	 * and so this value may change overtime.
@@ -605,7 +662,7 @@ public abstract class Stream {
 	 */
 	public final OutputStream createOutputStream() throws IOException {
 		if(!canWrite())
-			throw new IOException("This Sector's stream does not support writing...");
+			throw new IOException(getURL() + ": Can not be written to...");
 		
 		final SubStream subStream = createSubSectorStream();
 		return new EfficientOutputStream() {
@@ -755,23 +812,6 @@ public abstract class Stream {
 		return "application/octet-stream";
 	}
 	
-	public StreamReader createProcessor(String parser) throws IOException {
-		try {
-			return createProcessor(parser, false);
-		} catch(CloneNotSupportedException ex) {
-			throw new RuntimeException("CloneNotSupportedException thrown when it shouldn't have been", ex);
-		}
-	}
-	
-	public StreamReader createProcessor(String parser, boolean fromStart) throws IOException, CloneNotSupportedException {
-		InputStream inStream;
-		if(fromStart)
-			inStream = clone(true).createInputStream();
-		else
-			inStream = createInputStream();
-		return StreamReader.create(parser, inStream);
-	}
-	
 	@Override
 	public final Stream clone() throws CloneNotSupportedException {
 		return clone(true);
@@ -798,5 +838,30 @@ public abstract class Stream {
 			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
 		}
 	}
+	
+//	/**
+//	 * Attempts to scan this stream for other possible streams.
+//	 * This would list the links of an index of http stream, or files in a directory.
+//	 * 
+//	 * @param matcher
+//	 * @param directDescendants Whether or not the streams listed should be direct descendants of this stream
+//	 * @return 
+//	 * @throws UnsupportedOperationException 
+//	 */
+//	public abstract String[] scanListing(boolean directDescendants) throws UnsupportedOperationException;
+//	
+//	public abstract boolean exists();
+//	public abstract void copy(String to);
+//	public abstract void delete() throws UnsupportedOperationException;
+//	
+//	/**
+//	 * Converts a relative path to an absolute one, using this stream as the base.
+//	 * 
+//	 * @param path
+//	 * @return 
+//	 */
+//	public String reltoAbs(String path) {
+//		return null;
+//	}
 	
 }

@@ -29,22 +29,6 @@ public abstract class StreamReader <O> implements Iterable<O> {
 	
 	private static final PropMap<String,StreamReaderProvider> providers = new PropMap();
 	
-	public static StreamReader create(String format, Stream stream) throws IOException {
-		return create(format, stream.createInputStream(), stream.createOutputStream());
-	}
-
-	public static StreamReader create(String format, InputStream inStream, OutputStream outStream) {
-		return null;
-	}
-
-	public static StreamReader create(String format, InputStream inStream) {
-		return create(format, inStream, null);
-	}
-
-	public static StreamReader create(String format, OutputStream outStream) {
-		return create(format, null, outStream);
-	}
-	
 	/**
 	 * Reads the next object from this stream.
 	 * 

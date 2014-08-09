@@ -13,12 +13,12 @@
  * 
  */
 
-package net.nexustools.io.format;
+package net.nexustools.io;
 
 /**
  *
  * @author katelyn
  */
-public class StringProcessorNotCompatibleException extends Exception {
+public class BufferedStringReader {
 	
 }

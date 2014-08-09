@@ -19,7 +19,7 @@ package net.nexustools.io.format;
  *
  * @author katelyn
  */
-public class StreamReaderException extends Exception {
+public class StreamReaderException extends RuntimeException {
 	
 	public StreamReaderException(String message) {
 		super(message);

@@ -19,16 +19,8 @@ package net.nexustools.utils;
  *
  * @author katelyn
  */
-public abstract class SimpleCreator<C, U> implements Creator<C, U>, Provider<C> {
-
-	public final C create(U using) {
-		return create();
-	}
+public interface Provider<V> {
 	
-	public abstract C create();
-	
-	public final C provide() {
-		return create();
-	}
+	public V provide();
 	
 }

@@ -13,14 +13,16 @@
  * 
  */
 
-package net.nexustools.utils;
+package net.nexustools.io.format;
 
 /**
  *
  * @author katelyn
  */
-public interface Provder<C> {
-	
-	public C provide();
+public class StringParserNotCompatible extends StringParserException{
+
+	public StringParserNotCompatible(String msg) {
+		super(msg);
+	}
 	
 }
