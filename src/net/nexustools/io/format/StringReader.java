@@ -15,6 +15,8 @@
 
 package net.nexustools.io.format;
 
+import java.io.IOException;
+
 /**
  *
  * @author katelyn
@@ -26,7 +28,7 @@ public interface StringReader {
 	 * @param length Maximum length to read
 	 * @return A string or null if nothing left
 	 */
-	public String read(int length);
+	public String read(int length) throws IOException;
 	
 	/**
 	 * Trims data off the internal reader,
@@ -34,7 +36,7 @@ public interface StringReader {
 	 * 
 	 * @param usefulLength The number of characters since mark that were actually useful, and should be trimmed
 	 */
-	public void resetTrimmed(int usefulLength);
+	public void reset(int usefulLength);
 	
 	/**
 	 * Resets the internal reader to where it was when mark was called last.

@@ -81,7 +81,7 @@ public class FileStream extends Stream {
 		else {
 			fileStream = instanceCache.get(filePath);
 			if(fileStream == null) {
-				System.out.println("Opening FileStream: " + filePath);
+				System.out.println("Creating FileStream: " + filePath);
 				fileStream = new FileStream(filePath);
 				instanceCache.put(filePath, fileStream);
 			}

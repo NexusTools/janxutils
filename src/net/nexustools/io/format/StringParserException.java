@@ -15,14 +15,20 @@
 
 package net.nexustools.io.format;
 
+import java.io.IOException;
+
 /**
  *
  * @author katelyn
  */
-public class StringParserException extends StreamReaderException {
+public class StringParserException extends RuntimeException {
 	
 	public StringParserException(String msg) {
 		super(msg);
+	}
+
+	public StringParserException(Throwable t) {
+		super(t);
 	}
 	
 }

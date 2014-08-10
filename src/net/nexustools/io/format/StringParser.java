@@ -19,7 +19,21 @@ package net.nexustools.io.format;
  *
  * @author katelyn
  */
-public interface StringParser<O> {
+public abstract class StringParser<O> {
+	
+	private final StringReader stringReader;
+	public StringParser(StringReader stringReader) {
+		this.stringReader = stringReader;
+	}
+	public StringParser() {
+		this(null);
+	}
+	
+	public O parse() throws StringParserException{
+		assert(stringReader != null);
+		return parse(stringReader);
+	}
+	
 	/**
 	 * Parse an object out of a <code>StringReader</code>.
 	 * 
@@ -27,5 +41,5 @@ public interface StringParser<O> {
 	 * @return
 	 * @throws StringParserException 
 	 */
-	public O parse(StringReader reader) throws StringParserException;
+	public abstract O parse(StringReader reader) throws StringParserException;
 }
