@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import net.nexustools.AppDelegate;
 import net.nexustools.utils.IOUtils;
 
 /**
@@ -36,7 +38,7 @@ import net.nexustools.utils.IOUtils;
  */
 public abstract class Stream {
 	
-	public static final HashMap<String,String> mimeForExt = new HashMap() {
+	public static final HashMap<String,String> mimeForExt = new HashMap<String,String>() {
 		{
 			put("txt", "text/plain");
 			put("json", "text/json");
@@ -67,7 +69,7 @@ public abstract class Stream {
 		return NullStream.getInstance();
 	}
 	
-	private static final HashMap<String, StreamProvider> providers = new HashMap() {
+	private static final HashMap<String, StreamProvider> providers = new HashMap<String, StreamProvider>() {
 		{
 			put("memory", new StreamProvider() {
 				@Override
@@ -158,7 +160,7 @@ public abstract class Stream {
 			});
 		}
 	};
-	private final static ArrayList<StreamProvider> fallbackProviders = new ArrayList() {
+	private final static ArrayList<StreamProvider> fallbackProviders = new ArrayList<StreamProvider>() {
 		{
 			add(new StreamProvider() {
 				@Override
@@ -181,57 +183,57 @@ public abstract class Stream {
 	}
 	
 	static {
-		for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
-			registerProvider(provider);
+		//for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
+		//	registerProvider(provider);
 		
-		bindSynthScheme("temp", uriForPath(System.getProperty("java.io.tmpdir")));
-		bindSynthScheme("home", uriForPath(System.getProperty("user.home")));
+		bindSynthScheme("temp", uriForPath(AppDelegate.i().pathUri(AppDelegate.Path.Temporary)));
+		bindSynthScheme("home", uriForPath(AppDelegate.i().pathUri(AppDelegate.Path.UserHome)));
 	}
 	
-	public static void initAppAliases(String name, String organization) {
-		initAppAliases(name, organization, true);
-	}
-	
-	public static void initAppAliases(String name, String organization, boolean overwriteTemp) {
-		String userHome = System.getProperty("user.home");
-		if(!userHome.endsWith(File.separator))
-			userHome += File.separator;
-		
-		boolean hasOrg = false;
-		String configPath = userHome + "Library" + File.separator + "Application Support";
-		if(!(new File(configPath)).isDirectory()) {
-			configPath = userHome + "Application Data";
-			if(!(new File(configPath)).isDirectory())
-				configPath = userHome + ".config";
-			else {
-				configPath = userHome + "." + organization.toLowerCase();
-				hasOrg = true;
-			}
-		}
-		if(!hasOrg)
-			configPath += File.separator + organization;
-		configPath += File.separator + name;
-		
-		bindSynthScheme("config", uriForPath(configPath));
-		
-		configPath += File.separator;
-		bindSynthScheme("maps", uriForPath(configPath + "Maps"));
-		bindSynthScheme("music", uriForPath(configPath + "Music"));
-		bindSynthScheme("sounds", uriForPath(configPath + "Sounds"));
-		bindSynthScheme("assets", uriForPath(configPath + "Assets"));
-		bindSynthScheme("graphics", uriForPath(configPath + "Graphics"));
-		bindSynthScheme("sprites", uriForPath(configPath + "Sprites"));
-		bindSynthScheme("worlds", uriForPath(configPath + "Worlds"));
-		bindSynthScheme("saves", uriForPath(configPath + "Saves"));
-		
-		if(overwriteTemp) {
-			String tempPath = System.getProperty("java.io.tmpdir");
-			if(!tempPath.endsWith(File.separator))
-				tempPath += File.separator;
-			tempPath += organization + File.separator + name;
-			bindSynthScheme("temp", uriForPath(tempPath));
-		}
-	}
+//	public static void initAppAliases(String name, String organization) {
+//		initAppAliases(name, organization, true);
+//	}
+//	
+//	public static void initAppAliases(String name, String organization, boolean overwriteTemp) {
+//		String userHome = System.getProperty("user.home");
+//		if(!userHome.endsWith(File.separator))
+//			userHome += File.separator;
+//		
+//		boolean hasOrg = false;
+//		String configPath = userHome + "Library" + File.separator + "Application Support";
+//		if(!(new File(configPath)).isDirectory()) {
+//			configPath = userHome + "Application Data";
+//			if(!(new File(configPath)).isDirectory())
+//				configPath = userHome + ".config";
+//			else {
+//				configPath = userHome + "." + organization.toLowerCase();
+//				hasOrg = true;
+//			}
+//		}
+//		if(!hasOrg)
+//			configPath += File.separator + organization;
+//		configPath += File.separator + name;
+//		
+//		bindSynthScheme("config", uriForPath(configPath));
+//		
+//		configPath += File.separator;
+//		bindSynthScheme("maps", uriForPath(configPath + "Maps"));
+//		bindSynthScheme("music", uriForPath(configPath + "Music"));
+//		bindSynthScheme("sounds", uriForPath(configPath + "Sounds"));
+//		bindSynthScheme("assets", uriForPath(configPath + "Assets"));
+//		bindSynthScheme("graphics", uriForPath(configPath + "Graphics"));
+//		bindSynthScheme("sprites", uriForPath(configPath + "Sprites"));
+//		bindSynthScheme("worlds", uriForPath(configPath + "Worlds"));
+//		bindSynthScheme("saves", uriForPath(configPath + "Saves"));
+//		
+//		if(overwriteTemp) {
+//			String tempPath = System.getProperty("java.io.tmpdir");
+//			if(!tempPath.endsWith(File.separator))
+//				tempPath += File.separator;
+//			tempPath += organization + File.separator + name;
+//			bindSynthScheme("temp", uriForPath(tempPath));
+//		}
+//	}
 	
 	/**
 	 * Registers a new {@link StreamProvider}

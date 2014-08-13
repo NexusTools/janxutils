@@ -16,9 +16,11 @@
 package net.nexustools.io.format;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import net.nexustools.io.Stream;
 import net.nexustools.io.format.XMLParser.Chunk;
 import net.nexustools.utils.Pair;
@@ -78,10 +80,10 @@ public class XMLParser extends StringParser<Chunk> {
 		regexParser.add(Chunk.Type.DocumentType, "^>?[\\n\\r\\s]*<!DOCTYPE\\s+([^>]+)>", Pattern.CASE_INSENSITIVE);
 		
 		regexParser.add(Chunk.Type.StartTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s+");
-		regexParser.add(Chunk.Type.StartShortTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s*>([a-zA-Z0-9\\s\\n\\r]+)?");
+		regexParser.add(Chunk.Type.StartShortTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s*>([^<]+)?");
 		regexParser.add(Chunk.Type.Attribute, "^\\s*([a-zA-Z]+[a-zA-Z0-9\\-]*)=(\"([^\"]*)\"|'([^']*)')\\s*");
 		regexParser.add(Chunk.Type.EndTag, "^[\\n\\r\\s]*</\\s*([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s*>");
-		regexParser.add(Chunk.Type.Content, "^\\s*>([a-zA-Z0-9\\s\\n\\r]+)?");
+		regexParser.add(Chunk.Type.Content, "^\\s*>([^<]+)?");
 		regexParser.add(Chunk.Type.EndShortTag, "^\\s*/>");
 		
 		regexParser.add(Chunk.Type.CData, "^[\\n\\r\\s]*<!\\[CDATA\\[(.+?)\\]\\]>");
@@ -91,6 +93,9 @@ public class XMLParser extends StringParser<Chunk> {
 		super(new BufferedStringReader(uri));
 	}
 	public XMLParser(Stream stream) throws IOException {
+		super(new BufferedStringReader(stream));
+	}
+	public XMLParser(InputStream stream) throws IOException {
 		super(new BufferedStringReader(stream));
 	}
 	public XMLParser(StringReader stringReader) {

@@ -153,7 +153,7 @@ public class URLStream extends CachingStream {
 				dataOutputStream.writeUTF8(eTag);
 				
 				dataOutputStream.writeUTF8(con.getContentType());
-				dataOutputStream.writeLong(con.getContentLengthLong());
+				dataOutputStream.writeLong(con.getContentLength());
 				cacheStream.close();
 				
 				cacheStream = new FileStream(cachePath, true);
@@ -168,7 +168,7 @@ public class URLStream extends CachingStream {
 			cacheSet = new CachingStream.CacheInfo(con.getInputStream());
 		
 		cacheSet.mimetype = con.getContentType();
-		cacheSet.size = con.getContentLengthLong();
+		cacheSet.size = con.getContentLength();
 		
 		System.out.println(cacheSet);
 		return cacheSet;
