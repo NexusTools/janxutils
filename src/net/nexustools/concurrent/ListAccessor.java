@@ -16,6 +16,7 @@
 package net.nexustools.concurrent;
 
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  *
@@ -46,6 +47,8 @@ public interface ListAccessor<T> extends BaseAccessor, Iterable<T> {
 	public int lastIndexOf(T object, int from);
 	public int lastIndexOf(T object);
 	public boolean contains(T object);
+	
+	public ListIterator<T> listIterator();
 	
 	public int length();
 	public List<T> copy();

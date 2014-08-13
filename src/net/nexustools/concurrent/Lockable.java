@@ -51,20 +51,22 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @return Returns true if the test remained true after a full upgrade was completed.
 	 */
 	public <I> boolean upgradeTest(I against, Testable<I> testable) {
+		boolean worked = false;
 		lock();
-		if(testable.test(against)) {
-			if(!tryFastUpgrade()) {
-				upgrade();
-				if(!testable.test(against)) {
-					downgrade();
-					unlock();
-					return false;
+		try {
+			if(testable.test(against)) {
+				if(!tryFastUpgrade()) {
+					upgrade();
+					if(!testable.test(against))
+						return false;
 				}
+				worked = true;
 			}
-			return true;
+		} finally {
+			if(!worked)
+				unlock();
 		}
-		unlock();
-		return false;
+		return worked;
 	}
 	
 	public boolean tryFastUpgradeTest(Testable<Void> testable) {

@@ -28,6 +28,10 @@ import java.util.ListIterator;
  * @param <I>
  */
 public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> implements ListAccessor<I> {
+	
+	public static interface PropIterator<I> {
+		public void iterate(ListIterator<I> iterator);
+	}
 
 	private List<I> list;
 	private final ListAccessor<I> directAccessor = new ListAccessor<I>() {
@@ -117,6 +121,10 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 		}
 		public I last() {
 			return list.get(list.size()-1);
+		}
+
+		public ListIterator<I> listIterator() {
+			return list.listIterator();
 		}
 	};
 	public PropList(I... items) {
@@ -327,6 +335,23 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				return data.last();
 			}
 		});
+	}
+	
+	public void iterate(final PropIterator<I> iterator) {
+		write(new BaseWriter<ListAccessor<I>>() {
+			public void write(ListAccessor<I> data, Lockable lock) {
+				lock.lock();
+				try {
+					iterator.iterate(data.listIterator());
+				} finally {
+					lock.unlock();
+				}
+			}
+		});
+	}
+
+	public ListIterator<I> listIterator() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 	
 }

@@ -13,33 +13,35 @@
  * 
  */
 
-package net.nexustools;
+package net.nexustools.concurrent;
 
-import net.nexustools.io.Stream;
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public class ApplicationDelegate {
-	
-	private final String name;
-	private final String organization;
-	private static ApplicationDelegate current;
-	private ApplicationDelegate(String name, String organization) {
-		assert(current == null);
-		current = this;
-		
-		this.name = name;
-		this.organization = organization;
+public abstract class IfUpdateWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
+
+	@Override
+	public final void write(A data, Lockable lock) {
+		lock.lock();
+		try {
+			if(test(data)) {
+				if(!lock.tryFastUpgrade()) {
+					lock.upgrade();
+					if(!test(data))
+						return;
+				}
+				write(data);
+				lock.downgrade();
+				update();
+			}
+		} finally {
+			lock.unlock();
+		}
 	}
-	
-	public static ApplicationDelegate current() {
-		return current;
-	}
-	
-	public static void init(String name, String organization) {
-		new ApplicationDelegate(name, organization);
-	}
+	public abstract void write(A data);
+	public abstract void update();
 	
 }

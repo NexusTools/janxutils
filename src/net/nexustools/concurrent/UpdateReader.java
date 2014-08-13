@@ -38,7 +38,7 @@ public abstract class UpdateReader<A extends BaseAccessor> extends IfWriteReader
 	@Override
 	public final Boolean read(A data) {
 		update(data);
-		return null;
+		return true;
 	}
 
 	public abstract void update(A data);
