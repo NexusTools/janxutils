@@ -16,6 +16,7 @@
 package net.nexustools.concurrent;
 
 import java.util.Collection;
+import net.nexustools.runtime.future.QueueFuture;
 
 /**
  *
@@ -138,6 +139,19 @@ public class Prop<T> extends DefaultReadWriteConcurrency<PropAccessor<T>> implem
 			@Override
 			public T read(PropAccessor<T> data) {
 				return data.take();
+			}
+		});
+	}
+	
+	public boolean update(final T newValue) {
+		return read(new UpdateReader<PropAccessor<T>>() {
+			@Override
+			public void update(PropAccessor<T> data) {
+				data.set(newValue);
+			}
+			@Override
+			public boolean needUpdate(PropAccessor<T> against) {
+				return !newValue.equals(against);
 			}
 		});
 	}

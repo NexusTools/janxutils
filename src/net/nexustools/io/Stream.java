@@ -38,8 +38,10 @@ public abstract class Stream {
 	
 	public static final HashMap<String,String> mimeForExt = new HashMap() {
 		{
-			// TODO: Read mimes from mime.json
 			put("txt", "text/plain");
+			put("json", "text/json");
+			put("xml", "text/xml");
+			put("yml", "text/yml");
 			
 			put("css", "text/css");
 			put("js", "application/javascript");
@@ -247,7 +249,7 @@ public abstract class Stream {
 	}
 
 	private static final Pattern wrapperPattern = Pattern.compile("^[^\\(]+\\((.+)\\)$");
-	private static final Pattern lazyPattern = Pattern.compile("^(\\w+)\\:/?([^/]+.+)$");
+	private static final Pattern lazyPattern = Pattern.compile("^(\\w+)\\:([^/]+.+)$");
 
 	/**
 	 * Parse and attempt to return a new Stream
@@ -280,16 +282,6 @@ public abstract class Stream {
 	 * @throws IOException
 	 */
 	public static Stream open(String uri, boolean supportWriting) throws IOException, URISyntaxException {
-		Matcher matcher = lazyPattern.matcher(uri);
-		if(matcher.matches())
-			uri = matcher.group(1) + ":///" + matcher.group(2);
-		
-		uri = uri.replace(" ", "%20");
-		matcher = wrapperPattern.matcher(uri);
-		while(matcher.matches()) {
-			uri = matcher.group(1);
-			matcher = wrapperPattern.matcher(uri);
-		}
 		return open(new URI(uri), supportWriting);
 	}
 

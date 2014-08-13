@@ -75,7 +75,6 @@ public class BufferedStringReader implements StringReader {
 	public void reset(int usefulLength) throws StringIndexOutOfBoundsException {
 		assert(mark > -1);
 		assert(buffer.length() < usefulLength);
-		System.out.println("Deleting Useful Length: " + usefulLength);
 		buffer.delete(0, usefulLength);
 		mark = -1;
 		pos = 0;

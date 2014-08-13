@@ -13,25 +13,28 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.runtime.future;
 
-import net.nexustools.utils.Testable;
+import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.concurrent.Writer;
 
 /**
  *
  * @author katelyn
  */
-public class NormalQueueFuture<R extends Runnable> extends QueueFuture {
+public class BackpeddlingQueueFuture<R extends Runnable> extends TrackedQueueFuture<R> {
 
-	private final R runnable;
-	public NormalQueueFuture(R runnable, State state) {
-		super(state);
-		this.runnable = runnable;
-	}
-
-	@Override
-	public void execute(Testable<Void> isCancelled) {
-		runnable.run();
+	public BackpeddlingQueueFuture(final R runnable, State state) {
+		super(runnable, state);
+		
+		write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
+			@Override
+			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
+				TrackedQueueFuture old = data.replace(runnable, BackpeddlingQueueFuture.this);
+				if(old != null)
+					old.cancel();
+			}
+		});
 	}
 	
 }

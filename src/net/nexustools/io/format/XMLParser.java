@@ -17,9 +17,9 @@ package net.nexustools.io.format;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.nexustools.io.Stream;
 import net.nexustools.io.format.XMLParser.Chunk;
 import net.nexustools.utils.Pair;
 
@@ -75,20 +75,23 @@ public class XMLParser extends StringParser<Chunk> {
 		regexParser = new RegexParser();
 		regexParser.add(Chunk.Type.Comment, "^>?[\\n\\r\\s]*<!--\\s*(.+?)\\s*--!>");
 		regexParser.add(Chunk.Type.Instruction, "^>?[\\n\\r\\s]*<\\?([a-zA-Z]+[a-zA-Z0-9\\-]*)(\\s+(.+?))?\\?>");
-		regexParser.add(Chunk.Type.DocumentType, "^>?[\\n\\r\\s]*<!DOCTYPE\\s+([^>]+)>");
+		regexParser.add(Chunk.Type.DocumentType, "^>?[\\n\\r\\s]*<!DOCTYPE\\s+([^>]+)>", Pattern.CASE_INSENSITIVE);
 		
-		regexParser.add(Chunk.Type.StartTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\-]*)\\s+");
-		regexParser.add(Chunk.Type.StartShortTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\-]*)\\s*>([a-zA-Z0-9\\s\\n\\r]+)?");
+		regexParser.add(Chunk.Type.StartTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s+");
+		regexParser.add(Chunk.Type.StartShortTag, "^>?[\\n\\r\\s]*<([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s*>([a-zA-Z0-9\\s\\n\\r]+)?");
 		regexParser.add(Chunk.Type.Attribute, "^\\s*([a-zA-Z]+[a-zA-Z0-9\\-]*)=(\"([^\"]*)\"|'([^']*)')\\s*");
+		regexParser.add(Chunk.Type.EndTag, "^[\\n\\r\\s]*</\\s*([a-zA-Z]+[a-zA-Z0-9\\:]*)\\s*>");
 		regexParser.add(Chunk.Type.Content, "^\\s*>([a-zA-Z0-9\\s\\n\\r]+)?");
 		regexParser.add(Chunk.Type.EndShortTag, "^\\s*/>");
-		regexParser.add(Chunk.Type.EndTag, "^[\\n\\r\\s]*</\\s*([a-zA-Z]+[a-zA-Z0-9\\-]*)\\s*>");
 		
 		regexParser.add(Chunk.Type.CData, "^[\\n\\r\\s]*<!\\[CDATA\\[(.+?)\\]\\]>");
 	}
 	
 	public XMLParser(String uri) throws IOException, URISyntaxException {
 		super(new BufferedStringReader(uri));
+	}
+	public XMLParser(Stream stream) throws IOException {
+		super(new BufferedStringReader(stream));
 	}
 	public XMLParser(StringReader stringReader) {
 		super(stringReader);
@@ -103,9 +106,14 @@ public class XMLParser extends StringParser<Chunk> {
 		String key = null;
 		String content = null;
 		switch(data.i) {
+			case Content:
+				content = data.v.group(1).trim();
+				if(content.length() < 1)
+					content = null;
+				break;
+				
 			case CData:
 			case Comment:
-			case Content:
 			case DocumentType:
 				content = data.v.group(1);
 				break;
@@ -121,7 +129,9 @@ public class XMLParser extends StringParser<Chunk> {
 				break;
 				
 			case StartShortTag:
-				content = data.v.group(2);
+				content = data.v.group(2).trim();
+				if(content.length() < 1)
+					content = null;
 			case StartTag:
 				key = data.v.group(1);
 				break;

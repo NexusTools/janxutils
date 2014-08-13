@@ -75,30 +75,33 @@ public class RegexParser<K> extends StringParser<Pair<K, Matcher>> {
 		reader.mark();
 		int usefulLength = 0;
 		try {
+			Matcher matcher;
 			String buffer = reader.read(readAhead);
-			if(buffer == null) {
-				System.out.println("No Data Left");
+			if(buffer == null)
 				return null;
-			}
 			
 			for(Map.Entry<K, Pair<Integer, Pattern>> entry : patterns.entrySet()) {
-				Matcher matcher = entry.getValue().v.matcher(buffer);
+				matcher = entry.getValue().v.matcher(buffer);
 				if(matcher.find()) {
 					usefulLength = matcher.group(0).length();
 					return new Pair(entry.getKey(), matcher);
 				}
 			}
 			
-			System.out.println("Checking fallback pattern");
-			Matcher fallbackMatcher = fallbackPattern.v.matcher(buffer);
-			if(fallbackMatcher.matches())
-				return new Pair(fallbackPattern.i, fallbackMatcher);
-			fallbackMatcher = whitespace.matcher(buffer);
-			if(fallbackMatcher.matches())
+			if(fallbackPattern != null) {
+				matcher = fallbackPattern.v.matcher(buffer);
+				if(matcher.matches()) {
+					usefulLength = matcher.group(0).length();
+					return new Pair(fallbackPattern.i, matcher);
+				}
+			}
+			matcher = whitespace.matcher(buffer);
+			if(matcher.matches()) {
+				usefulLength = matcher.group(0).length();
 				return null;
-			
+			}
 			System.out.println(buffer);
-			throw new StringParserException("No matching patterns installed.");
+			throw new StringParserNotCompatible("No matching patterns found.");
 		} catch (IOException ex) {
 			throw new StringParserException(ex);
 		} finally {

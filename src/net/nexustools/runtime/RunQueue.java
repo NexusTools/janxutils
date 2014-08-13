@@ -15,6 +15,12 @@
 
 package net.nexustools.runtime;
 
+import net.nexustools.runtime.future.BackpeddlingQueueFuture;
+import net.nexustools.runtime.future.ForwardingQueueFuture;
+import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.runtime.future.RunnableQueueFuture;
+import net.nexustools.runtime.future.TrackedQueueFuture;
+
 /**
  *
  * @author katelyn
@@ -27,7 +33,8 @@ public abstract class RunQueue<R extends Runnable, T> {
     public static enum QueuePlacement {
         NormalPlacement,
         ReplaceExisting,
-        ReplaceAndCancelExisting
+        NormalPlacementAndCancelExisting,
+		WaitOnIdleThread
     }
 	
 	private static final ThreadLocal<RunQueue> currentRunQueue = new ThreadLocal();
@@ -50,7 +57,14 @@ public abstract class RunQueue<R extends Runnable, T> {
 	protected QueueFuture wrap(R runnable, QueueFuture.State state, QueuePlacement placement) {
 		switch(placement) {
 			case NormalPlacement:
-				return new NormalQueueFuture(runnable, state);
+				return new RunnableQueueFuture(runnable, state);
+				
+			case ReplaceExisting:
+				return new ForwardingQueueFuture(runnable, state);
+				
+			case WaitOnIdleThread:
+			case NormalPlacementAndCancelExisting:
+				return new BackpeddlingQueueFuture(runnable, state);
 				
 			default:
 				throw new UnsupportedOperationException();
@@ -58,10 +72,14 @@ public abstract class RunQueue<R extends Runnable, T> {
 	}
 	public final QueueFuture push(R runnable, QueuePlacement placement) {
 		QueueFuture future = wrap(runnable, QueueFuture.State.WaitingInQueue, placement);
+		if(future.isDone())
+			return null;
 		return push(future);
 	}
 	public final QueueFuture schedule(R runnable, long when, QueuePlacement placement) {
 		QueueFuture future = wrap(runnable, QueueFuture.State.Scheduled, placement);
+		if(future.isDone())
+			return null;
 		schedulerThread.schedule(future, when);
 		return future;
 	}
@@ -69,7 +87,7 @@ public abstract class RunQueue<R extends Runnable, T> {
 		return push(runnable, QueuePlacement.ReplaceExisting);
 	}
 	public final QueueFuture schedule(R runnable, long when) {
-		return schedule(runnable, when, QueuePlacement.ReplaceAndCancelExisting);
+		return schedule(runnable, when, QueuePlacement.NormalPlacementAndCancelExisting);
 	}
 	public abstract QueueFuture nextFuture(T requestSource);
 	protected abstract QueueFuture push(QueueFuture future);

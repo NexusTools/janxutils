@@ -13,18 +13,28 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools;
 
-import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.io.Stream;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public class ApplicationDelegate {
 	
-	public F schedule(F future, long when) {
-		return future;
+	private final String name;
+	private final String organization;
+	public static ApplicationDelegate current;
+	private ApplicationDelegate(String name, String organization) {
+		this.name = name;
+		this.organization = organization;
+	
+	}
+	
+	public static void init(String name, String organization) {
+		Stream.initAppAliases(name, organization);
+		current = new ApplicationDelegate(name, organization);
 	}
 	
 }

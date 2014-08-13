@@ -13,18 +13,35 @@
  * 
  */
 
-package net.nexustools.runtime;
-
-import net.nexustools.runtime.future.QueueFuture;
+package net.nexustools.concurrent;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
-	
-	public F schedule(F future, long when) {
-		return future;
+public abstract class UpdateReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
+
+	@Override
+	public final boolean test(A against) {
+		try {
+			return needUpdate(against);
+		} catch(NullPointerException ex) {
+			return true;
+		}
 	}
+	
+	@Override
+	public final Boolean def() {
+		return false;
+	}
+
+	@Override
+	public final Boolean read(A data) {
+		update(data);
+		return null;
+	}
+
+	public abstract void update(A data);
+	public abstract boolean needUpdate(A against);
 	
 }

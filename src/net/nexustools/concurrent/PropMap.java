@@ -73,9 +73,14 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			};
 		}
-
 		public Map<K, V> copy() {
 			return new HashMap(map);
+		}
+		public void remove(K key) {
+			map.remove(key);
+		}
+		public V replace(K key, V value) {
+			return map.put(key, value);
 		}
 	};
 	public PropMap(Type type) {
@@ -174,6 +179,15 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			}
 		});
 	}
+	
+	public void remove(final K key) {
+		write(new Writer<MapAccessor<K, V>>() {
+			@Override
+			public void write(MapAccessor<K, V> data) {
+				data.remove(key);
+			}
+		});
+	}
 
 	public boolean has(final K key) {
 		return read(new Reader<Boolean, MapAccessor<K, V>>() {
@@ -189,6 +203,16 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			@Override
 			public Map<K, V> read(MapAccessor<K, V> data) {
 				return data.copy();
+			}
+		});
+	}
+	
+	
+	public V replace(final K key, final V value) {
+		return read(new WriteReader<V, MapAccessor<K, V>>() {
+			@Override
+			public V read(MapAccessor<K, V> data) {
+				return data.replace(key, value);
 			}
 		});
 	}

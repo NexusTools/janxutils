@@ -13,18 +13,17 @@
  * 
  */
 
-package net.nexustools.runtime;
-
-import net.nexustools.runtime.future.QueueFuture;
+package net.nexustools.data.noise;
 
 /**
  *
  * @author katelyn
  */
-public class RunQueueScheduler<F extends QueueFuture> {
+public interface NoiseGenerator {
 	
-	public F schedule(F future, long when) {
-		return future;
-	}
+	public float noise(float x);
+	public float noise(float x, float y);
+	public float noise(float x, float y, float z);
+	public float noise(float x, float y, float z, float w);
 	
 }

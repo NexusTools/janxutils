@@ -15,11 +15,13 @@
 
 package net.nexustools.io.format;
 
+import java.util.Iterator;
+
 /**
  *
  * @author katelyn
  */
-public abstract class StringParser<O> {
+public abstract class StringParser<O> implements Iterable<O> {
 	
 	private final StringReader stringReader;
 	public StringParser(StringReader stringReader) {
@@ -29,7 +31,7 @@ public abstract class StringParser<O> {
 		this(null);
 	}
 	
-	public O parse() throws StringParserException{
+	public final O parse() throws StringParserException{
 		assert(stringReader != null);
 		return parse(stringReader);
 	}
@@ -42,4 +44,22 @@ public abstract class StringParser<O> {
 	 * @throws StringParserException 
 	 */
 	public abstract O parse(StringReader reader) throws StringParserException;
+
+	public Iterator<O> iterator() {
+		return new Iterator<O>() {
+			
+			private O next;
+			public boolean hasNext() {
+				return (next = parse()) != null;
+			}
+
+			public O next() {
+				return next;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException("Not supported yet.");
+			}
+		};
+	}
 }

@@ -15,6 +15,7 @@
 
 package net.nexustools.runtime;
 
+import net.nexustools.runtime.future.QueueFuture;
 import java.util.ArrayList;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
@@ -28,7 +29,7 @@ import net.nexustools.concurrent.Writer;
  * @param <R>
  * @param <F>
  */
-public abstract class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
+public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	
 	private final String name;
 	private final PropList<RunThread> idleThreads;

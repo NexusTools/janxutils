@@ -14,6 +14,7 @@
  */
 package net.nexustools.runtime;
 
+import net.nexustools.runtime.future.QueueFuture;
 import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
