@@ -13,28 +13,31 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.data.annote;
 
-import net.nexustools.concurrent.MapAccessor;
-import net.nexustools.concurrent.Writer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author katelyn
+ * 
+ * Indicates a method that attaches/detaches a value listener.
  */
-public class BackpeddlingQueueFuture<R extends Runnable> extends TrackedQueueFuture<R> {
-
-	public BackpeddlingQueueFuture(final R runnable, State state) {
-		super(runnable, state);
-		
-		write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
-			@Override
-			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
-				TrackedQueueFuture old = data.replace(runnable, BackpeddlingQueueFuture.this);
-				if(old != null)
-					old.sCancel();
-			}
-		});
-	}
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface FieldDispatcher {
+	
+	/**
+	 * Indicates the name to use for this field,
+	 * a name is derived automatically by default.
+	 * 
+	 * @return 
+	 */
+	String fieldName() default "";
+	
+	boolean attach();
 	
 }

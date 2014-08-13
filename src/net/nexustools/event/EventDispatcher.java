@@ -34,7 +34,7 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 	}
 	
 	private final R queue;
-	private final PropList<L> listeners = new PropList();
+	protected final PropList<L> listeners = new PropList();
 	public EventDispatcher(R queue) {
 		this.queue = queue;
 	}

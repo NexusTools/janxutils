@@ -31,7 +31,8 @@ public class ForwardingQueueFuture<R extends Runnable> extends TrackedQueueFutur
 			TrackedQueueFuture found;
 			@Override
 			public boolean test(MapAccessor<Runnable, TrackedQueueFuture> against) {
-				return (found = against.get(runnable)) == null;
+				found = against.get(runnable);
+				return found == null || found.isDone();
 			}
 			@Override
 			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
@@ -39,7 +40,7 @@ public class ForwardingQueueFuture<R extends Runnable> extends TrackedQueueFutur
 			}
 			@Override
 			public void soft(MapAccessor<Runnable, TrackedQueueFuture> data) {
-				cancel();
+				sCancel();
 			}
 		});
 	}

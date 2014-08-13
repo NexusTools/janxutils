@@ -30,7 +30,7 @@ import java.util.ListIterator;
 public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> implements ListAccessor<I> {
 	
 	public static interface PropIterator<I> {
-		public void iterate(ListIterator<I> iterator);
+		public void iterate(ListIterator<I> iterator, Lockable lock);
 	}
 
 	private List<I> list;
@@ -342,7 +342,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 			public void write(ListAccessor<I> data, Lockable lock) {
 				lock.lock();
 				try {
-					iterator.iterate(data.listIterator());
+					iterator.iterate(data.listIterator(), lock);
 				} finally {
 					lock.unlock();
 				}

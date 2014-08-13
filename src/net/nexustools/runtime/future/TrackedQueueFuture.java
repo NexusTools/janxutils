@@ -42,25 +42,32 @@ public class TrackedQueueFuture<R extends Runnable> extends RunnableQueueFuture 
 	protected <R> R read(BaseReader<R, MapAccessor<Runnable, TrackedQueueFuture>> reader) {
 		return tracking.read(reader);
 	}
+	
+	protected void sCancel() {
+		super.cancel();
+	}
+
+	@Override
+	public void cancel() {
+		removeFromTracker();
+		sCancel();
+	}
+	
+	protected void removeFromTracker() {
+		tracking.write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
+			@Override
+			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
+				TrackedQueueFuture queueFuture = data.take(runnable);
+				if(queueFuture != TrackedQueueFuture.this)
+					data.put(runnable, queueFuture); // Oops... apparently not myself anymore...
+			}
+		});
+	}
 
 	@Override
 	protected void executeImpl(final Testable isRunning) {
-		try {
-			super.executeImpl(isRunning);
-		} finally {
-			tracking.write(new IfWriter<MapAccessor<Runnable, TrackedQueueFuture>>() {
-				@Override
-				public boolean test(MapAccessor<Runnable, TrackedQueueFuture> against) {
-					return isRunning.test(null);
-				}
-				@Override
-				public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
-					TrackedQueueFuture queueFuture = data.take(runnable);
-					if(queueFuture != TrackedQueueFuture.this)
-						data.put(runnable, queueFuture); // Oops... apparently got cancelled..
-				}
-			});
-		}
+		removeFromTracker();
+		super.executeImpl(isRunning);
 	}
 	
 }
