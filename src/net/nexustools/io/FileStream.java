@@ -22,6 +22,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Method;
 import java.util.WeakHashMap;
 import net.nexustools.utils.WeakArrayList;
+import net.nexustools.utils.log.Logger;
 
 /**
  * A Stream which allows reading/writing using a {@link RandomAccessFile}.
@@ -50,7 +51,7 @@ public class FileStream extends Stream {
 		if(randomAccessFile == null) {
 			if(writable) {
 				String parentPath = path.substring(0, path.lastIndexOf("/"));
-				System.out.println(parentPath);
+				Logger.debug(parentPath);
 				File parentFile = new File(parentPath);
 				if(!parentFile.exists() && !parentFile.mkdirs())
 					throw new IOException(getURL() + ": Unable to create directory structure");
@@ -81,7 +82,7 @@ public class FileStream extends Stream {
 		else {
 			fileStream = instanceCache.get(filePath);
 			if(fileStream == null) {
-				System.out.println("Creating FileStream: " + filePath);
+				Logger.debug("Creating FileStream: " + filePath);
 				fileStream = new FileStream(filePath);
 				instanceCache.put(filePath, fileStream);
 			}
@@ -147,7 +148,7 @@ public class FileStream extends Stream {
 					if(deleteOnExit.isEmpty())
 						return;
 					
-					System.out.println("Cleaning remaining deleteOnExit FileStreams...");
+					Logger.debug("Cleaning remaining deleteOnExit FileStreams...");
 					for(FileStream fStream : deleteOnExit)
 						try {
 							fStream.deleteAsMarked();

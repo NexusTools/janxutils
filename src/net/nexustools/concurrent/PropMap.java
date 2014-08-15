@@ -26,7 +26,7 @@ import net.nexustools.utils.Pair;
  *
  * @author katelyn
  */
-public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> implements MapAccessor<K,V> {
+public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> implements MapAccessor<K,V>, Iterable<Pair<K,V>> {
 
 	public static enum Type {
 		HashMap,

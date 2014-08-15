@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.HashMap;
 
 import net.nexustools.io.Stream;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -61,7 +62,7 @@ public class AppDelegate {
 	}
 	
 	public static void init(String name, String organization) {
-		new AppDelegate(name, organization);
+		(new AppDelegate(name, organization)).init();
 	}
 	
 	public String pathUri(Path path) {
@@ -107,6 +108,18 @@ public class AppDelegate {
 			pathCache.put(path, uri);
 		}
 		return uri;
+	}
+	
+	public String name() {
+		return name;
+	}
+
+	public String organization() {
+		return organization;
+	}
+	
+	public void init() {
+		Logger.installSystemIO();
 	}
 	
 }

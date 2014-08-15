@@ -16,6 +16,7 @@
 package net.nexustools.utils.log;
 
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.List;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
@@ -58,26 +59,25 @@ public class Logger extends Thread {
 		logger.messageQueue.write(new Writer<ListAccessor<Message>>() {
 			@Override
 			public void write(ListAccessor<Message> data) {
-				data.unshift(message);
-				if(data.length() % 5 == 0)
-					logger.interrupt(); // Notify of pending messages
+				data.push(message);
+				logger.interrupt();
 			}
 		});
 	}
 	
-	public static void log(Level level, String message) {
+	public static void log(Level level, Object... message) {
 		log(new Message(level, message));
 	}
 
-	public static void debug(String message) {
+	public static void debug(Object... message) {
 		log(Level.Debug, message);
 	}
 
-	public static void warn(String message) {
+	public static void warn(Object... message) {
 		log(Level.Warning, message);
 	}
 
-	public static void error(String message) {
+	public static void error(Object... message) {
 		log(Level.Warning, message);
 	}
 	
@@ -113,21 +113,21 @@ public class Logger extends Thread {
 		
 		public final Level level;
 		public final String thread;
-		public final String section;
-		public final String content;
+		public final String className;
+		public final Object[] content;
 		
-		public Message(Level level, String thread, String section, String content) {
+		public Message(Level level, String thread, String className, Object... content) {
 			this.level = level;
 			this.thread = thread;
-			this.section = section;
+			this.className = className;
 			this.content = content;
 		}
 		
-		public Message(Level level, String section, String content) {
-			this(level, Thread.currentThread().getName(), section, content);
+		public Message(Level level, String className, Object... content) {
+			this(level, Thread.currentThread().getName(), className, content);
 		}
 		
-		public Message(Level level, String content) {
+		public Message(Level level, Object... content) {
 			this(level, getCallee().getClassName(), content);
 		}
 		
@@ -146,8 +146,9 @@ public class Logger extends Thread {
 	@Override
 	public void run() {
 		while(true) {
-			List<Message> messages = messageQueue.copy();
-			if(messages.size() > 0)
+			List<Message> messages = messageQueue.take();
+			if(messages.size() > 0) {
+				Collections.reverse(messages);
 				for(Message message : messages) {
 					PrintStream stream;
 					switch(message.level) {
@@ -160,17 +161,28 @@ public class Logger extends Thread {
 							stream = SystemOut;
 							break;
 					}
-					stream.print('[');
-					stream.print(message.level);
-					stream.print("] [");
+					stream.print("[");
 					stream.print(message.thread);
-					stream.print(':');
-					stream.print(message.section);
+					stream.print("] [");
+					int lastPeriod = message.className.lastIndexOf(".");
+					stream.print(lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className);
+					stream.print("] [");
+					stream.print(message.level);
 					stream.print("] ");
-					stream.print(message.content);
+					boolean addTab = false;
+					for(Object msg : message.content) {
+						if(addTab)
+							stream.print(' ');
+						else
+							addTab = true;
+						
+						stream.print(msg.toString());
+					}
+					
 					stream.println();
+					stream.flush();
 				}
-			else
+			} else
 				try {
 					Thread.sleep(5 * 60 * 60);
 				} catch (InterruptedException ex) {}

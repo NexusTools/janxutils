@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.nexustools.utils.Pair;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -100,7 +101,7 @@ public class RegexParser<K> extends StringParser<Pair<K, Matcher>> {
 				usefulLength = matcher.group(0).length();
 				return null;
 			}
-			System.out.println(buffer);
+			Logger.debug(buffer);
 			throw new StringParserNotCompatible("No matching patterns found.");
 		} catch (IOException ex) {
 			throw new StringParserException(ex);

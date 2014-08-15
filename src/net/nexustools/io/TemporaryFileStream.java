@@ -16,9 +16,10 @@
 package net.nexustools.io;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import net.nexustools.utils.StringUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  * A Temporary FileStream which deletes itself when 
@@ -54,7 +55,7 @@ public class TemporaryFileStream extends FileStream {
 
 	public TemporaryFileStream(String name) throws FileNotFoundException, IOException {
 		super(getTemporaryFileName(name), true);
-		System.out.println("Created Temporary File: " + getPath());
+		Logger.debug("Created Temporary File: " + getPath());
 		markDeleteOnExit();
 	}
 

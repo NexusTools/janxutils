@@ -23,8 +23,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.WeakHashMap;
-import net.nexustools.utils.Hasher;
 import net.nexustools.io.SubStream.Range;
+import net.nexustools.utils.Hasher;
+import net.nexustools.utils.log.Logger;
 
 /**
  * A Stream that provides reading/writing from a {@link URL}.
@@ -38,7 +39,7 @@ public class URLStream extends CachingStream {
 	protected static synchronized Stream getInstance(URL url) throws IOException {
 		URLStream urlStream = instanceCache.get(url);
 		if(urlStream == null) {
-			System.out.println("Opening URLStream: " + url);
+			Logger.debug("Opening URLStream: " + url);
 			urlStream = new URLStream(url);
 			instanceCache.put(url, urlStream);
 		}
@@ -126,7 +127,7 @@ public class URLStream extends CachingStream {
 					response = httpCon.getResponseCode();
 				} catch(IOException ex) {
 					ex.printStackTrace(System.err);
-					System.out.println("Using cache...");
+					Logger.debug("Using cache...");
 					response = 304; // Pretend it was cached if the connection fails
 				}
 				if(response == 304) {
@@ -170,7 +171,7 @@ public class URLStream extends CachingStream {
 		cacheSet.mimetype = con.getContentType();
 		cacheSet.size = con.getContentLength();
 		
-		System.out.println(cacheSet);
+		Logger.debug(cacheSet);
 		return cacheSet;
 	}
 

@@ -28,4 +28,8 @@ public class Event<S> {
 		this.source = source;
 	}
 	
+	public String toString() {
+		return getClass().getSimpleName() + "{source=" + source + ",timestamp=" + timestamp + "}";
+	}
+	
 }

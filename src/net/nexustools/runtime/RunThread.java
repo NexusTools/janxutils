@@ -14,12 +14,13 @@
  */
 package net.nexustools.runtime;
 
-import net.nexustools.runtime.future.QueueFuture;
 import net.nexustools.concurrent.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.SoftWriter;
 import net.nexustools.concurrent.WriteReader;
+import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -53,7 +54,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					setPriority(MAX_PRIORITY);
 					break;
 			}
-			System.out.println("Spawned: " + name);
+			Logger.debug(name, "Spawned");
 			setDaemon(true);
 			setName(name);
 			start();
@@ -61,7 +62,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 
 		@Override
 		public void run() {
-			System.out.println("Entered: " + name);
+			Logger.debug(name, "Entered");
 			// Make the queue this thread was created for current.
 			queue.read(new IfReader<Void, PropAccessor<Q>>() {
 				@Override
@@ -82,7 +83,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 							}
 						});
 						if(future == null && killNext) {
-							System.out.println("Quit: " + name);
+							Logger.debug(name, "Quit");
 							data.clear();
 							return true;
 						}
@@ -92,17 +93,16 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					return;
 				try {
 					if (future == null) {
-						System.out.println("Went Idle: " + name);
+						Logger.debug(name, "Went Idle");
 						Thread.sleep(60000 * 5);
 						killNext = true;
 					} else {
-						System.out.println("Executing: " + name);
-						System.out.println(future);
+						Logger.debug(name, "Executing", future);
 						killNext = false;
 						future.execute();
 					}
 				} catch (InterruptedException ex) {
-					System.out.println("Wokeup: " + name);
+					Logger.debug(name, "Wokeup");
 				} catch (RuntimeException run) {
 					run.printStackTrace();
 				}

@@ -21,6 +21,7 @@ import net.nexustools.concurrent.IfWriter;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -47,18 +48,18 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 		queue.push(new Runnable() {
 			public void run() {
 				final E event = processor.create();
-				System.out.println(event);
+				Logger.debug(event);
 				if(cListeners.size() == 1) {
-					System.out.println("Dispatching Event");
+					Logger.debug("Dispatching Event");
 					processor.dispatch(cListeners.get(0), event);
 					return;
 				}
 				
-				System.out.println("Dispatching Event to " + cListeners.size() + " listeners");
+				Logger.debug("Dispatching Event to " + cListeners.size() + " listeners");
 				for(final L listener : cListeners)
 					queue.push(new Runnable() {
 						public void run() {
-							System.out.println("Dispatching Event");
+							Logger.debug("Dispatching Event");
 							processor.dispatch(listener, event);
 						}
 					});

@@ -16,6 +16,7 @@
 package net.nexustools.data.noise;
 
 import java.util.Random;
+import net.nexustools.utils.log.Logger;
 
 /*
 	This class has been adapted since te original release.
@@ -182,7 +183,7 @@ public class Simplex implements NoiseGenerator {
 	public boolean needsPerm = true;
 
 	public void generatePerm(long seed) {
-		System.out.println("Generating simplex permutations for seed: " + seed + "...");
+		Logger.debug("Generating simplex permutations for seed: " + seed + "...");
 
 		Random nr = new Random(seed); // dont affect the regular random, and make sure the results are always the same regardless of when generatePerm is called
 		for (int i = 0; i < perm.length / 2; i++) {

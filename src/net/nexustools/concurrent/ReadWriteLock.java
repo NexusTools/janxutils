@@ -18,6 +18,7 @@ package net.nexustools.concurrent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -70,7 +71,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 			if(unlock > 0) {
 				semaphore.release(unlock);
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + unlock + " Permits");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + unlock + " Permits");
 			}
 		}
 	}
@@ -109,7 +110,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 			
 			if(exc) {
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + sharedRem + " Permits");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + sharedRem + " Permits");
 				
 				if(!semaphore.tryAcquire(sharedRem))
 					try {
@@ -121,7 +122,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 					}
 				pushFrame(new FullyLocked(sharedRem));
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
 			} else
 				pushFrame(new SharedLock(0));
 		}
@@ -132,7 +133,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 				return;
 			
 			if(verbose)
-				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting on " + sharedRem + " Permits");
+				Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting on " + sharedRem + " Permits");
 			try {
 				semaphore.release();
 				exclusive.acquireUninterruptibly();
@@ -142,7 +143,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 			}
 			update(totalPermits);
 			if(verbose)
-				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
+				Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
 		}
 		@Override
 		public void downgrade() {
@@ -152,7 +153,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 			upgradeCount --;
 			if(upgradeCount < 1) {
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + sharedRem + " Permits");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Released " + sharedRem + " Permits");
 	
 				semaphore.release(sharedRem);
 				update(initialPermits);
@@ -161,11 +162,11 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 		@Override
 		public boolean tryFastUpgrade() {
 			if(verbose)
-				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Trying Fast Upgrade");
+				Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Trying Fast Upgrade");
 			
 			if(upgradeCount > 0 || semaphore.tryAcquire(sharedRem)) {
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquired " + sharedRem + " Permits");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquired " + sharedRem + " Permits");
 	
 				update(totalPermits);
 				upgradeCount++;
@@ -184,7 +185,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 				if(semaphore.tryAcquire(sharedRem)) {
 					pushFrame(new FullyLocked(sharedRem));
 					if(verbose)
-						System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
+						Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] " + sharedRem + " Permits Obtained");
 				} else
 					return false;
 			else
@@ -198,11 +199,11 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 		public void lock(boolean exc) {
 			if(exc) {
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + totalPermits + " Permits");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring " + totalPermits + " Permits");
 				if(!semaphore.tryAcquire(totalPermits))
 					try {
 						if(verbose)
-							System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting for Other Threads");
+							Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Waiting for Other Threads");
 						exclusive.acquireUninterruptibly();
 						semaphore.acquireUninterruptibly(totalPermits);
 					} finally {
@@ -211,12 +212,12 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 				pushFrame(new FullyLocked(totalPermits));
 			} else {
 				if(verbose)
-					System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring 1 Permit");
+					Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Acquiring 1 Permit");
 				semaphore.acquireUninterruptibly();
 				pushFrame(new SharedLock(1));
 			}
 			if(verbose)
-				System.out.println("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
+				Logger.debug("[" + Thread.currentThread().getName() + "] [" + ReadWriteLock.this.toString() + "] Permits Obtained");
 		}
 
 		@Override

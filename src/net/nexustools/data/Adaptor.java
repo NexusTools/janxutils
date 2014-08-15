@@ -30,6 +30,7 @@ import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 import net.nexustools.data.primitives.PrimitiveAdaptor;
 import net.nexustools.utils.ClassUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -265,7 +266,7 @@ public abstract class Adaptor<T> {
 	}
 	
 	static {
-		System.out.println("Loading data adaptors");
+		Logger.debug("Loading data adaptors");
 		// Primitives
 		register(new net.nexustools.data.primitives.StringAdaptor());
 		
@@ -283,17 +284,17 @@ public abstract class Adaptor<T> {
 		register(new CollectionAdaptor());
 		register(new MapAdaptor());
 		
-		System.out.println("Registered " + adaptors.size() + " built-in adaptors");
+		Logger.debug("Registered " + adaptors.size() + " built-in adaptors");
 		int adaptorCount = adaptors.size();
 		
 		for(AdaptorProvider adaptorProvider : ServiceLoader.load(AdaptorProvider.class)) {
 			for(Adaptor adaptor : adaptorProvider.getAdaptors())
 				register(adaptor);
 			
-			System.out.println(adaptorProvider.getClass().getName() + " registered " +(adaptors.size()-adaptorCount) + " adaptors");
+			Logger.debug(adaptorProvider.getClass().getName() + " registered " +(adaptors.size()-adaptorCount) + " adaptors");
 			adaptorCount = adaptors.size();
 		}
-		System.out.println(adaptors.size() + " adaptors loaded");
+		Logger.debug(adaptors.size() + " adaptors loaded");
 	}
 	
 	public final T readInstance(DataInputStream in) throws IOException{
