@@ -18,6 +18,7 @@ package net.nexustools.utils.log;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
+import net.nexustools.AppDelegate;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.Writer;
@@ -30,7 +31,6 @@ public class Logger extends Thread {
 	
 	private static Logger logger = new Logger();
 	private static final PropList<String> classesToSkip = new PropList();
-	public static final long lifetime = System.currentTimeMillis();
 	private static final PrintStream SystemOut = System.out;
 	private static final PrintStream SystemErr = System.err;
 	
@@ -131,9 +131,6 @@ public class Logger extends Thread {
 			this(level, getCallee().getClassName(), content);
 		}
 		
-		public String uptime() {
-			return "";
-		}
 	}
 	
 	private static String outputFormat = "[{{uptime}}] [{{thread}}] {{content}}";
@@ -162,6 +159,8 @@ public class Logger extends Thread {
 							break;
 					}
 					stream.print("[");
+					stream.print(AppDelegate.uptime(message.timestamp));
+					stream.print("] [");
 					stream.print(message.thread);
 					stream.print("] [");
 					int lastPeriod = message.className.lastIndexOf(".");

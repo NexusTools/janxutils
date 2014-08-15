@@ -26,6 +26,56 @@ import net.nexustools.utils.log.Logger;
  * @author katelyn
  */
 public class AppDelegate {
+	public static final long created = System.currentTimeMillis();
+		
+	protected static String str(long time, int len) {
+		String val = String.valueOf(time);
+		while(val.length() < len)
+			val = '0' + val;
+
+		return val;
+	}
+	
+	public static String uptime() {
+		return uptime(System.currentTimeMillis());
+	}
+		
+	public static String uptime(long timestamp) {
+		long millis = timestamp - AppDelegate.created;
+
+		long seconds = millis / 1000;
+		millis -= seconds*1000;
+
+		long minutes = seconds / 60;
+		seconds -= minutes*60;
+
+		long hours = minutes / 60;
+		minutes -= hours*60;
+
+		StringBuilder builder = new StringBuilder();
+		if(hours >= 24) {
+			long days = hours / 24;
+			hours -= days*24;
+
+			if(days >= 365) {
+				long years = days / 365;
+				days -= years*365;
+				builder.append(years);
+				builder.append('.');
+			}
+			builder.append(str(days, 3));
+			builder.append(' ');
+		}
+
+		builder.append(str(hours, 2));
+		builder.append(':');
+		builder.append(str(minutes, 2));
+		builder.append(':');
+		builder.append(str(seconds, 2));
+		builder.append('.');
+		builder.append(str(millis, 3));
+		return builder.toString();
+	}
 	
 	public static enum Path {
 		Working,
@@ -65,7 +115,7 @@ public class AppDelegate {
 		(new AppDelegate(name, organization)).init();
 	}
 	
-	public String pathUri(Path path) {
+	public final String pathUri(Path path) {
 		String uri = pathCache.get(path);
 		if(uri == null) {
 			switch(path) {
@@ -110,15 +160,15 @@ public class AppDelegate {
 		return uri;
 	}
 	
-	public String name() {
+	public final String name() {
 		return name;
 	}
 
-	public String organization() {
+	public final String organization() {
 		return organization;
 	}
 	
-	public void init() {
+	protected void init() {
 		Logger.installSystemIO();
 	}
 	
