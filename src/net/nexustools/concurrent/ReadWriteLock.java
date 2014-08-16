@@ -256,7 +256,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	};
 	
 	private final Semaphore semaphore;
-	private final Semaphore exclusive = new Semaphore(1);
+	private final Semaphore exclusive;
 	private final ThreadLocal<ArrayList<Lockable>> frames = new ThreadLocal() {
 		@Override
 		protected Object initialValue() {
@@ -266,10 +266,17 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	
 	private final int totalPermits;
 	public ReadWriteLock() {
-		this(defaultPermitCount);
+		this(defaultPermitCount, true);
+	}
+	public ReadWriteLock(boolean fair) {
+		this(defaultPermitCount, fair);
 	}
 	public ReadWriteLock(int permits) {
+		this(permits, true);
+	}
+	public ReadWriteLock(int permits, boolean fair) {
 		semaphore = new Semaphore(totalPermits = Math.max(2, permits));
+		exclusive = new Semaphore(1, fair);
 		sharedRem = totalPermits-1;
 	}
 	
