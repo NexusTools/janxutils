@@ -103,7 +103,7 @@ public class AppDelegate {
 	
 	public static AppDelegate i() {
 		if(current == null)
-			current = new AppDelegate("Untitled Application", "JaNXUtils");
+			current = new AppDelegate(System.getProperty("appname", "Untitled Application"), System.getProperty("apporg", "NexusTools"));
 		return current;
 	}
 	

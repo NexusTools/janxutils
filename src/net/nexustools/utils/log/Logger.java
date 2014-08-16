@@ -34,12 +34,6 @@ public class Logger extends Thread {
 	private static final PrintStream SystemOut = System.out;
 	private static final PrintStream SystemErr = System.err;
 	
-	static {
-		addSkippableClass(Message.class);
-		addSkippableClass(Logger.class);
-		addSkippableClass(Level.class);
-	}
-	
 	/**
 	 * Installs writers on System.out and System.err which attempt
 	 * to emulate calls to log() when line downs are found, per thread.
@@ -53,6 +47,12 @@ public class Logger extends Thread {
 	
 	public static void addSkippableClass(Class<?> clazz) {
 		classesToSkip.push(clazz.getName());
+	}
+	
+	static {
+		addSkippableClass(Message.class);
+		addSkippableClass(Logger.class);
+		addSkippableClass(Level.class);
 	}
 	
 	public static void log(final Message message) {
@@ -108,6 +108,20 @@ public class Logger extends Thread {
 		return null;
 	}
 	
+	public static String getCalleeName() {
+		return getCalleeName(1);
+	}
+	
+	public static String getCalleeName(int skip) {
+		try {
+			return getCallee(skip).getClassName();
+		} catch(NullPointerException t) {
+			return "$Unknown$";
+		} catch(Throwable t) {
+			return "$Error$" + t.getClass();
+		}
+	}
+	
 	public static class Message {
 		public final long timestamp = System.currentTimeMillis();
 		
@@ -128,7 +142,7 @@ public class Logger extends Thread {
 		}
 		
 		public Message(Level level, Object... content) {
-			this(level, getCallee().getClassName(), content);
+			this(level, getCalleeName(), content);
 		}
 		
 	}
