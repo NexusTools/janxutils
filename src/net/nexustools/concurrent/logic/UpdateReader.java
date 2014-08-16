@@ -13,23 +13,37 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
 
 /**
  *
  * @author katelyn
  */
-public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
+public abstract class UpdateReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
 
 	@Override
-	public final void write(A data, Lockable lock) {
-		lock.lock(true);
+	public final boolean test(A against) {
 		try {
-			write(data);
-		} finally {
-			lock.unlock();
+			return needUpdate(against);
+		} catch(NullPointerException ex) {
+			return true;
 		}
 	}
-	public abstract void write(A data);
+	
+	@Override
+	public final Boolean def() {
+		return false;
+	}
+
+	@Override
+	public final Boolean read(A data) {
+		update(data);
+		return true;
+	}
+
+	public abstract void update(A data);
+	public abstract boolean needUpdate(A against);
 	
 }

@@ -16,7 +16,7 @@
 package net.nexustools.runtime.future;
 
 import net.nexustools.concurrent.MapAccessor;
-import net.nexustools.concurrent.SoftWriter;
+import net.nexustools.concurrent.logic.SoftWriter;
 
 /**
  *

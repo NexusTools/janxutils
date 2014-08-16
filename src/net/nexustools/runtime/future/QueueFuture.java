@@ -15,13 +15,13 @@
 
 package net.nexustools.runtime.future;
 
-import net.nexustools.concurrent.IfReader;
-import net.nexustools.concurrent.IfWriteReader;
-import net.nexustools.concurrent.IfWriter;
+import net.nexustools.concurrent.logic.IfReader;
+import net.nexustools.concurrent.logic.IfWriteReader;
+import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
-import net.nexustools.concurrent.Reader;
-import net.nexustools.concurrent.WriteReader;
+import net.nexustools.concurrent.logic.Reader;
+import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.utils.Testable;
 /**
  *

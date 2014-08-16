@@ -13,10 +13,26 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestReader<A extends BaseAccessor> extends IfReader<Boolean, A> {}
+public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
+
+	@Override
+	public final void write(A data, Lockable lock) {
+		lock.lock(true);
+		try {
+			write(data);
+		} finally {
+			lock.unlock();
+		}
+	}
+	public abstract void write(A data);
+	
+}

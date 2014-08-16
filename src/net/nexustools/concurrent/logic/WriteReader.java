@@ -13,18 +13,21 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
+public abstract class WriteReader<R, A extends BaseAccessor> implements BaseReader<R, A> {
 
 	@Override
 	public final R read(A data, Lockable<A> lock) {
+		lock.lock(true);
 		try {
-			lock.lock();
 			return read(data);
 		} finally {
 			lock.unlock();

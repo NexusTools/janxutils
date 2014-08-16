@@ -13,20 +13,18 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
 
-import net.nexustools.concurrent.logic.BaseReader;
-import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
 
 /**
  *
  * @author katelyn
+ * @param <A> The Writer to perform with
  */
-public interface ReadWriteConcurrency<A extends BaseAccessor> {
+public interface BaseWriter<A extends BaseAccessor> {
 	
-	public A directAccessor();
-	public void write(BaseWriter<A> actor);
-	public <R> R read(BaseReader<R, A> reader);
-	public Lockable<A> lockable();
+	public void write(A data, Lockable lock);
 	
 }

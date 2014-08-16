@@ -15,6 +15,8 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.concurrent.logic.BaseReader;
+import net.nexustools.concurrent.logic.BaseWriter;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.SimpleCreator;
 import net.nexustools.utils.Testable;

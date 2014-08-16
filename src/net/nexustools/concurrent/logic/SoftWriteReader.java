@@ -13,21 +13,40 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class VoidReader<A extends BaseAccessor> extends Reader<Void, A> {
+public abstract class SoftWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
 
 	@Override
-	public Void read(A data) {
-		readV(data);
-		return null;
+	public final R read(A data, Lockable<A> lock) {
+		lock.lock();
+		try {
+			if(lock.upgradeTest(data, this))
+				try {
+					return read(data);
+				} finally {
+					lock.unlock();
+				}
+			else
+				return soft(data);
+		} finally {
+			lock.unlock();
+		}
 	}
 	
-	public abstract void readV(A data);
+	public abstract R soft(A data);
+	public abstract R read(A data);
 
+	public boolean test(A against) {
+		return !against.isTrue();
+	}
 	
 }

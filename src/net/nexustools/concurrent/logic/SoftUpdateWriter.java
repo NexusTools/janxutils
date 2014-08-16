@@ -13,38 +13,40 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
 
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
 import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class SoftWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
+public abstract class SoftUpdateWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
 
 	@Override
-	public final R read(A data, Lockable<A> lock) {
+	public final void write(A data, Lockable lock) {
 		lock.lock();
 		try {
-			if(lock.upgradeTest(data, this))
+			if(test(data)) {
 				try {
-					return read(data);
+					if(!lock.tryFastUpgrade()) {
+						lock.upgrade();
+						if(!test(data))
+							return;
+					}
+					write(data);
 				} finally {
-					lock.unlock();
+					lock.downgrade();
 				}
-			else
-				return soft(data);
+			}
+			update();
 		} finally {
 			lock.unlock();
 		}
 	}
-	
-	public abstract R soft(A data);
-	public abstract R read(A data);
-
-	public boolean test(A against) {
-		return !against.isTrue();
-	}
+	public abstract void write(A data);
+	public abstract void update();
 	
 }

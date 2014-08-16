@@ -14,11 +14,11 @@
  */
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.IfReader;
+import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
-import net.nexustools.concurrent.SoftWriter;
-import net.nexustools.concurrent.WriteReader;
+import net.nexustools.concurrent.logic.SoftWriter;
+import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.runtime.future.QueueFuture;
 import net.nexustools.utils.log.Logger;
 

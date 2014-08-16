@@ -15,6 +15,9 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.concurrent.logic.BaseReader;
+import net.nexustools.concurrent.logic.BaseWriter;
+
 /**
  *
  * @author katelyn

@@ -13,35 +13,34 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class UpdateReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
+public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
 
 	@Override
-	public final boolean test(A against) {
+	public final R read(A data, Lockable<A> lock) {
+		lock.lock();
 		try {
-			return needUpdate(against);
-		} catch(NullPointerException ex) {
-			return true;
+			if(test(data))
+				return read(data);
+			
+			return null;
+		} finally {
+			lock.unlock();
 		}
 	}
 	
-	@Override
-	public final Boolean def() {
-		return false;
+	public abstract R read(A data);
+	public boolean test(A against) {
+		return against.isTrue();
 	}
-
-	@Override
-	public final Boolean read(A data) {
-		update(data);
-		return true;
-	}
-
-	public abstract void update(A data);
-	public abstract boolean needUpdate(A against);
 	
 }

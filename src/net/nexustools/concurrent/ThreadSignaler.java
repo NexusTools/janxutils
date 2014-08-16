@@ -15,6 +15,8 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.concurrent.logic.IfReader;
+
 /**
  *
  * @author katelyn

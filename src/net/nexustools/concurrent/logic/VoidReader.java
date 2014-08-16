@@ -13,15 +13,23 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
 
 /**
  *
  * @author katelyn
- * @param <A> The Writer to perform with
  */
-public interface BaseWriter<A extends BaseAccessor> {
+public abstract class VoidReader<A extends BaseAccessor> extends Reader<Void, A> {
+
+	@Override
+	public Void read(A data) {
+		readV(data);
+		return null;
+	}
 	
-	public void write(A data, Lockable lock);
+	public abstract void readV(A data);
+
 	
 }

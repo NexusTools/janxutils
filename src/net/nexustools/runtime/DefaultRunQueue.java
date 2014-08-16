@@ -16,8 +16,8 @@
 package net.nexustools.runtime;
 
 import net.nexustools.concurrent.BaseAccessor;
-import net.nexustools.concurrent.BaseReader;
-import net.nexustools.concurrent.BaseWriter;
+import net.nexustools.concurrent.logic.BaseReader;
+import net.nexustools.concurrent.logic.BaseWriter;
 import net.nexustools.concurrent.ReadWriteLock;
 
 /**

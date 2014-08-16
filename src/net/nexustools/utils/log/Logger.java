@@ -21,7 +21,7 @@ import java.util.List;
 import net.nexustools.AppDelegate;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
-import net.nexustools.concurrent.Writer;
+import net.nexustools.concurrent.logic.Writer;
 
 /**
  *
@@ -133,10 +133,9 @@ public class Logger extends Thread {
 		
 	}
 	
-	private static String outputFormat = "[{{uptime}}] [{{thread}}] {{content}}";
-	
 	private PropList<Message> messageQueue = new PropList<Message>();
 	protected Logger() {
+		super("Logger");
 		start();
 	}
 
@@ -174,7 +173,6 @@ public class Logger extends Thread {
 							stream.print(' ');
 						else
 							addTab = true;
-						
 						stream.print(msg.toString());
 					}
 					

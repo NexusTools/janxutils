@@ -13,37 +13,12 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
 
-import net.nexustools.utils.Testable;
+import net.nexustools.concurrent.BaseAccessor;
 
 /**
  *
  * @author katelyn
  */
-public abstract class SoftWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
-
-	@Override
-	public final void write(A data, Lockable lock) {
-		lock.lock();
-		try {
-			if(lock.upgradeTest(data, this))
-				try {
-					write(data);
-				} finally {
-					lock.unlock();
-				}
-			else
-				soft(data);
-		} finally {
-			lock.unlock();
-		}
-	}
-	public abstract void write(A data);
-	public abstract void soft(A data);
-
-	public boolean test(A against) {
-		return !against.isTrue();
-	}
-	
-}
+public abstract class TestReader<A extends BaseAccessor> extends IfReader<Boolean, A> {}

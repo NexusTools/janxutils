@@ -13,32 +13,19 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
 
-import net.nexustools.utils.Testable;
+import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.concurrent.Lockable;
 
 /**
  *
  * @author katelyn
+ * @param <R> The data this reader reads
+ * @param <A> The Accessor to fetch the data to read from
  */
-public abstract class IfWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
-
-	@Override
-	public final R read(A data, Lockable<A> lock) {
-		if(lock.upgradeTest(data, this))
-			try {
-				return read(data);
-			} finally {
-				lock.unlock();
-			}
-		return def();
-	}
+public interface BaseReader<R, A extends BaseAccessor> {
 	
-	public abstract R def();
-	public abstract R read(A data);
-
-	public boolean test(A against) {
-		return against.isTrue();
-	}
+	public R read(A data, Lockable<A> lock);
 	
 }

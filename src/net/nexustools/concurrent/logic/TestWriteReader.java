@@ -13,26 +13,19 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.concurrent.logic;
+
+import net.nexustools.concurrent.BaseAccessor;
 
 /**
  *
  * @author katelyn
  */
-public abstract class WriteReader<R, A extends BaseAccessor> implements BaseReader<R, A> {
+public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
 
 	@Override
-	public final R read(A data, Lockable<A> lock) {
-		lock.lock(true);
-		try {
-			return read(data);
-		} finally {
-			lock.unlock();
-		}
+	public Boolean def() {
+		return false;
 	}
-	
-	public abstract R read(A data);
-	
-	
 	
 }

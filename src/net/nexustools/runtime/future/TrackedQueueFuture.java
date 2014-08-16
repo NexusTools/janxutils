@@ -15,12 +15,12 @@
 
 package net.nexustools.runtime.future;
 
-import net.nexustools.concurrent.BaseReader;
-import net.nexustools.concurrent.BaseWriter;
-import net.nexustools.concurrent.IfWriter;
+import net.nexustools.concurrent.logic.BaseReader;
+import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.MapAccessor;
 import net.nexustools.concurrent.PropMap;
-import net.nexustools.concurrent.Writer;
+import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.utils.Testable;
 
 /**
