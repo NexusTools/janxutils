@@ -185,9 +185,6 @@ public abstract class Stream {
 	static {
 		//for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
 		//	registerProvider(provider);
-		
-		bindSynthScheme("temp", uriForPath(AppDelegate.i().pathUri(AppDelegate.Path.Temporary)));
-		bindSynthScheme("home", uriForPath(AppDelegate.i().pathUri(AppDelegate.Path.UserHome)));
 	}
 	
 //	public static void initAppAliases(String name, String organization) {
@@ -431,6 +428,10 @@ public abstract class Stream {
 				}
 			}
 		});
+	}
+
+	public static void remove(String scheme) {
+		providers.remove(scheme);
 	}
 	
 	/**

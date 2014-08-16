@@ -18,6 +18,7 @@ package net.nexustools.utils.log;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.WeakHashMap;
 import net.nexustools.AppDelegate;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
@@ -155,6 +156,7 @@ public class Logger extends Thread {
 
 	@Override
 	public void run() {
+		final WeakHashMap<String, String> classNames = new WeakHashMap();
 		while(true) {
 			List<Message> messages = messageQueue.take();
 			if(messages.size() > 0) {
@@ -176,8 +178,15 @@ public class Logger extends Thread {
 					stream.print("] [");
 					stream.print(message.thread);
 					stream.print("] [");
-					int lastPeriod = message.className.lastIndexOf(".");
-					stream.print(lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className);
+					
+					String goodClassName = classNames.get(message.className);
+					if(goodClassName == null) {
+						int lastPeriod = message.className.lastIndexOf(".");
+						goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
+						classNames.put(message.className, goodClassName);
+					}
+					stream.print(goodClassName);
+					
 					stream.print("] [");
 					stream.print(message.level);
 					stream.print("] ");

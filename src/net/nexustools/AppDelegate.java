@@ -17,15 +17,21 @@ package net.nexustools;
 
 import java.io.File;
 import java.util.HashMap;
-
+import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.io.Stream;
+import static net.nexustools.io.Stream.bindSynthScheme;
+import static net.nexustools.io.Stream.uriForPath;
+import net.nexustools.runtime.RunQueue;
 import net.nexustools.utils.log.Logger;
 
 /**
  *
  * @author katelyn
  */
-public class AppDelegate {
+public abstract class AppDelegate<R extends RunQueue> {
 	public static final long created = System.currentTimeMillis();
 		
 	protected static String str(long time, int len) {
@@ -78,41 +84,103 @@ public class AppDelegate {
 	}
 	
 	public static enum Path {
-		Working,
-		Application,
-		Configuration,
-		Temporary,
+		Working("run"),
+		Application("app"),
+		Temporary("temp"),
+		Configuration("config"),
+		Storage("store"),
 		
-		UserHome,
-		UserDocuments,
-		UserPictures,
-		UserMusic
+		UserHome("home"),
+		UserDocuments("docs"),
+		UserPictures("pics"),
+		UserMusic("music");
+		
+		public final String scheme;
+		Path(String scheme) {
+			this.scheme = scheme;
+		}
 	}
 	
+	private final R runQueue;
 	private final String name;
 	private final String organization;
-	private static AppDelegate current;
-	private HashMap<Path, String> pathCache = new HashMap();
-	protected AppDelegate(String name, String organization) {
-		assert(current == null);
-		current = this;
-		
+	private static final Prop<AppDelegate> current = new Prop();
+	private final HashMap<Path, String> pathCache = new HashMap();
+	public AppDelegate(String[] args) {
+		this(args, defaultName(), defaultOrganization(), (R)RunQueue.current());
+	}
+	public AppDelegate(String[] args, R queue) {
+		this(args, defaultName(), defaultOrganization(), queue);
+	}
+	protected AppDelegate(final String[] args, String name, String organization, R queue) {
 		this.name = name;
 		this.organization = organization;
+		runQueue = queue;
+		makeCurrent();
+		
+		Logger.installSystemIO();
+		queue.push(new Runnable() {
+			public void run() {
+				launch(args);
+			}
+		});
+	}
+	
+	public final R queue() {
+		return runQueue;
+	}
+	
+	public final void makeCurrent() {
+		current.write(new Writer<PropAccessor<AppDelegate>>() {
+			@Override
+			public void write(PropAccessor<AppDelegate> data) {
+				Logger.debug("Switching To", AppDelegate.this);
+				
+				data.set(AppDelegate.this);
+				for(AppDelegate.Path path : AppDelegate.Path.values())
+					try {
+						bindSynthScheme(path.scheme, uriForPath(AppDelegate.i().pathUri(path)));
+					} catch(Throwable t) {
+						Logger.warn(path.scheme + "://", "is not supported by this application delegate.");
+						Stream.remove(path.scheme);
+					}
+			}
+		});
+	}
+	
+	public static String defaultName() {
+		return System.getProperty("appname", "Untitled Application");
+	}
+	
+	public static String defaultOrganization() {
+		return System.getProperty("apporg", "NexusTools");
 	}
 	
 	public static AppDelegate i() {
-		if(current == null)
-			current = new AppDelegate(System.getProperty("appname", "Untitled Application"), System.getProperty("apporg", "NexusTools"));
-		return current;
+		return current.read(new SoftWriteReader<AppDelegate, PropAccessor<AppDelegate>>() {
+			@Override
+			public AppDelegate soft(PropAccessor<AppDelegate> data) {
+				return data.get();
+			}
+			@Override
+			public AppDelegate read(PropAccessor<AppDelegate> data) {
+				AppDelegate appDelegate;
+				try {
+					data.set(appDelegate = (AppDelegate) Class.forName(System.getProperty("appdelegate", AppDelegate.class.getName())).newInstance());
+				} catch (ClassNotFoundException ex) {
+					throw new RuntimeException(ex);
+				} catch (InstantiationException ex) {
+					throw new RuntimeException(ex);
+				} catch (IllegalAccessException ex) {
+					throw new RuntimeException(ex);
+				}
+				return appDelegate;
+			}
+		});
 	}
 	
 	public static AppDelegate current() {
-		return current;
-	}
-	
-	public static void init(String name, String organization) {
-		(new AppDelegate(name, organization)).init();
+		return current.get();
 	}
 	
 	public final String pathUri(Path path) {
@@ -168,8 +236,11 @@ public class AppDelegate {
 		return organization;
 	}
 	
-	protected void init() {
-		Logger.installSystemIO();
+	protected abstract void launch(String[] args);
+	
+	@Override
+	public String toString() {
+        return getClass().getSimpleName() + "{name=" + name + ",org=" + organization + ",queue=" + queue() + "}";
 	}
 	
 }
