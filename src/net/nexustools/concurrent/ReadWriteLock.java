@@ -270,13 +270,13 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	
 	private final int totalPermits;
 	public ReadWriteLock() {
-		this(defaultPermitCount, true);
+		this(defaultPermitCount, false);
 	}
 	public ReadWriteLock(boolean fair) {
 		this(defaultPermitCount, fair);
 	}
 	public ReadWriteLock(int permits) {
-		this(permits, true);
+		this(permits, false);
 	}
 	public ReadWriteLock(int permits, boolean fair) {
 		if(permits < 2) {
