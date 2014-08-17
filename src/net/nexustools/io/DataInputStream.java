@@ -33,10 +33,8 @@ import net.nexustools.data.AdaptorException;
  */
 public final class DataInputStream extends java.io.DataInputStream {
 
-	private final InputStream inStream;
 	public DataInputStream(InputStream in) {
 		super(in);
-		inStream = in;
 	}
 	public DataInputStream(Stream stream) throws IOException {
 		this(stream.createInputStream());
@@ -141,7 +139,7 @@ public final class DataInputStream extends java.io.DataInputStream {
 		StringBuilder builder = new StringBuilder();
 		builder.append(getClass().getName());
 		builder.append('(');
-		builder.append(inStream.toString());
+		builder.append(in.toString());
 		builder.append(')');
 
 		return builder.toString();

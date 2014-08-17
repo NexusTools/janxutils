@@ -31,10 +31,8 @@ import static net.nexustools.utils.StringUtils.UTF8;
  */
 public class DataOutputStream extends java.io.DataOutputStream {
 
-	private final OutputStream outStream;
 	public DataOutputStream(OutputStream out) {
 		super(out);
-		outStream = out;
 	}
 	public DataOutputStream(Stream stream) throws IOException {
 		this(stream.createOutputStream());
@@ -93,7 +91,7 @@ public class DataOutputStream extends java.io.DataOutputStream {
 		StringBuilder builder = new StringBuilder();
 		builder.append(getClass().getName());
 		builder.append('(');
-		builder.append(outStream.toString());
+		builder.append(out.toString());
 		builder.append(')');
 
 		return builder.toString();

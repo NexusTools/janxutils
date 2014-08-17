@@ -15,13 +15,13 @@
 
 package net.nexustools.utils.log;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.WeakHashMap;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
-import java.util.WeakHashMap;
 import net.nexustools.AppDelegate;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
@@ -92,19 +92,28 @@ public class Logger extends Thread {
 		log(Level.Debug, message);
 	}
 
+	public static void info(Object... message) {
+		log(Level.Information, message);
+	}
+
 	public static void warn(Object... message) {
 		log(Level.Warning, message);
 	}
 
 	public static void error(Object... message) {
-		log(Level.Warning, message);
+		log(Level.Error, message);
+	}
+
+	public static void exception(Throwable t) {
+		error(t);
 	}
 	
 	public static enum Level {
 		Debug((byte)0),
-		Warning((byte)1),
-		Error((byte)2),
-		Fatal((byte)3);
+		Information((byte)1),
+		Warning((byte)2),
+		Error((byte)3),
+		Fatal((byte)4);
 		
 		public final byte code;
 		Level(byte level) {
@@ -174,6 +183,7 @@ public class Logger extends Thread {
 	private PropList<Message> messageQueue = new PropList<Message>();
 	protected Logger() {
 		super("Logger");
+		setPriority(MIN_PRIORITY);
 		start();
 	}
 
@@ -186,7 +196,7 @@ public class Logger extends Thread {
 			if(messages.size() > 0) {
 				ArrayList<Message> readyMessages = new ArrayList();
 				Iterator<Message> it = messages.iterator();
-				long before = System.currentTimeMillis() - 250;
+				long before = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
 				while(it.hasNext()) {
 					Message next = it.next();
 					if(next.timestamp < before) {

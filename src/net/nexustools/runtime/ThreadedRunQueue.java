@@ -52,12 +52,6 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	public ThreadedRunQueue(String name) {
 		this(name, -1);
 	}
-	public ThreadedRunQueue(int threads) {
-		this(null, threads);
-	}
-	public ThreadedRunQueue() {
-		this(null, -1);
-	}
 	@Override
 	public QueueFuture nextFuture(final RunThread runThread) {
 		return tasks.read(new WriteReader<QueueFuture, ListAccessor<QueueFuture>>() {
@@ -68,7 +62,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 					return data.shift();
 				}
 				
-				Logger.debug("No New Futures");
+				//Logger.debug("No New Futures");
 				idleThreads.push(runThread);
 				return null;
 			}
