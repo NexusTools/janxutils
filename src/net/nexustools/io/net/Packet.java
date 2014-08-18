@@ -35,7 +35,7 @@ public abstract class Packet<C, S> {
 	
 	private final Prop<byte[]> cache = new Prop();
 	
-	protected abstract void recvFromServer(C client, S server);
+	protected abstract void recvFromServer(C client);
 	protected abstract void recvFromClient(C client, S server);
 	
 	public void read(DataInputStream dataInput) throws UnsupportedOperationException, IOException, AdaptorException {

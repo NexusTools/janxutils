@@ -22,19 +22,19 @@ import net.nexustools.event.Event;
  *
  * @author kate
  */
-public interface PacketReceivedListener<C extends Client, S> extends EventListener {
+public interface PacketListener<C extends Client, S> extends EventListener {
 	
-	public static class PacketReceivedEvent<C extends Client, S> extends Event<S> {
+	public static class PacketEvent<C extends Client, S> extends Event<S> {
 		public final C client;
 		public final Packet packet;
-		public PacketReceivedEvent(S source, C client, Packet packet) {
+		public PacketEvent(S source, C client, Packet packet) {
 			super(source);
 			this.client = client;
 			this.packet = packet;
 		}
 	}
 	
-	public void packetReceivedFromClient(PacketReceivedEvent<C, S> packetReceivedEvent);
-	public void packetReceivedFromServer(PacketReceivedEvent<C, S> packetReceivedEvent);
+	public void packetReceivedFromClient(PacketEvent<C, S> packetReceivedEvent);
+	public void packetReceivedFromServer(PacketEvent<C, S> packetReceivedEvent);
 	
 }

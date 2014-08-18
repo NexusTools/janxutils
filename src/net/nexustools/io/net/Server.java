@@ -32,7 +32,7 @@ import net.nexustools.utils.log.Logger;
  *
  * @author kate
  */
-public abstract class Server<P extends Packet, C extends Client<P, ? extends Server>> extends Thread {
+public class Server<P extends Packet, C extends Client<P, ? extends Server>> extends Thread {
 	
 	public static enum Protocol {
 		TCP,
@@ -69,7 +69,9 @@ public abstract class Server<P extends Packet, C extends Client<P, ? extends Ser
 		start();
 	}
 	
-	public abstract C createClient(Pair<DataInputStream,DataOutputStream> socket);
+	public C createClient(Pair<DataInputStream,DataOutputStream> socket) {
+		return (C) new Client("Client", socket, this);
+	}
 	
 	public void send(final P packet, final Testable<C> shouldSend) {
 		clients.read(new VoidReader<ListAccessor<C>>() {

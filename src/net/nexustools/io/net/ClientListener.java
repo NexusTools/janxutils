@@ -22,16 +22,17 @@ import net.nexustools.event.Event;
  *
  * @author kate
  */
-public interface ClientConnectedListener<C extends Client, S> extends EventListener {
+public interface ClientListener<C extends Client, S> extends EventListener {
 	
-	public static class ClientConnectedEvent<C extends Client, S> extends Event<S> {
+	public static class ClientEvent<C extends Client, S> extends Event<S> {
 		final C client;
-		public ClientConnectedEvent(S source, C client) {
+		public ClientEvent(S source, C client) {
 			super(source);
 			this.client = client;
 		}
 	}
 	
-	public void clientConnected(ClientConnectedEvent<C, S> clientConnectedEvent);
+	public void clientConnected(ClientEvent<C, S> clientConnectedEvent);
+	public void clientDisconnected(ClientEvent<C, S> clientConnectedEvent);
 	
 }
