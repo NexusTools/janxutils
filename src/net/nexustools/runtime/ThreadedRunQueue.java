@@ -31,10 +31,12 @@ import net.nexustools.runtime.future.QueueFuture;
  */
 public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	
+	private final int count;
 	private final String name;
 	private final PropList<RunThread> idleThreads;
 	private final PropList<QueueFuture> tasks = new PropList();
 	public ThreadedRunQueue(String name, int threads) {
+		count = threads;
 		this.name = name;
 		if(threads < 1)
 			threads = Runtime.getRuntime().availableProcessors();
@@ -88,6 +90,11 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	@Override
 	public String name() {
 		return name;
+	}
+
+	@Override
+	public int countThreads() {
+		return count;
 	}
 
 }

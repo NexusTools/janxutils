@@ -80,7 +80,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		throw new UnsupportedDataTypeException();
 	}
 	
-	final RunQueue runQueue;
+	protected final RunQueue runQueue;
 	final PacketRegistry packetRegistry;
 	final Prop<Boolean> isAlive = new Prop(true);
 	final PropList<P> packetQueue = new PropList();

@@ -91,4 +91,6 @@ public abstract class RunQueue<R extends Runnable, T> {
 	public abstract QueueFuture nextFuture(T requestSource);
 	protected abstract QueueFuture push(QueueFuture future);
 	
+	public abstract int countThreads();
+	
 }
