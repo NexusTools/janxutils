@@ -17,6 +17,8 @@ package net.nexustools;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Properties;
+
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.logic.SoftWriteReader;
@@ -85,10 +87,12 @@ public abstract class AppDelegate<R extends RunQueue> {
 	
 	public static enum Path {
 		Working("run"),
-		Application("app"),
 		Temporary("temp"),
+		Application("app"),
+		
 		Configuration("config"),
 		Storage("store"),
+		Share("share"),
 		
 		UserHome("home"),
 		UserDocuments("docs"),
@@ -134,7 +138,7 @@ public abstract class AppDelegate<R extends RunQueue> {
 		current.write(new Writer<PropAccessor<AppDelegate>>() {
 			@Override
 			public void write(PropAccessor<AppDelegate> data) {
-				Logger.debug("Switching To", AppDelegate.this);
+				Logger.quote(data.isset() ? "Switching To" : "Spawned AppDelegate", AppDelegate.this);
 				
 				data.set(AppDelegate.this);
 				for(AppDelegate.Path path : AppDelegate.Path.values())
@@ -240,7 +244,7 @@ public abstract class AppDelegate<R extends RunQueue> {
 	
 	@Override
 	public String toString() {
-        return getClass().getSimpleName() + "{name=" + name + ",org=" + organization + ",queue=" + queue() + "}";
+        return organization + '.' + name;
 	}
 	
 }

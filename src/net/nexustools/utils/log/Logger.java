@@ -15,16 +15,16 @@
 
 package net.nexustools.utils.log;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.WeakHashMap;
 import java.util.Comparator;
 import java.util.Iterator;
+
 import net.nexustools.AppDelegate;
-import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.logic.Writer;
 
 /**
@@ -51,6 +51,22 @@ public class Logger extends Thread {
 		minLevel = mLevel;
 	}
 	
+	private static class Quote {
+		public final Object obj;
+		public Quote(Object obj) {
+			this.obj = obj;
+		}
+		public String toString() {
+			return "`" + obj + '`';
+		}
+	}
+	
+	public static Object wrapQuotes(Object obj) {
+		if(obj instanceof Quote)
+			return obj;
+		return new Quote(obj);
+	}
+	
 	/**
 	 * Installs writers on System.out and System.err which attempt
 	 * to emulate calls to log() when line downs are found, per thread.
@@ -58,8 +74,8 @@ public class Logger extends Thread {
 	 * {@code LoggerPrintStream}
 	 */
 	public static void installSystemIO() {
-		System.setOut(new LoggerPrintStream(Level.Debug));
-		System.setErr(new LoggerPrintStream(Level.Error));
+		//System.setOut(new LoggerPrintStream(Level.Debug));
+		//System.setErr(new LoggerPrintStream(Level.Error));
 	}
 	
 	public static void addSkippableClass(Class<?> clazz) {
@@ -67,6 +83,7 @@ public class Logger extends Thread {
 	}
 	
 	static {
+		addSkippableClass(Thread.class);
 		addSkippableClass(Message.class);
 		addSkippableClass(Logger.class);
 		addSkippableClass(Level.class);
@@ -94,6 +111,14 @@ public class Logger extends Thread {
 
 	public static void info(Object... message) {
 		log(Level.Information, message);
+	}
+
+	public static void quote(Level level, Object message, Object quote) {
+		log(level, message, wrapQuotes(quote));
+	}
+
+	public static void quote(Object message, Object quote) {
+		quote(Level.Information, message, quote);
 	}
 
 	public static void warn(Object... message) {
@@ -175,7 +200,7 @@ public class Logger extends Thread {
 		}
 		
 		public Message(Level level, Object... content) {
-			this(level, getCalleeName(), content);
+			this(level, getCalleeName(0), content);
 		}
 		
 	}

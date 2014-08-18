@@ -20,7 +20,7 @@ package net.nexustools.utils.args;
  * @author katelyn
  */
 public class CommonConversions {
-	public final static ArgumentConverter<Void> MustBeEmpty = new ArgumentConverter() {
+	public final static ArgumentConverter<Void> MustBeEmpty = new ArgumentConverter<Void>() {
 		@Override
 		public Void test(String[] strings) throws ArgumentParserException {
 			if(strings.length > 0)
@@ -29,7 +29,7 @@ public class CommonConversions {
 			return null;
 		}
 	};
-	public final static ArgumentConverter<String> String = new ArgumentConverter() {
+	public final static ArgumentConverter<String> String = new ArgumentConverter<String>() {
 		@Override
 		public String test(String[] strings) throws ArgumentParserException {
 			if(strings.length != 1)
@@ -38,7 +38,7 @@ public class CommonConversions {
 			return strings[0];
 		}
 	};
-	public final static ArgumentConverter<String[]> StringList = new ArgumentConverter() {
+	public final static ArgumentConverter<String[]> StringList = new ArgumentConverter<String[]>() {
 		@Override
 		public String[] test(String[] strings) {
 			return strings;
