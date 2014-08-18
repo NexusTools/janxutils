@@ -54,7 +54,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					setPriority(MAX_PRIORITY);
 					break;
 			}
-			Logger.gears(name, "Spawned");
+			Logger.debug(name, "Spawned");
 			setDaemon(true);
 			setName(name);
 			start();
@@ -83,7 +83,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 							}
 						});
 						if(future == null && killNext) {
-							Logger.gears(name, "Quit");
+							Logger.debug(name, "Quit");
 							data.clear();
 							return true;
 						}

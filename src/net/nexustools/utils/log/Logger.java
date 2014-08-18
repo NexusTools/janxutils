@@ -142,20 +142,22 @@ public class Logger extends Thread {
 		 * Internal messages about changes to the underlying implementations.
 		 * Produces an immense amount of output, disabled by default.
 		 */
-		Gears((byte)-1),
+		Gears("GEARS", (byte)-1),
 		
 		/**
 		 * Messages about actions and state changes that may be helpful for debugging.
 		 */
-		Debug((byte)0),
+		Debug("DEBUG", (byte)0),
 		
-		Information((byte)1),
-		Warning((byte)2),
-		Error((byte)3),
-		Fatal((byte)4);
+		Information("INFO ", (byte)1),
+		Warning("WARN ", (byte)2),
+		Error("ERROR", (byte)3),
+		Fatal("FATAL", (byte)4);
 		
 		public final byte code;
-		Level(byte level) {
+		public final String title;
+		Level(String title, byte level) {
+			this.title = title;
 			this.code = level;
 		}
 	}
@@ -219,6 +221,26 @@ public class Logger extends Thread {
 		
 	}
 	
+	protected static class Expander {
+		int len = 0;
+		static final boolean enabled = System.getProperty("loggerwhitespace", "enabled").equalsIgnoreCase("enabled");
+		public String expand(String string) {
+			if(string.length() > len)
+				len = string.length();
+			else {
+				int rem = len - string.length();
+				boolean front = true;
+				while(rem-- > 0) {
+					if(front = !front)
+						string += ' ';
+					else
+						string = ' ' + string;
+				}
+			}
+			return string;
+		}
+	}
+	
 	private PropList<Message> messageQueue = new PropList<Message>();
 	protected Logger() {
 		super("Logger");
@@ -230,6 +252,8 @@ public class Logger extends Thread {
 	public void run() {
 		final WeakHashMap<String, String> classNames = new WeakHashMap();
 		final ArrayList<Message> messages = new ArrayList();
+		final Expander threadName = new Expander();
+		final Expander className = new Expander();
 		while(true) {
 			messages.addAll(messageQueue.take());
 			if(messages.size() > 0) {
@@ -262,10 +286,11 @@ public class Logger extends Thread {
 								stream = SystemOut;
 								break;
 						}
-						stream.print("[");
 						stream.print(Application.uptime(message.timestamp));
+						stream.print(" [");
+						stream.print(message.level.title);
 						stream.print("] [");
-						stream.print(message.thread);
+						stream.print(threadName.expand(message.thread));
 						stream.print("] [");
 
 						String goodClassName = classNames.get(message.className);
@@ -274,10 +299,8 @@ public class Logger extends Thread {
 							goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
 							classNames.put(message.className, goodClassName);
 						}
-						stream.print(goodClassName);
+						stream.print(className.expand(goodClassName));
 
-						stream.print("] [");
-						stream.print(message.level);
 						stream.print("] ");
 						boolean addTab = false;
 						for(Object msg : message.content) {
