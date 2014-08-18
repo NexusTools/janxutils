@@ -15,7 +15,6 @@
 
 package net.nexustools;
 
-import java.util.HashMap;
 import net.nexustools.AppDelegate.Path;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
@@ -30,7 +29,7 @@ import net.nexustools.utils.log.Logger;
  * @author kate
  */
 public class Application {
-	public static final long created = System.currentTimeMillis();
+	private static long offset = 0;
 	private static final Prop<AppDelegate> delegate = new Prop();
 		
 	protected static String str(long time, int len) {
@@ -46,7 +45,11 @@ public class Application {
 	}
 		
 	public static String uptime(long timestamp) {
-		long millis = timestamp - created;
+		long millis = timestamp - (AppDelegate.created + offset);
+		if(millis < 0) {
+			offset += millis;
+			millis = 0;
+		}
 
 		long seconds = millis / 1000;
 		millis -= seconds*1000;
@@ -109,11 +112,15 @@ public class Application {
 					try {
 						bindSynthScheme(path.scheme, uriForPath(app.pathUri(path)));
 					} catch(Throwable t) {
-						Logger.warn(path.scheme + "://", "is not supported by this application delegate.");
+						Logger.warn(path.scheme + "://", "is not supported by this AppDelegate.");
 						Stream.remove(path.scheme);
 					}
 			}
 		});
+	}
+	
+	public static void main(String[] args) {
+		delegate.get().mainLoop(args);
 	}
 	
 }

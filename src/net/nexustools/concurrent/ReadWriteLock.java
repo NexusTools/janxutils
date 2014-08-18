@@ -15,10 +15,11 @@
 
 package net.nexustools.concurrent;
 
-import net.nexustools.concurrent.logic.SoftWriteReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -27,15 +28,13 @@ import java.util.concurrent.Semaphore;
 public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	
 	private static boolean verbose;
-	private static final byte defaultPermitCount;
+	public static final byte defaultPermitCount;
 	static {
 		verbose = System.getProperty("readwritelog", "").equalsIgnoreCase("verbose");
 		defaultPermitCount = Byte.valueOf(System.getProperty("readwritepermits", String.valueOf(Runtime.getRuntime().availableProcessors()*2))); // handle up to 2 threads per core, maximum 255
-		
-		System.out.println("Using " + defaultPermitCount + " permits for ReadWriteLocks");
 	}
 	
-	private static PropMap<Object, ReadWriteLock> lockMap = new PropMap(PropMap.Type.WeakHashMap);
+	private static final PropMap<Object, ReadWriteLock> lockMap = new PropMap(PropMap.Type.WeakHashMap);
 	public static Lockable lockFor(final Object target) {
 		if(target instanceof ReadWriteConcurrency)
 			return ((ReadWriteConcurrency)target).lockable();

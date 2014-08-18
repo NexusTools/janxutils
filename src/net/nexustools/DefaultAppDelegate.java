@@ -27,7 +27,6 @@ import net.nexustools.utils.log.Logger;
  * @author kate
  */
 public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDelegate {
-	
 	private final R runQueue;
 	private final String name;
 	private final String organization;
@@ -43,7 +42,7 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		runQueue = queue;
 		install();
 		
-		Logger.installSystemIO();
+		Logger.installSystem();
 		queue.push(new Runnable() {
 			public void run() {
 				launch(args);

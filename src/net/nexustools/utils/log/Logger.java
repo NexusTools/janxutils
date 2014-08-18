@@ -25,6 +25,7 @@ import java.util.WeakHashMap;
 import net.nexustools.Application;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
+import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
 
 /**
@@ -49,6 +50,8 @@ public class Logger extends Thread {
 					break;
 				}
 		minLevel = mLevel;
+		if(mLevel.code <= Level.Gears.code)
+			logger.messageQueue.push(new Message(Logger.Level.Gears, Thread.currentThread().getName(), "ReadWriteLock", "Using", defaultPermitCount, "permits by Default"));
 	}
 	
 	private static class Quote {
@@ -73,7 +76,7 @@ public class Logger extends Thread {
 	 * 
 	 * {@code LoggerPrintStream}
 	 */
-	public static void installSystemIO() {
+	public static void installSystem() {
 		//System.setOut(new LoggerPrintStream(Level.Debug));
 		//System.setErr(new LoggerPrintStream(Level.Error));
 	}
@@ -148,7 +151,7 @@ public class Logger extends Thread {
 		 * Messages about actions and state changes that may be helpful for debugging.
 		 */
 		Debug("DEBUG", (byte)0),
-		
+
 		Information("INFO ", (byte)1),
 		Warning("WARN ", (byte)2),
 		Error("ERROR", (byte)3),
@@ -229,7 +232,7 @@ public class Logger extends Thread {
 				len = string.length();
 			else {
 				int rem = len - string.length();
-				boolean front = true;
+				boolean front = false;
 				while(rem-- > 0) {
 					if(front = !front)
 						string += ' ';
@@ -254,6 +257,7 @@ public class Logger extends Thread {
 		final ArrayList<Message> messages = new ArrayList();
 		final Expander threadName = new Expander();
 		final Expander className = new Expander();
+		
 		while(true) {
 			messages.addAll(messageQueue.take());
 			if(messages.size() > 0) {
@@ -322,8 +326,6 @@ public class Logger extends Thread {
 				try {
 					Thread.sleep(5 * 60 * 60);
 				} catch (InterruptedException ex) {}
-			
-			
 		}
 	}
 	
