@@ -16,6 +16,7 @@
 package net.nexustools;
 
 import java.io.File;
+
 import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
 import net.nexustools.io.Stream;
@@ -58,17 +59,22 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		Application.setDelegate(this);
 	}
 	
-	public final String pathUri(Path path) {
+	public String pathUri(Path path) {
 		switch(path) {
 			case Temporary:
-				return Stream.uriForPath(System.getProperty("java.io.tmpdir"));
+				String tempDir = System.getenv("TMPDIR");
+				if(tempDir == null)
+					tempDir = System.getProperty("java.io.tmpdir");
+				return Stream.uriForPath(tempDir);
 
 			case UserHome:
 				return Stream.uriForPath(System.getProperty("user.home"));
 
 			case Configuration:
 			{
-				String userHome = System.getProperty("user.home");
+				String userHome = System.getenv("HOME");
+				if(userHome == null)
+					userHome = System.getProperty("user.home");
 				if(!userHome.endsWith(File.separator))
 					userHome += File.separator;
 
