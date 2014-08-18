@@ -22,7 +22,6 @@ import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.future.QueueFuture;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -34,7 +33,6 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	
 	private final String name;
 	private final PropList<RunThread> idleThreads;
-	//private final PropList<RunThread> knownThreads;
 	private final PropList<QueueFuture> tasks = new PropList();
 	public ThreadedRunQueue(String name, int threads) {
 		this.name = name;

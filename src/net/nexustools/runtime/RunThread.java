@@ -14,9 +14,9 @@
  */
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.SoftWriter;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.runtime.future.QueueFuture;
@@ -54,7 +54,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					setPriority(MAX_PRIORITY);
 					break;
 			}
-			//Logger.debug(name, "Spawned");
+			Logger.gears(name, "Spawned");
 			setDaemon(true);
 			setName(name);
 			start();
@@ -62,7 +62,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 
 		@Override
 		public void run() {
-			//Logger.debug(name, "Entered");
+			Logger.gears(name, "Entered");
 			// Make the queue this thread was created for current.
 			queue.read(new IfReader<Void, PropAccessor<Q>>() {
 				@Override
@@ -83,7 +83,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 							}
 						});
 						if(future == null && killNext) {
-							//Logger.debug(name, "Quit");
+							Logger.gears(name, "Quit");
 							data.clear();
 							return true;
 						}
@@ -93,16 +93,16 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					return;
 				try {
 					if (future == null) {
-						//Logger.debug(name, "Went Idle");
+						Logger.gears(name, "Went Idle");
 						Thread.sleep(60000 * 5);
 						killNext = true;
 					} else {
-						//Logger.debug(name, "Executing", future);
+						Logger.gears(name, "Executing", future);
 						killNext = false;
 						future.execute();
 					}
 				} catch (InterruptedException ex) {
-					//Logger.debug(name, "Wokeup");
+					Logger.gears(name, "Wokeup");
 				} catch (RuntimeException run) {
 					run.printStackTrace();
 				}

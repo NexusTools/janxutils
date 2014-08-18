@@ -18,13 +18,13 @@ package net.nexustools.utils.log;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.WeakHashMap;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.WeakHashMap;
 
-import net.nexustools.AppDelegate;
-import net.nexustools.concurrent.PropList;
+import net.nexustools.Application;
 import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Writer;
 
 /**
@@ -40,7 +40,7 @@ public class Logger extends Thread {
 	private static final Level minLevel;
 	
 	static {
-		Level mLevel = Level.Debug;
+		Level mLevel = Level.Gears;
 		String strLevel = System.getProperty("logger");
 		if(strLevel != null)
 			for(Level level : Level.values())
@@ -105,6 +105,10 @@ public class Logger extends Thread {
 		log(new Message(level, message));
 	}
 
+	public static void gears(Object... message) {
+		log(Level.Gears, message);
+	}
+
 	public static void debug(Object... message) {
 		log(Level.Debug, message);
 	}
@@ -134,7 +138,17 @@ public class Logger extends Thread {
 	}
 	
 	public static enum Level {
+		/**
+		 * Internal messages about changes to the underlying implementations.
+		 * Produces an immense amount of output, disabled by default.
+		 */
+		Gears((byte)-1),
+		
+		/**
+		 * Messages about actions and state changes that may be helpful for debugging.
+		 */
 		Debug((byte)0),
+		
 		Information((byte)1),
 		Warning((byte)2),
 		Error((byte)3),
@@ -249,7 +263,7 @@ public class Logger extends Thread {
 								break;
 						}
 						stream.print("[");
-						stream.print(AppDelegate.uptime(message.timestamp));
+						stream.print(Application.uptime(message.timestamp));
 						stream.print("] [");
 						stream.print(message.thread);
 						stream.print("] [");
