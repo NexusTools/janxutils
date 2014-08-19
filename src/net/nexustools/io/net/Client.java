@@ -19,8 +19,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 import javax.activation.UnsupportedDataTypeException;
+import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.AdaptorException;
 import net.nexustools.event.DefaultEventDispatcher;
 import net.nexustools.event.EventDispatcher;
@@ -50,7 +52,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 					if(packets.size() > 0)
 						for(P packet : packets)
 							try {
-								socket.v.write(packet.data());
+								socket.v.write(packet.data(Client.this));
 							} catch (IOException ex) {
 								throw ex;
 							} catch (Throwable t) {
@@ -210,7 +212,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	public P nextPacket() throws IOException {
 		P packet = (P)packetRegistry.create(socket.i.readShort());
 		try {
-			packet.read(socket.i);
+			packet.read(socket.i, this);
 		} catch (UnsupportedOperationException ex) {
 			throw new IOException(ex);
 		} catch (AdaptorException ex) {
@@ -219,8 +221,14 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		return packet;
 	}
 	
-	public void send(P packet) {
-		sendThread.interrupt();
+	public void send(final P packet) {
+		packetQueue.write(new Writer<ListAccessor<P>>() {
+			@Override
+			public void write(ListAccessor<P> data) {
+				data.push(packet);
+				sendThread.interrupt();
+			}
+		});
 	}
 	
 	public void moveTo(Server server) {

@@ -38,13 +38,13 @@ public abstract class Packet<C, S> {
 	protected abstract void recvFromServer(C client);
 	protected abstract void recvFromClient(C client, S server);
 	
-	public void read(DataInputStream dataInput) throws UnsupportedOperationException, IOException, AdaptorException {
+	public void read(DataInputStream dataInput, C client) throws UnsupportedOperationException, IOException, AdaptorException {
 		Adaptor.resolveAndRead(this, dataInput);
 	}
-	public void write(DataOutputStream dataOutput) throws UnsupportedOperationException, IOException, AdaptorException {
+	public void write(DataOutputStream dataOutput, C client) throws UnsupportedOperationException, IOException, AdaptorException {
 		Adaptor.resolveAndWrite(this, dataOutput);
 	}
-	public byte[] data() throws UnsupportedOperationException, IOException, AdaptorException {
+	public byte[] data(final C client) throws UnsupportedOperationException, IOException, AdaptorException {
 		return cache.read(new SoftWriteReader<byte[], PropAccessor<byte[]>>() {
 			@Override
 			public byte[] soft(PropAccessor<byte[]> data) {
@@ -54,7 +54,7 @@ public abstract class Packet<C, S> {
 			public byte[] read(PropAccessor<byte[]> data) {
 				try {
 					MemoryStream memoryStream = new MemoryStream();
-					write(memoryStream.createDataOutputStream());
+					write(memoryStream.createDataOutputStream(), client);
 					data.set(memoryStream.toByteArray());
 					return data.get();
 				} catch (UnsupportedOperationException ex) {

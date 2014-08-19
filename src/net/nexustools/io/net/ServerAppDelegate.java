@@ -17,7 +17,11 @@ package net.nexustools.io.net;
 
 import java.io.IOException;
 import net.nexustools.DefaultAppDelegate;
+import net.nexustools.io.DataInputStream;
+import net.nexustools.io.DataOutputStream;
 import net.nexustools.io.net.Server.Protocol;
+import net.nexustools.utils.Pair;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -37,8 +41,11 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 	protected abstract void populate(PacketRegistry registery);
 	
 	protected C createClient(String host, int port) throws IOException {
-		return (C)new Client(name, host, port, Protocol.TCP, packetRegistry);
+		return (C)new Client(name + "-Client", host, port, Protocol.TCP, packetRegistry);
 	}
+    protected C createClient(Pair<DataInputStream,DataOutputStream> socket, S server) throws IOException {
+        return (C)new Client(name + "-Client", socket, server);
+    }
 	protected S createServer(int port) throws IOException {
 		return (S)new Server(port, Protocol.TCP, packetRegistry);
 	}
@@ -47,14 +54,17 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 	protected void launchServer(S server) {}
 
 	protected void launch(String[] args) {
+		Logger.quote("Poluating Packet Registry", this);
 		populate(packetRegistry);
 		
 		try {
-			if(args.length == 2)
+			if(args.length == 2) {
+				Logger.gears("Starting Client", args);
 				launchClient(createClient(args[0], Integer.valueOf(args[1])));
-			else if(args.length == 1)
+			}else if(args.length == 1) {
+				Logger.gears("Starting Server", args);
 				launchServer(createServer(Integer.valueOf(args[0])));
-			else
+			} else
 				throw new UnsupportedOperationException("Required 1 or 2 arguments, (HOST PORT) or (PORT)");
 		} catch (IOException ex) {
 			throw new RuntimeException(ex);

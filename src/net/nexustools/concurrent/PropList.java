@@ -80,10 +80,18 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 			return list.size();
 		}
 		public I shift() {
-			return list.remove(0);
+			try {
+				return list.remove(0);
+			} catch(IndexOutOfBoundsException ex) {
+				return null;
+			}
 		}
 		public I pop() {
-			return list.remove(list.size()-1);
+			try {
+				return list.remove(list.size()-1);
+			} catch(IndexOutOfBoundsException ex) {
+				return null;
+			}
 		}
 		public boolean isTrue() {
 			return list.size() > 0;
