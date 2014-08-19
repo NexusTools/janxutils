@@ -15,6 +15,7 @@
 
 package net.nexustools.io;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,27 +30,25 @@ public class StreamUtils {
 	public static final short DefaultMemoryMax = 8192;
 	public static final short DefaultCopySize = DefaultMemoryMax;
 	
-	public static long copy(InputStream inStream, OutputStream outStream) throws IOException {
-		return copy(inStream, outStream, DefaultMemoryMax);
+	public static void copy(InputStream inStream, OutputStream outStream) throws IOException {
+		copy(inStream, outStream, DefaultMemoryMax);
 	}
 	
-	public static long copy(InputStream inStream, OutputStream outStream, long max) throws IOException {
-		return copy(inStream, outStream, max, DefaultCopySize);
+	public static void copy(InputStream inStream, OutputStream outStream, int max) throws IOException {
+		copy(inStream, outStream, max, DefaultCopySize);
 	}
 
-	public static long copy(InputStream inStream, OutputStream outStream, long max, short bufferSize) throws IOException {
+	public static void copy(InputStream inStream, OutputStream outStream, int amount, short bufferSize) throws IOException {
 		int copied;
-		long read = 0;
 		byte[] buf = new byte[bufferSize];
-		while((copied = inStream.read(buf)) != -1) {
-			max -= copied;
-			if(max < 0)
-				throw new IOException("Reached copy limit");
+		while((copied = inStream.read(buf, 0, (int) Math.min(amount, bufferSize))) > 0) {
+			amount -= copied;
 			outStream.write(buf, 0, copied);
-			read += copied;
+			if(amount < 0)
+				break;
 		}
-		
-		return read;
+		if(amount > 0)
+			throw new EOFException("Stream ended with " + amount + "bytes left");
 	}
 	
 }
