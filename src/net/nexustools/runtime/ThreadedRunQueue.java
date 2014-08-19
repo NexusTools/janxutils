@@ -18,10 +18,12 @@ package net.nexustools.runtime;
 import java.util.ArrayList;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -46,7 +48,6 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 			runThreads.add(runThread);
 			threads --;
 		}
-		//knownThreads = new PropList(runThreads);
 		idleThreads = new PropList(runThreads);
 	}
 	public ThreadedRunQueue(String name) {
@@ -56,15 +57,22 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	public QueueFuture nextFuture(final RunThread runThread) {
 		return tasks.read(new WriteReader<QueueFuture, ListAccessor<QueueFuture>>() {
 			@Override
-			public QueueFuture read(ListAccessor<QueueFuture> data) {
-				if(data.isTrue()) {
-					idleThreads.remove(runThread);
-					return data.shift();
-				}
-				
-				//Logger.debug("No New Futures");
-				idleThreads.push(runThread);
-				return null;
+			public QueueFuture read(final ListAccessor<QueueFuture> tasksData) {
+				return idleThreads.read(new Reader<QueueFuture, ListAccessor<RunThread>>() {
+					@Override
+					public QueueFuture read(ListAccessor<RunThread> data) {
+						Logger.gears(name, "Reading Future");
+						if(tasksData.isTrue()) {
+							idleThreads.remove(runThread);
+							Logger.gears(name, "Found Future");
+							return tasksData.shift();
+						}
+
+						idleThreads.unique(runThread);
+						Logger.gears(name, "No New Futures");
+						return null;
+					}
+				});
 			}
 		});
 	}
@@ -73,13 +81,19 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	protected QueueFuture push(final QueueFuture future) {
 		tasks.write(new Writer<ListAccessor<QueueFuture>>() {
 			@Override
-			public void write(ListAccessor<QueueFuture> data) {
-				data.push(future);
-				idleThreads.read(new TestReader<ListAccessor<RunThread>>() {
+			public void write(final ListAccessor<QueueFuture> tasksData) {
+				idleThreads.read(new Reader<Boolean, ListAccessor<RunThread>>() {
 					@Override
 					public Boolean read(ListAccessor<RunThread> data) {
-						data.last().notifyTasksAvailable();
-						return true;
+						tasksData.push(future);
+						if(data.isTrue()) {
+							Logger.gears("Notifying Idle RunThread");
+							data.last().notifyTasksAvailable();
+							return true;
+						}
+					
+						Logger.gears("No idle RunThreads to Notify");
+						return false;
 					}
 				});
 			}

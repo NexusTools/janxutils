@@ -26,6 +26,7 @@ public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
 	
 	public V get(K key);
 	public V take(K key);
+	public Map<K,V> take();
 	public void remove(K key);
 	public void put(K key, V value);
 	public V replace(K key, V value);

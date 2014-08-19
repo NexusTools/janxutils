@@ -85,6 +85,12 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		public V replace(K key, V value) {
 			return map.put(key, value);
 		}
+
+		public Map<K, V> take() {
+			Map<K, V> copy = copy();
+			map.clear();
+			return copy;
+		}
 	};
 	public PropMap(Type type) {
 		switch(this.type = type) {
@@ -216,6 +222,15 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			@Override
 			public V read(MapAccessor<K, V> data) {
 				return data.replace(key, value);
+			}
+		});
+	}
+	
+	public Map<K, V> take() {
+		return read(new WriteReader<Map<K, V>, MapAccessor<K, V>>() {
+			@Override
+			public Map<K, V> read(MapAccessor<K, V> data) {
+				return data.take();
 			}
 		});
 	}

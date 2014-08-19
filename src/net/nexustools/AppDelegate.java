@@ -83,8 +83,8 @@ public interface AppDelegate {
 	public String name();
 	public String organization();
 	public String pathUri(Path path);
-	public void mainLoop(String[] args);
 	public boolean needsMainLoop();
+	public void mainLoop();
 	
 	
 	

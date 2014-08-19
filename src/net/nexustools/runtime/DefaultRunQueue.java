@@ -28,7 +28,7 @@ import net.nexustools.concurrent.ReadWriteLock;
  */
 public class DefaultRunQueue<R extends Runnable> extends ThreadedRunQueue<R> {
 
-	private static DefaultRunQueue instance = new DefaultRunQueue();
+	private static DefaultRunQueue instance = new DefaultRunQueue("DefaultRunQueue");
 	public static DefaultRunQueue instance() {
 		return instance;
 	}
@@ -39,12 +39,6 @@ public class DefaultRunQueue<R extends Runnable> extends ThreadedRunQueue<R> {
 	}
 	public DefaultRunQueue(String name) {
 		this(name, -1);
-	}
-	public DefaultRunQueue(int threads) {
-		this(null, threads);
-	}
-	public DefaultRunQueue() {
-		this(null, -1);
 	}
 
 	public void write(BaseAccessor data, BaseWriter actor) {

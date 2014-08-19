@@ -73,6 +73,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 			});
 			killNext = false;
 			do {
+				Logger.gears(name, "Retreiving Work");
 				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
@@ -92,6 +93,8 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 				}))
 					return;
 				try {
+					Logger.gears(future);
+					
 					if (future == null) {
 						Logger.gears(name, "Went Idle");
 						Thread.sleep(60000 * 5);
@@ -123,9 +126,11 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 		this.name = name;
 		this.queue = new Prop(queue);
 		this.priority = new Prop(priority);
+		Logger.gears("RunThread Created", this);
 	}
 
 	public void notifyTasksAvailable() {
+		Logger.gears("Notifying Tasks Available", this);
 		thread.write(new SoftWriter<PropAccessor<NativeRunThread>>() {
 			@Override
 			public void write(PropAccessor<NativeRunThread> data) {
@@ -146,4 +151,9 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 		queue.clear();
 	}
 
+	@Override
+	public String toString() {
+		return "RunThread(name=" + name + ", queue=" + queue.get() + ")";
+	}
+	
 }
