@@ -88,7 +88,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 						tasksData.push(future);
 						if(data.isTrue()) {
 							Logger.gears("Notifying Idle RunThread");
-							data.last().notifyTasksAvailable();
+							data.pop().notifyTasksAvailable();
 							return true;
 						}
 					
