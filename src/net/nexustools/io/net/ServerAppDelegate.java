@@ -92,10 +92,11 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 				launchServer(server);
 			} else
 				throw new UnsupportedOperationException("Required 1 or 2 arguments, (HOST PORT) or (PORT)");
-		} catch (IOException ex) {
-			throw new RuntimeException(ex);
-		} catch (NoSuchMethodException ex) {
-			throw new RuntimeException(ex);
+		} catch (Throwable t) {
+			mainLoop.set(new Runnable() {
+				public void run() {}
+			});
+			throw new RuntimeException(t);
 		}
 	}
 

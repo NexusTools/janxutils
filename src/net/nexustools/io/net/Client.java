@@ -40,7 +40,7 @@ import net.nexustools.utils.log.Logger;
  */
 public class Client<P extends Packet, S extends Server<P, ?>> {
 	
-	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("Client-OutQueue");
+	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("ClientOut");
 	private abstract class ReceiveThread extends Thread {
 		public ReceiveThread(String name) {
 			super(name + "-in");

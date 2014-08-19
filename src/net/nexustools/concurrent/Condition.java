@@ -21,8 +21,15 @@ package net.nexustools.concurrent;
  */
 public class Condition {
 	
-	private final Prop<Boolean> condition = new Prop<Boolean>(false);
+	private final Prop<Boolean> condition;
 	private final PropList<Thread> waitingThreads = new PropList<Thread>();
+	public Condition(boolean initialState) {
+		condition = new Prop<Boolean>(initialState);
+	}
+	public Condition() {
+		this(false);
+	}
+	
 	public void waitFor() {
 		waitingThreads.unique(Thread.currentThread());
 		while(!condition.isTrue())
@@ -32,6 +39,9 @@ public class Condition {
 		waitingThreads.remove(Thread.currentThread());
 	}
 	
+	public void start() {
+		condition.set(false);
+	}
 	public void finish() {
 		condition.set(true);
 		for(Thread thread : waitingThreads)

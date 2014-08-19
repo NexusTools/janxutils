@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Reader;
-import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.future.QueueFuture;
@@ -47,6 +46,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 		this.name = name + "Queue";
 		if(threads < 1)
 			threads = defaultThreadCount;
+		Logger.gears("Creating", threads, "RunThreads for", this.name);
 		ArrayList<RunThread> runThreads = new ArrayList();
 		while(threads > 0) {
 			RunThread runThread = new RunThread(this.name + '-' + threads, this);

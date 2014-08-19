@@ -126,7 +126,6 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 		this.name = name;
 		this.queue = new Prop(queue);
 		this.priority = new Prop(priority);
-		Logger.gears("RunThread Created", this);
 	}
 
 	public void notifyTasksAvailable() {
@@ -153,7 +152,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 
 	@Override
 	public String toString() {
-		return "RunThread(name=" + name + ", queue=" + queue.get() + ")";
+		return getClass().getSimpleName() + "(name=" + name + ", queue=" + queue.get() + ")";
 	}
 	
 }
