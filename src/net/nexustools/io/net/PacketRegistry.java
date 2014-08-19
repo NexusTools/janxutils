@@ -18,6 +18,7 @@ package net.nexustools.io.net;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import net.nexustools.concurrent.PropList;
+import net.nexustools.utils.Pair;
 
 /**
  *
@@ -25,15 +26,41 @@ import net.nexustools.concurrent.PropList;
  */
 public class PacketRegistry<P extends Packet> {
 	
-	final PropList<Constructor<? extends P>> registered = new PropList(); 
+	public class Entry extends Pair<Constructor<? extends P>, Class<? extends P>> {
+		
+		public Entry(Constructor<? extends P> constructor, Class<? extends P> clazz) {
+			super(constructor, clazz);
+		}
+
+		@Override
+		public int hashCode() {
+			return v.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return ((Entry)obj).v == v;
+		}
+		
+	}
+	
+	final PropList<Entry> registered = new PropList();
 	
 	public void register(Class<? extends P> packetClass) throws NoSuchMethodException {
-		registered.unique(packetClass.getConstructor());
+		registered.unique(new Entry(packetClass.getConstructor(), packetClass));
+	}
+	
+	public short idFor(Packet packet) throws NoSuchMethodException {
+		return idFor((Class<? extends P>)packet.getClass());
+	}
+	
+	public short idFor(Class<? extends P> packetClass) throws NoSuchMethodException {
+		return (short) registered.indexOf(new Entry(packetClass.getConstructor(), packetClass));
 	}
 	
 	public P create(short id) {
 		try {
-			return registered.get(id).newInstance();
+			return registered.get(id).i.newInstance();
 		} catch (InstantiationException ex) {
 			throw new RuntimeException(ex);
 		} catch (IllegalAccessException ex) {
@@ -42,6 +69,8 @@ public class PacketRegistry<P extends Packet> {
 			throw new RuntimeException(ex);
 		} catch (InvocationTargetException ex) {
 			throw new RuntimeException(ex);
+		} catch (IndexOutOfBoundsException ex) {
+			throw new RuntimeException("Packet ID not registered: " + id);
 		}
 	}
 	

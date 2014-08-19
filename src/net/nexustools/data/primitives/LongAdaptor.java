@@ -13,18 +13,31 @@
  * 
  */
 
-package net.nexustools.io.net;
+package net.nexustools.data.primitives;
 
 import java.io.IOException;
+import net.nexustools.io.DataInputStream;
+import net.nexustools.io.DataOutputStream;
 
 /**
  *
- * @author kate
+ * @author katelyn
  */
-public class DisconnectedException extends IOException {
-	
-	public DisconnectedException(Throwable t) {
-		super(t);
+public class LongAdaptor extends PrimitiveAdaptor<Long> {
+
+	@Override
+	public void write(Long target, DataOutputStream out) throws IOException {
+		out.writeLong(target);
 	}
-	
+
+	@Override
+	public Long createInstance(DataInputStream in, Class<? extends Long> target) throws IOException {
+		return in.readLong();
+	}
+
+	@Override
+	public Class<? extends Long> getType() {
+		return Long.class;
+	}
+
 }

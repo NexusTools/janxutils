@@ -16,6 +16,7 @@
 package net.nexustools.io.net;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import net.nexustools.DefaultAppDelegate;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
@@ -38,7 +39,7 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 		this(args, name, organization, new PacketRegistry());
 	}
 	
-	protected abstract void populate(PacketRegistry registery);
+	protected abstract void populate(PacketRegistry registry) throws NoSuchMethodException;
 	
 	protected C createClient(String host, int port) throws IOException {
 		return (C)new Client(name + "-Client", host, port, Protocol.TCP, packetRegistry);
@@ -55,9 +56,9 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 
 	protected void launch(String[] args) {
 		Logger.quote("Poluating Packet Registry", this);
-		populate(packetRegistry);
 		
 		try {
+			populate(packetRegistry);
 			if(args.length == 2) {
 				Logger.gears("Starting Client", args);
 				launchClient(createClient(args[0], Integer.valueOf(args[1])));
@@ -67,6 +68,8 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 			} else
 				throw new UnsupportedOperationException("Required 1 or 2 arguments, (HOST PORT) or (PORT)");
 		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		} catch (NoSuchMethodException ex) {
 			throw new RuntimeException(ex);
 		}
 	}

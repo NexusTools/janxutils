@@ -15,6 +15,7 @@
 
 package net.nexustools.io.net;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
@@ -23,7 +24,6 @@ import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.data.AdaptorException;
 import net.nexustools.event.DefaultEventDispatcher;
 import net.nexustools.event.EventDispatcher;
 import net.nexustools.io.DataInputStream;
@@ -52,7 +52,23 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 					if(packets.size() > 0)
 						for(P packet : packets)
 							try {
-								socket.v.write(packet.data(Client.this));
+								int packetID = packetRegistry.idFor(packet);
+								Logger.gears("Writing Packet", packetID, packet);
+								
+								byte[] data;
+								try {
+									data = packet.data(Client.this);
+								} catch(IOException ex) {
+									Logger.exception(ex);
+									continue;
+								}
+								
+								Logger.debug(socket.v);
+								socket.v.writeShort(packetID);
+								socket.v.write(data);
+								socket.v.flush();
+								
+								Logger.gears("Written and Flushed");
 							} catch (IOException ex) {
 								throw ex;
 							} catch (Throwable t) {
@@ -64,6 +80,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 						} catch (InterruptedException ex) {}
 				}
 			} catch(IOException ex) {
+				Logger.exception(Logger.Level.Gears, ex);
 			} finally {
 				try {
 					socket.v.close();
@@ -75,8 +92,12 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	public static Pair<DataInputStream,DataOutputStream> open(String host, int port, Protocol protocol) throws IOException {
 		switch(protocol) {
 			case TCP:
+				Logger.gears("Opening TCP Socket", host, port);
+				
 				Socket socket = new Socket(host, port);
-				return new Pair(new DataInputStream(socket.getInputStream()), new DataOutputStream(socket.getOutputStream()));
+				Pair pair = new Pair(new DataInputStream(socket.getInputStream()), new DataOutputStream(socket.getOutputStream()));
+				Logger.gears("Opened", socket, pair);
+				return pair;
 		}
 		
 		throw new UnsupportedDataTypeException();
@@ -99,9 +120,10 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 				try {
 					while(true) {
 						final Packet packet = nextPacket();
-						assert(packet != null);
+						if(packet == null)
+							throw new IOException("Unexpected end of stream");
 						
-						Logger.debug("Received Packet", packet);
+						Logger.gears("Received Packet", packet);
 						runQueue.push(new Runnable() {
 							public void run() {
 								packet.recvFromClient(Client.this, server);
@@ -109,6 +131,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 						});
 					}
 				} catch (DisconnectedException ex) {
+					Logger.exception(Logger.Level.Gears, ex);
 				} catch (IOException ex) {
 					Logger.exception(ex);
 				} finally {
@@ -148,9 +171,10 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 				try {
 					while(true) {
 						final Packet packet = nextPacket();
-						assert(packet != null);
+						if(packet == null)
+							throw new IOException("Unexpected end of stream");
 						
-						Logger.debug("Received Packet", packet);
+						Logger.gears("Received Packet", packet);
 						runQueue.push(new Runnable() {
 							public void run() {
 								packet.recvFromServer(Client.this);
@@ -158,6 +182,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 						});
 					}
 				} catch (DisconnectedException ex) {
+					Logger.exception(Logger.Level.Gears, ex);
 				} catch (IOException ex) {
 					Logger.exception(ex);
 				} finally {
@@ -210,9 +235,19 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	}
 	
 	public P nextPacket() throws IOException {
-		P packet = (P)packetRegistry.create(socket.i.readShort());
+		Logger.gears("Waiting for packet", this);
+		short packetID;
+		try {
+			packetID = socket.i.readShort();
+		} catch(EOFException eof) {
+			throw new DisconnectedException(eof);
+		}
+		Logger.gears("Reading packet", packetID);
+		
+		P packet = (P)packetRegistry.create(packetID);
 		try {
 			packet.read(socket.i, this);
+			Logger.gears("Readed packet", packet);
 		} catch (UnsupportedOperationException ex) {
 			throw new IOException(ex);
 		}

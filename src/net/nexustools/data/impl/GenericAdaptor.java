@@ -17,6 +17,8 @@ package net.nexustools.data.impl;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.Adaptor;
 import net.nexustools.data.AdaptorException;
 import net.nexustools.data.analyze.ClassDefinition;
@@ -41,7 +43,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	private final ClassDefinition definition;
 	
-	public GenericAdaptor(Class<? extends T> target) {
+	public GenericAdaptor(Class<? extends T> target) throws AdaptorException {
 		this.definition = ClassDefinition.getInstance(target);
 	}
 
@@ -52,7 +54,12 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void write(T target, DataOutputStream out) throws IOException {
-		ClassDefinition targetDefinition = ClassDefinition.getInstance(target.getClass());
+		ClassDefinition targetDefinition;
+		try {
+			targetDefinition = ClassDefinition.getInstance(target.getClass());
+		} catch (AdaptorException ex) {
+			throw new IOException(ex);
+		}
 		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.write(target, out);
 		}
@@ -70,7 +77,12 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void read(T target, DataInputStream in) throws IOException {
-		ClassDefinition targetDefinition = ClassDefinition.getInstance(target.getClass());
+		ClassDefinition targetDefinition;
+		try {
+			targetDefinition = ClassDefinition.getInstance(target.getClass());
+		} catch (AdaptorException ex) {
+			throw new IOException(ex);
+		}
 		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.read(target, in);
 		}

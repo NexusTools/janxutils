@@ -30,5 +30,10 @@ public class Pair<I, V> {
 	}
 	
 	public Pair() {}
+
+	@Override
+	public String toString() {
+		return "Pair(" + i + ", " + v + ")";
+	}
 	
 }

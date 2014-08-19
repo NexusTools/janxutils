@@ -15,16 +15,17 @@
 
 package net.nexustools.concurrent;
 
-import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.concurrent.logic.Reader;
-import net.nexustools.concurrent.logic.WriteReader;
-import net.nexustools.concurrent.logic.BaseWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.concurrent.logic.Reader;
+import net.nexustools.concurrent.logic.WriteReader;
+import net.nexustools.concurrent.logic.Writer;
 
 /**
  *
@@ -59,18 +60,26 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 		}
 		public int indexOf(I object, int from) {
 			ListIterator<I> listIterator = list.listIterator(from);
-			while(true) {
-				int index = listIterator.nextIndex();
-				if(index == -1 || listIterator.next().equals(object))
-					return index;
+			try {
+				while(true) {
+					int index = listIterator.nextIndex();
+					if(listIterator.next().equals(object))
+						return index;
+				}
+			} catch(NoSuchElementException ex) {
+				return -1;
 			}
 		}
 		public int lastIndexOf(I object, int from) {
 			ListIterator<I> listIterator = list.listIterator(from);
-			while(true) {
-				int index = listIterator.previousIndex();
-				if(index == -1 || listIterator.previous().equals(object))
-					return index;
+			try {
+				while(true) {
+					int index = listIterator.previousIndex();
+					if(index == -1 || listIterator.previous().equals(object))
+						return index;
+				}
+			} catch(NoSuchElementException ex) {
+				return -1;
 			}
 		}
 		public int lastIndexOf(I object) {

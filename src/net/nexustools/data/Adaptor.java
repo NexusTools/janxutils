@@ -45,6 +45,7 @@ public abstract class Adaptor<T> {
 			put(byte.class, Byte.class);
 			put(short.class, Short.class);
 			put(int.class, Integer.class);
+			put(long.class, Long.class);
 			
 			put(float.class, Float.class);
 			put(double.class, Double.class);
@@ -273,6 +274,7 @@ public abstract class Adaptor<T> {
 		register(new net.nexustools.data.primitives.ByteAdaptor());
 		register(new net.nexustools.data.primitives.ShortAdaptor());
 		register(new net.nexustools.data.primitives.IntegerAdaptor());
+		register(new net.nexustools.data.primitives.LongAdaptor());
 		
 		register(new net.nexustools.data.primitives.FloatAdaptor());
 		register(new net.nexustools.data.primitives.DoubleAdaptor());

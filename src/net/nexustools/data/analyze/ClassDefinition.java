@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import net.nexustools.data.Adaptor;
 import net.nexustools.data.AdaptorException;
 import net.nexustools.data.annote.ClassStream;
@@ -36,7 +37,7 @@ import net.nexustools.utils.log.Logger;
 public final class ClassDefinition {
 	
 	private static final WeakHashMap<Class<?>, ClassDefinition> instances = new WeakHashMap();
-	public static synchronized ClassDefinition getInstance(Class<?> type) {
+	public static synchronized ClassDefinition getInstance(Class<?> type) throws AdaptorException {
 		ClassDefinition def = instances.get(type);
 		if(def == null) {
 			Logger.gears("Creating definition for", type.getName());
@@ -64,7 +65,7 @@ public final class ClassDefinition {
 	protected final ArrayList<FieldDefinition.Adaptor> staticFields = new ArrayList();
 	protected final HashMap<String, FieldDefinition.Adaptor> mutableFields = new HashMap();
 	protected final HashMap<Byte, FieldDefinition.Adaptor> fieldMap = new HashMap();
-	private ClassDefinition(Class<?> type) {
+	private ClassDefinition(Class<?> type) throws AdaptorException {
 		Class<?> superClazz = type.getSuperclass();
 		if(superClazz != null && !superClazz.equals(Object.class))
 			superDefinition = getInstance(superClazz);
@@ -86,7 +87,7 @@ public final class ClassDefinition {
 		return fieldMap;
 	}
 	
-	private void process() {
+	private void process() throws AdaptorException {
 		if(superDefinition != null) {
 			Logger.gears("Attaching SuperDefinition", superDefinition);
 			staticFields.addAll(superDefinition.staticFields);
@@ -108,14 +109,11 @@ public final class ClassDefinition {
 
 				fieldInstruction.staticField = fieldStream.staticField();
 				fieldInstruction.mutableType = fieldStream.mutableType();
-				try {
-					fieldInstruction.mutableType = fieldInstruction.mutableType && Adaptor.isMutable(field.getType());
-				} catch (AdaptorException ex) {}
+				fieldInstruction.mutableType = fieldInstruction.mutableType && Adaptor.isMutable(field.getType());
 				fieldInstruction.neverNull = fieldStream.neverNull();
 				fieldInstruction.fieldID = fieldStream.fieldID();
 
-				if(!registerField(field, fieldInstruction))
-					throw new RuntimeException("Failed to register field with FieldStream annotation");
+				registerField(field, fieldInstruction);
 			} else {
 				if(Modifier.isFinal(field.getModifiers()) ||
 						Modifier.isStatic(field.getModifiers()))
@@ -188,25 +186,20 @@ public final class ClassDefinition {
 
 				try {
 					fieldInstruction.mutableType = Adaptor.isMutable(field.getType());
+					registerField(field, fieldInstruction);
 				} catch (AdaptorException ex) {
 					Logger.exception(Logger.Level.Gears, ex);
 					continue;
 				}
-				registerField(field, fieldInstruction);
 			}
 		}
 		
 		Logger.debug(this, "Loaded", staticFields.size(), "Static Fields", fieldMap.size(), "Mapped Fields", mutableFields.size(), "Mutable Fields");
 	}
 	
-	protected final boolean registerField(Field field, FieldDefinition.Instruction fieldInstruction) {
-		FieldDefinition fieldDefinition;
-		try {
-			fieldDefinition = new FieldDefinition(field, fieldInstruction);
-		} catch (AdaptorException ex) {
-			Logger.exception(Logger.Level.Gears, ex);
-			return false;
-		}
+	protected final void registerField(Field field, FieldDefinition.Instruction fieldInstruction) throws AdaptorException {
+		FieldDefinition fieldDefinition = new FieldDefinition(field, fieldInstruction);
+		
 		fields.put(field.getName(), fieldDefinition);
 		if(fieldInstruction.staticField)
 			staticFields.add(fieldDefinition.getAdaptor());
@@ -214,7 +207,6 @@ public final class ClassDefinition {
 			fieldMap.put((byte)fieldInstruction.fieldID, fieldDefinition.getAdaptor());
 		else
 			mutableFields.put(field.getName(), fieldDefinition.getAdaptor());
-		return true;
 	}
 	
 	public Set<String> fieldKeySet() {
