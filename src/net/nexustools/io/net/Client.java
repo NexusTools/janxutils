@@ -18,8 +18,8 @@ package net.nexustools.io.net;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 import javax.activation.UnsupportedDataTypeException;
+import net.nexustools.concurrent.Condition;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropList;
@@ -40,53 +40,47 @@ import net.nexustools.utils.log.Logger;
  */
 public class Client<P extends Packet, S extends Server<P, ?>> {
 	
-	public class SendThread extends Thread {
-		public SendThread(String name) {
-			super(name);
+	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("Client-OutQueue");
+	private abstract class ReceiveThread extends Thread {
+		public ReceiveThread(String name) {
+			super(name + "-in");
 			setDaemon(true);
 		}
+		public abstract Runnable packetProcessor(P packet);
+		public abstract Object eventSource();
 		@Override
 		public void run() {
 			try {
-				while(isAlive.get()) {
-					List<P> packets = packetQueue.take();
-					if(packets.size() > 0)
-						for(P packet : packets)
-							try {
-								int packetID = packetRegistry.idFor(packet);
-								Logger.gears("Writing Packet", packetID, packet);
-								
-								byte[] data;
-								try {
-									data = packet.data(Client.this);
-								} catch(IOException ex) {
-									Logger.exception(ex);
-									continue;
-								}
-								
-								Logger.debug(socket.v);
-								socket.v.writeShort(packetID);
-								socket.v.write(data);
-								socket.v.flush();
-								
-								Logger.gears("Written and Flushed");
-							} catch (IOException ex) {
-								throw ex;
-							} catch (Throwable t) {
-								Logger.exception(t);
-							}
-					else
-						try {
-							Thread.sleep(2 * 60 * 1000);
-						} catch (InterruptedException ex) {}
+				while(true) {
+					final P packet = nextPacket();
+					if(packet == null)
+						throw new IOException("Unexpected end of stream");
+
+					Logger.gears("Received Packet", packet);
+					runQueue.push(packetProcessor(packet));
 				}
-			} catch(IOException ex) {
+			} catch (DisconnectedException ex) {
 				Logger.exception(Logger.Level.Gears, ex);
+			} catch (IOException ex) {
+				Logger.exception(ex);
 			} finally {
+				isAlive.set(false);
+				Logger.debug("Client Disconnected", Client.this);
 				try {
-					socket.v.close();
+					socket.i.close();
 				} catch (IOException ex) {}
+
+				eventDispatcher.dispatch(new EventDispatcher.Processor<ClientListener, ClientListener.ClientEvent>() {
+					public ClientListener.ClientEvent create() {
+						return new ClientListener.ClientEvent(eventSource(), Client.this);
+					}
+					public void dispatch(ClientListener listener, ClientListener.ClientEvent event) {
+						listener.clientDisconnected(event);
+					}
+				});
+				shutdown.finish();
 			}
+			
 		}
 	}
 	
@@ -106,55 +100,56 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	
 	protected final RunQueue runQueue;
 	final PacketRegistry packetRegistry;
+	final Condition shutdown = new Condition();
 	final Prop<Boolean> isAlive = new Prop(true);
 	final PropList<P> packetQueue = new PropList();
 	protected final Pair<DataInputStream,DataOutputStream> socket;
 	final DefaultEventDispatcher<?, ClientListener, ClientListener.ClientEvent> eventDispatcher;
 	final DefaultEventDispatcher<?, PacketListener, PacketListener.PacketEvent> packetDispatcher;
-	final Thread receiveThread;
-	final SendThread sendThread;
-	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, final Server server) {
-		sendThread = new SendThread(name + "-send");
-		receiveThread = new Thread(name + "-receive") {
-			{
-				setDaemon(true);
-			}
-			@Override
-			public void run() {
+	final Runnable processSendQueue = new Runnable() {
+		public void run() {
+			for(P packet : packetQueue.take())
 				try {
-					while(true) {
-						final Packet packet = nextPacket();
-						if(packet == null)
-							throw new IOException("Unexpected end of stream");
-						
-						Logger.gears("Received Packet", packet);
-						runQueue.push(new Runnable() {
-							public void run() {
-								packet.recvFromClient(Client.this, server);
-							}
-						});
+					int packetID = packetRegistry.idFor(packet);
+					Logger.gears("Writing Packet", packetID, packet);
+
+					byte[] data;
+					try {
+						data = packet.data(Client.this);
+					} catch(Throwable t) {
+						Logger.warn("Error generating packet contents");
+						Logger.warn("Client may now become unstable");
+						Logger.exception(Logger.Level.Warning, t);
+						continue;
 					}
-				} catch (DisconnectedException ex) {
-					Logger.exception(Logger.Level.Gears, ex);
+
+					Logger.debug(socket.v);
+					socket.v.writeShort(packetID);
+					socket.v.write(data);
+					socket.v.flush();
+
+					Logger.gears("Written and Flushed");
 				} catch (IOException ex) {
 					Logger.exception(ex);
-				} finally {
-					isAlive.set(false);
-					sendThread.interrupt();
-					Logger.debug("Client Disconnected", Client.this);
-					try {
-						socket.i.close();
-					} catch (IOException ex) {}
+				} catch (NoSuchMethodException ex) {
+					Logger.exception(ex);
 				}
-				eventDispatcher.dispatch(new EventDispatcher.Processor<ClientListener, ClientListener.ClientEvent>() {
-					public ClientListener.ClientEvent create() {
-						return new ClientListener.ClientEvent(server, Client.this);
+		}
+	};
+	final ReceiveThread receiveThread;
+	public Client(String name, Pair<DataInputStream,DataOutputStream> socket, final Server server) {
+		receiveThread = new ReceiveThread(name) {
+			@Override
+			public Runnable packetProcessor(final P packet) {
+				return new Runnable() {
+					public void run() {
+						packet.recvFromClient(Client.this, server);
 					}
-					public void dispatch(ClientListener listener, ClientListener.ClientEvent event) {
-						listener.clientDisconnected(event);
-					}
-				});
-				
+				};
+			}
+			@Override
+			public Object eventSource() {
+				return server;
 			}
 		};
 		
@@ -165,64 +160,36 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		this.socket = socket;
 		
 		receiveThread.start();
-		sendThread.start();
 	}
-	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, PacketRegistry packetRegistry) {
-		sendThread = new SendThread(name + "-send");
-		receiveThread = new Thread(name + "-receive") {
-			{
-				setDaemon(true);
+	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, RunQueue runQueue, PacketRegistry packetRegistry) {
+		receiveThread = new ReceiveThread(name) {
+			@Override
+			public Runnable packetProcessor(final P packet) {
+				return new Runnable() {
+					public void run() {
+						packet.recvFromServer(Client.this);
+					}
+				};
 			}
 			@Override
-			public void run() {
-				try {
-					while(true) {
-						final Packet packet = nextPacket();
-						if(packet == null)
-							throw new IOException("Unexpected end of stream");
-						
-						Logger.gears("Received Packet", packet);
-						runQueue.push(new Runnable() {
-							public void run() {
-								packet.recvFromServer(Client.this);
-							}
-						});
-					}
-				} catch (DisconnectedException ex) {
-					Logger.exception(Logger.Level.Gears, ex);
-				} catch (IOException ex) {
-					Logger.exception(ex);
-				} finally {
-					isAlive.set(false);
-					sendThread.interrupt();
-					Logger.debug("Client Disconnected", Client.this);
-					try {
-						socket.i.close();
-					} catch (IOException ex) {}
-				}
-				eventDispatcher.dispatch(new EventDispatcher.Processor<ClientListener, ClientListener.ClientEvent>() {
-					public ClientListener.ClientEvent create() {
-						return new ClientListener.ClientEvent(Client.this, Client.this);
-					}
-					public void dispatch(ClientListener listener, ClientListener.ClientEvent event) {
-						listener.clientDisconnected(event);
-					}
-				});
-				
+			public Object eventSource() {
+				return Client.this;
 			}
 		};
 		
-		runQueue = new ThreadedRunQueue(name + "-RunQueue");
+		this.runQueue = runQueue;
 		eventDispatcher = new DefaultEventDispatcher(runQueue);
 		packetDispatcher = new DefaultEventDispatcher(runQueue);
 		this.packetRegistry = packetRegistry;
 		this.socket = socket;
 		
 		receiveThread.start();
-		sendThread.start();
+	}
+	public Client(String name, String host, int port, Protocol protocol, RunQueue runQueue, PacketRegistry packetRegistry) throws IOException {
+		this(name, open(host, port, protocol), runQueue, packetRegistry);
 	}
 	public Client(String name, String host, int port, Protocol protocol, PacketRegistry packetRegistry) throws IOException {
-		this(name, open(host, port, protocol), packetRegistry);
+		this(name, host, port, protocol, new ThreadedRunQueue(name + "-RunQueue"), packetRegistry);
 	}
 	
 	public final void addClientListener(ClientListener listener) {
@@ -266,7 +233,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 			@Override
 			public void write(ListAccessor<P> data) {
 				data.push(packet);
-				sendThread.interrupt();
+				sendQueue.push(processSendQueue, RunQueue.QueuePlacement.ReplaceExisting);
 			}
 		});
 	}

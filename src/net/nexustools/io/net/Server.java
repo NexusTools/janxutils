@@ -58,11 +58,14 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 	public Server(int port, Protocol protocol, PacketRegistry packetRegistry) throws IOException {
 		this(spawn(port, protocol), packetRegistry);
 	}
+	public Server(int port, Protocol protocol, PacketRegistry packetRegistry, RunQueue runQueue) throws IOException {
+		this(spawn(port, protocol), packetRegistry, runQueue);
+	}
 	public Server(StreamServer streamServer, PacketRegistry packetRegistry) {
-		this(streamServer, packetRegistry, new ThreadedRunQueue(streamServer.toString() + "-RunQueue"));
+		this(streamServer, packetRegistry, new ThreadedRunQueue(streamServer.toString()));
 	}
 	protected Server(StreamServer streamServer, PacketRegistry packetRegistry, RunQueue runQueue) {
-		super(streamServer.toString());
+		super(streamServer.toString() + "-AcceptListener");
 		this.packetRegistry = packetRegistry;
 		this.streamServer = streamServer;
 		this.runQueue = runQueue;

@@ -16,12 +16,12 @@
 package net.nexustools.io.net;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import net.nexustools.DefaultAppDelegate;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 import net.nexustools.io.net.Server.Protocol;
+import net.nexustools.runtime.ThreadedRunQueue;
 import net.nexustools.utils.Pair;
 import net.nexustools.utils.log.Logger;
 
@@ -33,12 +33,15 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 
 	private Prop<Runnable> mainLoop = new Prop();
 	protected final PacketRegistry packetRegistry;
-	public ServerAppDelegate(String[] args, String name, String organization, PacketRegistry packetRegistry) {
-		super(args, name, organization);
+	public ServerAppDelegate(String[] args, String name, String organization, PacketRegistry packetRegistry, float multiplier) {
+		super(args, name, organization, new ThreadedRunQueue(name, multiplier));
 		this.packetRegistry = packetRegistry;
 	}
+	public ServerAppDelegate(String[] args, String name, String organization, float multiplier) {
+		this(args, name, organization, new PacketRegistry(), multiplier);
+	}
 	public ServerAppDelegate(String[] args, String name, String organization) {
-		this(args, name, organization, new PacketRegistry());
+		this(args, name, organization, 1.5f);
 	}
 	
 	protected abstract void populate(PacketRegistry registry) throws NoSuchMethodException;
@@ -50,7 +53,7 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
         return (C)new Client(name + "-Client", socket, server);
     }
 	protected S createServer(int port) throws IOException {
-		return (S)new Server(port, Protocol.TCP, packetRegistry);
+		return (S)new Server(port, Protocol.TCP, packetRegistry, runQueue);
 	}
 	
 	protected abstract void launchClient(C client);
@@ -66,23 +69,9 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 				final C client = createClient(args[0], Integer.valueOf(args[1]));
 				Logger.gears("Installing Client MainLoop", args);
 				mainLoop.set(new Runnable() {
-					boolean finished = false;
-					
 					public void run() {
-						ClientListener clientListener = new ClientListener() {
-							final Thread myself = Thread.currentThread();
-							public void clientConnected(ClientListener.ClientEvent clientConnectedEvent) {}
-							public void clientDisconnected(ClientListener.ClientEvent clientConnectedEvent) {
-								finished = true;
-								myself.interrupt();
-							}
-						};
-						
 						Logger.gears("Waiting for Client to Disconnect", client);
-						while(!finished)
-							try {
-								Thread.sleep(Long.MAX_VALUE);
-							} catch (InterruptedException ex) {}
+						client.shutdown.waitFor();
 					}
 				});
 				Logger.gears("Launching Client", args);

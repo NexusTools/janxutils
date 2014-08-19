@@ -33,18 +33,23 @@ import net.nexustools.utils.log.Logger;
  */
 public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	
+	private final static int defaultThreadCount = Integer.valueOf(System.getProperty("threadqueuecount", String.valueOf(Runtime.getRuntime().availableProcessors())));
+	
 	private final int count;
 	private final String name;
 	private final PropList<RunThread> idleThreads;
 	private final PropList<QueueFuture> tasks = new PropList();
+	public ThreadedRunQueue(String name, float multiplier) {
+		this(name, (int)(defaultThreadCount*multiplier));
+	}
 	public ThreadedRunQueue(String name, int threads) {
 		count = threads;
-		this.name = name;
+		this.name = name + "Queue";
 		if(threads < 1)
-			threads = Runtime.getRuntime().availableProcessors();
+			threads = defaultThreadCount;
 		ArrayList<RunThread> runThreads = new ArrayList();
 		while(threads > 0) {
-			RunThread runThread = new RunThread(name + '-' + threads, this);
+			RunThread runThread = new RunThread(this.name + '-' + threads, this);
 			runThreads.add(runThread);
 			threads --;
 		}

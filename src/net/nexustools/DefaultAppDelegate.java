@@ -28,8 +28,8 @@ import net.nexustools.utils.log.Logger;
  * @author kate
  */
 public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDelegate {
-	private final R runQueue;
 	public final String name;
+	protected final R runQueue;
 	private final String organization;
 	public DefaultAppDelegate(String[] args) {
 		this(args, defaultName(), defaultOrganization());
