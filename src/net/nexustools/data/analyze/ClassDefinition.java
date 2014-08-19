@@ -27,6 +27,7 @@ import net.nexustools.data.Adaptor;
 import net.nexustools.data.AdaptorException;
 import net.nexustools.data.annote.ClassStream;
 import net.nexustools.data.annote.FieldStream;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -35,9 +36,10 @@ import net.nexustools.data.annote.FieldStream;
 public final class ClassDefinition {
 	
 	private static final WeakHashMap<Class<?>, ClassDefinition> instances = new WeakHashMap();
-	public static ClassDefinition getInstance(Class<?> type) {
+	public static synchronized ClassDefinition getInstance(Class<?> type) {
 		ClassDefinition def = instances.get(type);
 		if(def == null) {
+			Logger.gears("Creating definition for", type.getName());
 			def = new ClassDefinition(type);
 			instances.put(type, def);
 		}
@@ -86,6 +88,7 @@ public final class ClassDefinition {
 	
 	private void process() {
 		if(superDefinition != null) {
+			Logger.gears("Attaching SuperDefinition", superDefinition);
 			staticFields.addAll(superDefinition.staticFields);
 			for(Entry<String, FieldDefinition.Adaptor> entry : superDefinition.mutableFields.entrySet())
 				mutableFields.put(entry.getKey(), entry.getValue());
@@ -93,11 +96,14 @@ public final class ClassDefinition {
 				fieldMap.put(entry.getKey(), entry.getValue());
 		}
 
+		Logger.gears("Processing Fields", this);
 		ArrayList<Field> unknownFields = new ArrayList();
 		for(Field field : type.getDeclaredFields()) {
+			Logger.gears(field.getName(), field);
 			FieldStream fieldStream = field.getAnnotation(FieldStream.class);
 
 			if(fieldStream != null) {
+				Logger.gears("Found fieldStreak annotation", fieldStream);
 				FieldDefinition.Instruction fieldInstruction = new FieldDefinition.Instruction();
 
 				fieldInstruction.staticField = fieldStream.staticField();
@@ -119,11 +125,13 @@ public final class ClassDefinition {
 			}
 		}
 
+		Logger.gears("Processing Fields", this);
 		if(unknownFields.size() > 0) {
 			Instruction classInstruction = new Instruction();
 			{
 				ClassStream classStream = type.getAnnotation(ClassStream.class);
 				if(classStream != null) {
+					Logger.gears("Class has ClassStream");
 					classInstruction.publicFields = classStream.publicFields();
 					classInstruction.protectedFields = classStream.protectedFields();
 					classInstruction.privateFields = classStream.privateFields();
@@ -137,24 +145,34 @@ public final class ClassDefinition {
 			int fieldID = 1;
 			for(Field field : unknownFields) {
 				if(Modifier.isPublic(field.getModifiers()) &&
-						!classInstruction.publicFields)
+						!classInstruction.publicFields) {
+					Logger.gears("Skipping public", field.getName());
 					continue;
+				}
 
 				if(Modifier.isProtected(field.getModifiers()) &&
-						!classInstruction.protectedFields)
+						!classInstruction.protectedFields) {
+					Logger.gears("Skipping protected", field.getName());
 					continue;
+				}
 
 				if(Modifier.isPrivate(field.getModifiers()) &&
-						!classInstruction.privateFields)
+						!classInstruction.privateFields) {
+					Logger.gears("Skipping private", field.getName());
 					continue;
+				}
 
 				if(Modifier.isVolatile(field.getModifiers()) &&
-						!classInstruction.volatileFields)
+						!classInstruction.volatileFields) {
+					Logger.gears("Skipping volatile", field.getName());
 					continue;
+				}
 
 				if(Modifier.isTransient(field.getModifiers()) &&
-						!classInstruction.transientFields)
+						!classInstruction.transientFields) {
+					Logger.gears("Skipping transient", field.getName());
 					continue;
+				}
 
 				FieldDefinition.Instruction fieldInstruction = new FieldDefinition.Instruction();
 				if(classInstruction.staticFieldLayout)
@@ -165,18 +183,20 @@ public final class ClassDefinition {
 
 					if(fieldID > 255)
 						throw new RuntimeException("More than 255 fields with IDs is not allowed");
-
 					fieldInstruction.fieldID = (byte)fieldID;
 				}
 
 				try {
 					fieldInstruction.mutableType = Adaptor.isMutable(field.getType());
 				} catch (AdaptorException ex) {
+					Logger.exception(Logger.Level.Gears, ex);
 					continue;
 				}
 				registerField(field, fieldInstruction);
 			}
 		}
+		
+		Logger.debug(this, "Loaded", staticFields.size(), "Static Fields", fieldMap.size(), "Mapped Fields", mutableFields.size(), "Mutable Fields");
 	}
 	
 	protected final boolean registerField(Field field, FieldDefinition.Instruction fieldInstruction) {
@@ -184,6 +204,7 @@ public final class ClassDefinition {
 		try {
 			fieldDefinition = new FieldDefinition(field, fieldInstruction);
 		} catch (AdaptorException ex) {
+			Logger.exception(Logger.Level.Gears, ex);
 			return false;
 		}
 		fields.put(field.getName(), fieldDefinition);
@@ -206,6 +227,11 @@ public final class ClassDefinition {
 	
 	public Class<?> getType() {
 		return type;
+	}
+
+	@Override
+	public String toString() {
+		return "Definition(" + type.getName() + ")";
 	}
 	
 }

@@ -16,8 +16,6 @@
 package net.nexustools.io.net;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.logic.SoftWriteReader;
@@ -26,6 +24,7 @@ import net.nexustools.data.AdaptorException;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 import net.nexustools.io.MemoryStream;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -38,11 +37,21 @@ public abstract class Packet<C, S> {
 	protected abstract void recvFromServer(C client);
 	protected abstract void recvFromClient(C client, S server);
 	
-	public void read(DataInputStream dataInput, C client) throws UnsupportedOperationException, IOException, AdaptorException {
-		Adaptor.resolveAndRead(this, dataInput);
+	public void read(DataInputStream dataInput, C client) throws UnsupportedOperationException, IOException {
+		try {
+			Adaptor.resolveAndRead(this, dataInput);
+		} catch (AdaptorException ex) {
+			Logger.exception(ex);
+			Logger.warn("Packet may be corrupt, don't call super.read on your packet if you don't intend to use an adaptor");
+		}
 	}
-	public void write(DataOutputStream dataOutput, C client) throws UnsupportedOperationException, IOException, AdaptorException {
-		Adaptor.resolveAndWrite(this, dataOutput);
+	public void write(DataOutputStream dataOutput, C client) throws UnsupportedOperationException, IOException {
+		try {
+			Adaptor.resolveAndWrite(this, dataOutput);
+		} catch (AdaptorException ex) {
+			Logger.exception(ex);
+			Logger.warn("Packet may be corrupt, don't call super.read on your packet if you don't intend to use an adaptor");
+		}
 	}
 	public byte[] data(final C client) throws UnsupportedOperationException, IOException, AdaptorException {
 		return cache.read(new SoftWriteReader<byte[], PropAccessor<byte[]>>() {
@@ -60,8 +69,6 @@ public abstract class Packet<C, S> {
 				} catch (UnsupportedOperationException ex) {
 					throw new RuntimeException(ex);
 				} catch (IOException ex) {
-					throw new RuntimeException(ex);
-				} catch (AdaptorException ex) {
 					throw new RuntimeException(ex);
 				}
 			}

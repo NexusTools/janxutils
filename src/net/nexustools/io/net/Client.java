@@ -215,8 +215,6 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 			packet.read(socket.i, this);
 		} catch (UnsupportedOperationException ex) {
 			throw new IOException(ex);
-		} catch (AdaptorException ex) {
-			throw new IOException(ex);
 		}
 		return packet;
 	}

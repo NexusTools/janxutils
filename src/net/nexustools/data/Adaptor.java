@@ -101,7 +101,7 @@ public abstract class Adaptor<T> {
 	 * @return Compatible Adaptor or null if allowFallback is disabled and no adaptor is found
 	 * @throws nexustools.data.AdaptorException
 	 */
-	public static Adaptor resolveAdaptor(Class<?> clazz, boolean allowFallback) throws AdaptorException {
+	public static synchronized Adaptor resolveAdaptor(Class<?> clazz, boolean allowFallback) throws AdaptorException {
 		Class<?> remap = classRemap.get(clazz);
 		if(remap != null)
 			clazz = remap;

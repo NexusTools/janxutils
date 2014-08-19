@@ -137,7 +137,11 @@ public class Logger extends Thread {
 	}
 
 	public static void exception(Throwable t) {
-		error(t);
+		exception(Level.Error, t);
+	}
+
+	public static void exception(Level level, Throwable t) {
+		log(level, t);
 	}
 	
 	public static enum Level {
@@ -312,7 +316,13 @@ public class Logger extends Thread {
 								stream.print(' ');
 							else
 								addTab = true;
-							stream.print(msg.toString());
+							
+							if(msg instanceof Throwable)
+								((Throwable)msg).printStackTrace(stream);
+							else if(msg == null)
+								stream.print("$NULL$");
+							else
+								stream.print(msg.toString());
 						}
 
 						stream.println();
