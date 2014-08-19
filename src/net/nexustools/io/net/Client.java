@@ -43,6 +43,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	public class SendThread extends Thread {
 		public SendThread(String name) {
 			super(name);
+			setDaemon(true);
 		}
 		@Override
 		public void run() {
@@ -115,6 +116,9 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, final Server server) {
 		sendThread = new SendThread(name + "-send");
 		receiveThread = new Thread(name + "-receive") {
+			{
+				setDaemon(true);
+			}
 			@Override
 			public void run() {
 				try {
@@ -166,6 +170,9 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, PacketRegistry packetRegistry) {
 		sendThread = new SendThread(name + "-send");
 		receiveThread = new Thread(name + "-receive") {
+			{
+				setDaemon(true);
+			}
 			@Override
 			public void run() {
 				try {

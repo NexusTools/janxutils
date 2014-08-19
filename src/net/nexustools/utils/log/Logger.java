@@ -252,6 +252,7 @@ public class Logger extends Thread {
 	protected Logger() {
 		super("Logger");
 		setPriority(MIN_PRIORITY);
+		setDaemon(true);
 		start();
 	}
 
