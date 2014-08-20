@@ -37,6 +37,8 @@ public final class RunQueueScheduler {
 	private static class SchedulerThread extends Thread {
 		public SchedulerThread() {
 			super("RunQueueScheduler");
+			setPriority(MAX_PRIORITY);
+			setDaemon(true);
 			start();
 		}
 		@Override
@@ -44,15 +46,37 @@ public final class RunQueueScheduler {
 			while(true) {
 				FutureTask fTask = scheduledTasks.pop();
 				if(fTask == null) {
+					Logger.gears("Waiting for more tasks");
 					try {
 						Thread.sleep(60000 * 60 * 5);
 					} catch (InterruptedException ex) {}
 					continue;
 				}
 				
-				if(fTask.future.onSchedule()) {
-					fTask.onQueue();
-					fTask.queue.push(fTask.future);
+				try {
+					Logger.gears("Waiting for Scheduled Task", fTask, fTask.when);
+					while(!fTask.future.isDone()) {
+						long rem = fTask.when - System.currentTimeMillis();
+						if(rem > 0) {
+							Logger.gears("Sleeping for " + rem + "ms");
+							try {
+								Thread.sleep(Math.min(rem, 5000));
+							} catch(InterruptedException ex) {}
+						} else
+							break;
+					}
+					if(fTask.future.isDone()) {
+						Logger.gears("Task was Cancelled", fTask);
+						continue;
+					}
+					
+					Logger.gears("Executing Scheduled Task", fTask);
+					if(fTask.future.onSchedule()) {
+						fTask.onQueue();
+						fTask.queue.push(fTask.future);
+					}
+				} catch(Throwable t) {
+					Logger.exception(Logger.Level.Gears, t);
 				}
 			}
 		}
@@ -85,8 +109,8 @@ public final class RunQueueScheduler {
 		}
 		@Override
 		public void onQueue() {
-			Logger.info(Logger.Level.Gears, "Repeating", this);
-			scheduleRepeating(future, 0, interval, queue);
+			Logger.gears("Repeating", future);
+			scheduleRepeating(future.copy(Task.State.Scheduled), 0, interval, queue);
 		}
 	}
 	
@@ -104,19 +128,26 @@ public final class RunQueueScheduler {
 	
 	private static void schedule(final FutureTask entry) {
 		Logger.info(Logger.Level.Gears, "Scheduling", entry);
-		scheduledTasks.push(entry);
-		schedulerThread.write(new SoftWriter<PropAccessor<Thread>>() {
+		scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
 			@Override
-			public void write(PropAccessor<Thread> data) {
-				Logger.gears("Spawning Scheduler Thread");
-				data.set(new SchedulerThread());
-			}
-			@Override
-			public void soft(PropAccessor<Thread> data) {
-				Logger.gears("Notifying Scheduler Thread");
-				data.get().interrupt();
+			public void write(final ListAccessor<FutureTask> taskList) {
+				taskList.push(entry);
+				if(taskList.length() == 1)
+					schedulerThread.write(new SoftWriter<PropAccessor<Thread>>() {
+						@Override
+						public void write(PropAccessor<Thread> data) {
+							Logger.gears("Spawning Scheduler Thread");
+							data.set(new SchedulerThread());
+						}
+						@Override
+						public void soft(PropAccessor<Thread> data) {
+							Logger.gears("Notifying Scheduler Thread");
+							data.get().interrupt();
+						}
+					});
 			}
 		});
+				
 	}
 	public static void schedule(Task task, int when, RunQueue targetQueue) {
 		schedule(new FutureTask(when, targetQueue, task));

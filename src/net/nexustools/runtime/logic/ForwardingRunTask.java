@@ -44,5 +44,10 @@ public class ForwardingRunTask<R extends Runnable> extends TrackedQueueFuture<R>
 			}
 		});
 	}
+
+	@Override
+	public ForwardingRunTask copy(State state) {
+		return new ForwardingRunTask(runnable, state);
+	}
 	
 }

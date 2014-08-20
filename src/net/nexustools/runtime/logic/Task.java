@@ -46,5 +46,6 @@ public interface Task {
 	public void cancel();
 	public void execute();
 	public boolean onSchedule();
+	public Task copy(State state);
 	
 }

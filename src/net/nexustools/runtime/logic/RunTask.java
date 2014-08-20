@@ -15,6 +15,7 @@
 
 package net.nexustools.runtime.logic;
 
+import net.nexustools.runtime.RunQueue;
 import net.nexustools.utils.Testable;
 
 /**
@@ -76,7 +77,9 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 		}
 		return true;
 	}
-	
-	
+
+	public RunTask copy(State state) {
+		return new RunTask(runnable, state);
+	}
 	
 }

@@ -36,5 +36,10 @@ public class BackpeddlingRunTask<R extends Runnable> extends TrackedQueueFuture<
 			}
 		});
 	}
+
+	@Override
+	public BackpeddlingRunTask copy(State state) {
+		return new BackpeddlingRunTask(runnable, state);
+	}
 	
 }
