@@ -233,7 +233,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 			@Override
 			public void write(ListAccessor<P> data) {
 				data.push(packet);
-				sendQueue.push(processSendQueue, RunQueue.QueuePlacement.ReplaceExisting);
+				sendQueue.push(processSendQueue, RunQueue.Placement.ReplaceExisting);
 			}
 		});
 	}

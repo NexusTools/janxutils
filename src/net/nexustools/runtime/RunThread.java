@@ -19,7 +19,8 @@ import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.SoftWriter;
 import net.nexustools.concurrent.logic.WriteReader;
-import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
+import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -34,24 +35,29 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 	public static enum Priority {
 		Low,
 		Normal,
-		High
+		High,
+		
+		Maximum
 	}
 
 	class NativeRunThread extends Thread {
 
-		private QueueFuture future;
+		private Task future;
 		private boolean killNext;
 
 		{
 			switch (priority.get()) {
 				case Low:
-					setPriority(MIN_PRIORITY);
+					setPriority(0);
 					break;
 				case Normal:
-					setPriority(NORM_PRIORITY);
+					setPriority(3);
 					break;
 				case High:
-					setPriority(MAX_PRIORITY);
+					setPriority(6);
+					break;
+				case Maximum:
+					setPriority(10);
 					break;
 			}
 			Logger.debug(name, "Spawned");
@@ -60,6 +66,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 			start();
 		}
 
+		RunQueue cQueue;
 		@Override
 		public void run() {
 			Logger.gears(name, "Entered");
@@ -77,10 +84,13 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
-						future = queue.read(new IfReader<QueueFuture, PropAccessor<Q>>() {
+						future = queue.read(new IfReader<Task, PropAccessor<Q>>() {
 							@Override
-							public QueueFuture read(PropAccessor<Q> data) {
-								return data.get().nextFuture(RunThread.this);
+							public Task read(PropAccessor<Q> data) {
+								cQueue = data.get();
+								if(cQueue == null)
+									return null;
+								return cQueue.nextFuture(RunThread.this);
 							}
 						});
 						if(future == null && killNext) {
@@ -104,6 +114,8 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 						killNext = false;
 						future.execute();
 					}
+				} catch (StopRepeating ex) {
+					RunQueueScheduler.stopRepeating(future, cQueue);
 				} catch (InterruptedException ex) {
 					Logger.gears(name, "Wokeup");
 				} catch (RuntimeException run) {

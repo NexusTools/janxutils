@@ -36,6 +36,9 @@ public interface ListAccessor<T> extends BaseAccessor, Iterable<T> {
 	public T get(int at);
 	public T last();
 	
+	public void pushAll(Iterable<T> object);
+	public void unshiftAll(Iterable<T> object);
+	
 	public void push(T object);
 	public void unshift(T object);
 	public void insert(T object, int at);

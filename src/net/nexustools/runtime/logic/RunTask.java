@@ -13,7 +13,7 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.runtime.logic;
 
 import net.nexustools.utils.Testable;
 
@@ -21,12 +21,12 @@ import net.nexustools.utils.Testable;
  *
  * @author katelyn
  */
-public class RunnableQueueFuture<R extends Runnable> extends QueueFuture {
+public class RunTask<R extends Runnable> extends DefaultTask {
 	
-	private static final ThreadLocal<RunnableQueueFuture> currentQueueFuture = new ThreadLocal();
+	private static final ThreadLocal<RunTask> currentQueueFuture = new ThreadLocal();
 	private static final ThreadLocal<Testable<Void>> currentTestable = new ThreadLocal();
 	
-	public static RunnableQueueFuture currentQueueFuture() {
+	public static RunTask currentQueueFuture() {
 		return currentQueueFuture.get();
 	}
 	
@@ -35,7 +35,7 @@ public class RunnableQueueFuture<R extends Runnable> extends QueueFuture {
 	}
 
 	public final R runnable;
-	public RunnableQueueFuture(R runnable, State state) {
+	public RunTask(R runnable, State state) {
 		super(state);
 		this.runnable = runnable;
 	}
@@ -56,5 +56,27 @@ public class RunnableQueueFuture<R extends Runnable> extends QueueFuture {
 			currentQueueFuture.remove();
 		}
 	}
+
+	@Override
+	public int hashCode() {
+		return runnable.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		final RunTask<?> other = (RunTask<?>) obj;
+		if (this.runnable != other.runnable && (this.runnable == null || !this.runnable.equals(other.runnable))) {
+			return false;
+		}
+		return true;
+	}
+	
+	
 	
 }

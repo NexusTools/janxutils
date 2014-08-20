@@ -43,6 +43,9 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		public V get(K key) {
 			return map.get(key);
 		}
+		public V get(K key, V def) {
+			return map.getOrDefault(key, def);
+		}
 		public V take(K key) {
 			return map.remove(key);
 		}
@@ -85,11 +88,17 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		public V replace(K key, V value) {
 			return map.put(key, value);
 		}
-
 		public Map<K, V> take() {
 			Map<K, V> copy = copy();
 			map.clear();
 			return copy;
+		}
+		public void putAll(Iterable<Pair<K, V>> iterable) {
+			for(Pair<K,V> entry : iterable)
+				map.put(entry.i, entry.v);
+		}
+		public void putAll(Map<K, V> iterable) {
+			map.putAll(iterable);
 		}
 	};
 	public PropMap(Type type) {
@@ -167,6 +176,33 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			@Override
 			public V read(MapAccessor<K, V> data) {
 				return data.get(key);
+			}
+		});
+	}
+
+	public V get(final K key, final V def) {
+		return read(new Reader<V, MapAccessor<K, V>>() {
+			@Override
+			public V read(MapAccessor<K, V> data) {
+				return data.get(key, def);
+			}
+		});
+	}
+
+	public void putAll(final Iterable<Pair<K, V>> iterable) {
+		write(new Writer<MapAccessor<K, V>>() {
+			@Override
+			public void write(MapAccessor<K, V> data) {
+				data.putAll(iterable);
+			}
+		});
+	}
+
+	public void putAll(final Map<K, V> map) {
+		write(new Writer<MapAccessor<K, V>>() {
+			@Override
+			public void write(MapAccessor<K, V> data) {
+				data.putAll(map);
 			}
 		});
 	}

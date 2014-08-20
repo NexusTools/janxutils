@@ -25,12 +25,17 @@ import net.nexustools.utils.Pair;
 public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
 	
 	public V get(K key);
-	public V take(K key);
-	public Map<K,V> take();
+	public V get(K key, V def);
+	
 	public void remove(K key);
 	public void put(K key, V value);
+	public void putAll(Iterable<Pair<K,V>> iterable);
+	public void putAll(Map<K,V> iterable);
 	public V replace(K key, V value);
 	public boolean has(K key);
 	public Map<K, V> copy();
+	
+	public V take(K key);
+	public Map<K,V> take();
 	
 }

@@ -13,34 +13,24 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.IfWriter;
-import net.nexustools.concurrent.logic.IfWriteReader;
+import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.utils.Testable;
 /**
  *
  * @author katelyn
  */
-public abstract class QueueFuture {
-	
-	public static enum State {
-		Scheduled,
-		WaitingInQueue,
-		Executing,
-		Complete,
-		Aborted,
-		
-		Cancelled
-	}
+public abstract class DefaultTask implements Task {
 	
 	private final Prop<State> state;
 	private final Prop<Thread> runThread = new Prop();
-	public QueueFuture(State state) {
+	public DefaultTask(State state) {
 		this.state = new Prop(state);
 	}
 	
@@ -72,24 +62,6 @@ public abstract class QueueFuture {
 	
 	public boolean isCancelled() {
 		return state() == State.Cancelled;
-	}
-	
-	boolean movedToQueue() {
-		return state.read(new IfWriteReader<Boolean, PropAccessor<State>>() {
-			@Override
-			public Boolean def() {
-				return false;
-			}
-			@Override
-			public boolean test(PropAccessor<State> against) {
-				return against.get() == State.Scheduled;
-			}
-			@Override
-			public Boolean read(PropAccessor<State> data) {
-				data.set(State.WaitingInQueue);
-				return true;
-			}
-		});
 	}
 	
 	public void cancel() {
@@ -153,6 +125,20 @@ public abstract class QueueFuture {
 		}
 	}
 	
+	public boolean onSchedule() {
+		return state.read(new TestReader<PropAccessor<State>>() {
+			@Override
+			public boolean test(PropAccessor<State> against) {
+				return against.get() == State.Scheduled;
+			}
+			@Override
+			public void readV(PropAccessor<State> data) {
+				data.set(State.WaitingInQueue);
+			}
+		});
+	}
+	
 	protected abstract void executeImpl(Testable<Void> isRunning);
+
 	
 }

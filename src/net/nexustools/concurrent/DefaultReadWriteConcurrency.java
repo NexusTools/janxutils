@@ -34,11 +34,11 @@ public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implem
 		this.lock = lock;
 	}
 	
-	public final void write(BaseWriter<A> actor) {
+	public void write(BaseWriter<A> actor) {
 		lock.write(directAccessor(), actor);
 	}
 
-	public final <R> R read(BaseReader<R, A> reader) {
+	public <R> R read(BaseReader<R, A> reader) {
 		return (R)lock.read(directAccessor(), reader);
 	}
 

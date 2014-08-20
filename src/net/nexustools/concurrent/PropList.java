@@ -33,12 +33,8 @@ import net.nexustools.concurrent.logic.Writer;
  * @param <I>
  */
 public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> implements ListAccessor<I> {
-	
-	public static interface PropIterator<I> {
-		public void iterate(ListIterator<I> iterator, Lockable lock);
-	}
 
-	private List<I> list;
+	protected List<I> list;
 	private final ListAccessor<I> directAccessor = new ListAccessor<I>() {
 		public void push(I object) {
 			list.add(object);
@@ -146,6 +142,26 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 
 		public ListIterator<I> listIterator() {
 			return list.listIterator();
+		}
+
+		public void pushAll(Iterable<I> objects) {
+			if(objects instanceof List) {
+				list.addAll((List)objects);
+				return;
+			}
+			for(I obj : objects)
+				push(obj);
+		}
+
+		public void unshiftAll(Iterable<I> objects) {
+			List<I> current = list;
+			list = new ArrayList<I>();
+			if(objects instanceof List)
+				list.addAll((List)objects);
+			else
+				for(I obj : objects)
+					unshift(obj);
+			list.addAll(current);
 		}
 	};
 	public PropList(I... items) {
@@ -372,7 +388,29 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 	}
 
 	public ListIterator<I> listIterator() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	public void pushAll(final Iterable<I> objects) {
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.pushAll(objects);
+			}
+		});
+	}
+
+	public void unshiftAll(final Iterable<I> objects) {
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.unshiftAll(objects);
+			}
+		});
+	}
+	
+	public static interface PropIterator<I> {
+		public void iterate(ListIterator<I> iterator, Lockable lock);
 	}
 	
 }

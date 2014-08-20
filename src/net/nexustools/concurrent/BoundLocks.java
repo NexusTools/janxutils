@@ -83,5 +83,10 @@ public class BoundLocks<A extends BaseAccessor> extends Lockable<A> {
 			lock.unlock();
 		}
 	}
+
+	@Override
+	public void fastUpgrade() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
 	
 }

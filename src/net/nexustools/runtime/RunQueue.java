@@ -15,10 +15,10 @@
 
 package net.nexustools.runtime;
 
-import net.nexustools.runtime.future.BackpeddlingQueueFuture;
-import net.nexustools.runtime.future.ForwardingQueueFuture;
-import net.nexustools.runtime.future.QueueFuture;
-import net.nexustools.runtime.future.RunnableQueueFuture;
+import net.nexustools.runtime.logic.BackpeddlingRunTask;
+import net.nexustools.runtime.logic.ForwardingRunTask;
+import net.nexustools.runtime.logic.Task;
+import net.nexustools.runtime.logic.RunTask;
 
 /**
  *
@@ -28,7 +28,7 @@ import net.nexustools.runtime.future.RunnableQueueFuture;
  */
 public abstract class RunQueue<R extends Runnable, T> {
 	
-    public static enum QueuePlacement {
+    public static enum Placement {
         NormalPlacement,
         ReplaceExisting,
         NormalPlacementAndCancelExisting,
@@ -49,46 +49,61 @@ public abstract class RunQueue<R extends Runnable, T> {
 		current().push(runnable);
 	}
 	
-	private static RunQueueScheduler schedulerThread = new RunQueueScheduler();
 	protected RunQueue() {}
 	public abstract String name();
-	protected QueueFuture wrap(R runnable, QueueFuture.State state, QueuePlacement placement) {
+	protected Task wrap(R runnable, Task.State state, Placement placement) {
 		switch(placement) {
 			case NormalPlacement:
-				return new RunnableQueueFuture(runnable, state);
+				return new RunTask(runnable, state);
 				
 			case ReplaceExisting:
-				return new ForwardingQueueFuture(runnable, state);
+				return new ForwardingRunTask(runnable, state);
 				
 			case WaitOnIdleThread:
 			case NormalPlacementAndCancelExisting:
-				return new BackpeddlingQueueFuture(runnable, state);
+				return new BackpeddlingRunTask(runnable, state);
 				
 			default:
 				throw new UnsupportedOperationException();
 		}
 	}
-	public final QueueFuture push(R runnable, QueuePlacement placement) {
-		QueueFuture future = wrap(runnable, QueueFuture.State.WaitingInQueue, placement);
+	public final Task push(R runnable, Placement placement) {
+		Task future = wrap(runnable, Task.State.WaitingInQueue, placement);
 		if(future.isDone())
 			return null;
 		return push(future);
 	}
-	public final QueueFuture schedule(R runnable, long when, QueuePlacement placement) {
-		QueueFuture future = wrap(runnable, QueueFuture.State.Scheduled, placement);
+	public final Task scheduleRepeating(R runnable, int delay, int repeat, Placement placement) {
+		Task future = wrap(runnable, Task.State.Scheduled, placement);
 		if(future.isDone())
 			return null;
-		schedulerThread.schedule(future, when);
+		RunQueueScheduler.scheduleRepeating(future, delay, repeat, this);
 		return future;
 	}
-	public final QueueFuture push(R runnable) {
-		return push(runnable, QueuePlacement.ReplaceExisting);
+	public final Task scheduleRepeating(R runnable, int repeat, Placement placement) {
+		return scheduleRepeating(runnable, 0, repeat, placement);
 	}
-	public final QueueFuture schedule(R runnable, long when) {
-		return schedule(runnable, when, QueuePlacement.NormalPlacementAndCancelExisting);
+	public final Task scheduleRepeating(R runnable, int delay, int repeat) {
+		return scheduleRepeating(runnable, delay, repeat, Placement.NormalPlacement);
 	}
-	public abstract QueueFuture nextFuture(T requestSource);
-	protected abstract QueueFuture push(QueueFuture future);
+	public final Task scheduleRepeating(R runnable, int repeat) {
+		return scheduleRepeating(runnable, 0, repeat, Placement.NormalPlacement);
+	}
+	public final Task schedule(R runnable, int when, Placement placement) {
+		Task future = wrap(runnable, Task.State.Scheduled, placement);
+		if(future.isDone())
+			return null;
+		RunQueueScheduler.schedule(future, when, this);
+		return future;
+	}
+	public final Task schedule(R runnable, int when) {
+		return schedule(runnable, when, Placement.NormalPlacement);
+	}
+	public final Task push(R runnable) {
+		return push(runnable, Placement.ReplaceExisting);
+	}
+	public abstract Task nextFuture(T requestSource);
+	public abstract Task push(Task future);
 	
 	public abstract int countThreads();
 	

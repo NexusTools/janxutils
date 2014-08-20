@@ -20,7 +20,7 @@ import net.nexustools.concurrent.logic.UpdateReader;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
 import java.util.Collection;
-import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.runtime.logic.Task;
 
 /**
  *

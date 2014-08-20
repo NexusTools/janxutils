@@ -30,6 +30,9 @@ public class FakeLock extends Lockable {
 
 	@Override
 	public void upgrade() {}
+	
+	@Override
+	public void fastUpgrade() {}
 
 	@Override
 	public void downgrade() {}

@@ -13,28 +13,30 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.runtime;
 
-import net.nexustools.concurrent.MapAccessor;
-import net.nexustools.concurrent.logic.Writer;
+import java.util.Comparator;
+import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.SortedPropList;
+import net.nexustools.runtime.logic.Task;
 
 /**
  *
- * @author katelyn
+ * @author kate
  */
-public class BackpeddlingQueueFuture<R extends Runnable> extends TrackedQueueFuture<R> {
+public abstract class SortedTaskDelegator<F extends Task> implements FutureDelegator<F> {
+	
+	protected final PropList<F> queue;
+	public SortedTaskDelegator() {
+		queue = new SortedPropList(comparator());
+	}
+	
+	public abstract Comparator<F> comparator();
 
-	public BackpeddlingQueueFuture(final R runnable, State state) {
-		super(runnable, state);
-		
-		write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
-			@Override
-			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
-				TrackedQueueFuture old = data.replace(runnable, BackpeddlingQueueFuture.this);
-				if(old != null)
-					old.sCancel();
-			}
-		});
+	public F nextTask(ListAccessor<F> queue) {
+		this.queue.pushAll(queue.take());
+		return this.queue.shift();
 	}
 	
 }

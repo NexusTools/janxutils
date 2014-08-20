@@ -13,37 +13,17 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.runtime;
 
-import net.nexustools.concurrent.BaseAccessor;
-import net.nexustools.concurrent.Lockable;
-import net.nexustools.utils.Testable;
+import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.runtime.logic.Task;
 
 /**
  *
- * @author katelyn
+ * @author kate
  */
-public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
-
-	@Override
-	public final R read(A data, Lockable<A> lock) {
-		lock.lock();
-		try {
-			if(test(data))
-				return read(data);
-			
-			return def();
-		} finally {
-			lock.unlock();
-		}
-	}
+public interface FutureDelegator<F extends Task> {
 	
-	protected R def() {
-		return null;
-	}
-	public abstract R read(A data);
-	public boolean test(A against) {
-		return against.isTrue();
-	}
+	public F nextTask(ListAccessor<F> queue);
 	
 }

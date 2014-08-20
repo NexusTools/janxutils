@@ -21,7 +21,7 @@ import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.runtime.future.QueueFuture;
+import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -31,17 +31,63 @@ import net.nexustools.utils.log.Logger;
  */
 public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	
+	public static enum Delegator {
+		/**
+		 * First come first serve.
+		 * Delegates tasks based on the order they were entered into the queue.
+		 */
+		FCFS,
+		
+		/**
+		 * Fair, keeps track of the CPU time used by each unique runnable.
+		 * Prioritizes instances that use less CPU over those that use more.
+		 */
+		Fair
+	}
+	
+	public static FutureDelegator create(Delegator type) {
+		switch(type) {
+			case FCFS:
+				return new FCFSTaskDelegator();
+				
+			case Fair:
+				return new FairTaskDelegator();
+		}
+		
+		throw new UnsupportedOperationException();
+	}
+	
 	private final static int defaultThreadCount = Integer.valueOf(System.getProperty("threadqueuecount", String.valueOf(Runtime.getRuntime().availableProcessors())));
 	
 	private final int count;
 	private final String name;
+	private final FutureDelegator taskDelegator;
 	private final PropList<RunThread> idleThreads;
-	private final PropList<QueueFuture> tasks = new PropList();
+	private final PropList<Task> tasks = new PropList();
 	public ThreadedRunQueue(String name, float multiplier) {
-		this(name, (int)(defaultThreadCount*multiplier));
+		this(name, Delegator.Fair, (int)(defaultThreadCount*multiplier));
 	}
 	public ThreadedRunQueue(String name, int threads) {
+		this(name, Delegator.Fair, threads);
+	}
+	public ThreadedRunQueue(String name) {
+		this(name, Delegator.Fair, -1);
+	}
+	public ThreadedRunQueue(String name, Delegator delegator, float multiplier) {
+		this(name, delegator, (int)(defaultThreadCount*multiplier));
+	}
+	public ThreadedRunQueue(String name, Delegator delegator, int threads) {
+		this(name, create(delegator), threads);
+	}
+	public ThreadedRunQueue(String name, Delegator delegator) {
+		this(name, delegator, -1);
+	}
+	public ThreadedRunQueue(String name, FutureDelegator delegator, float multiplier) {
+		this(name, delegator, (int)(defaultThreadCount*multiplier));
+	}
+	public ThreadedRunQueue(String name, FutureDelegator delegator, int threads) {
 		count = threads;
+		taskDelegator = delegator;
 		this.name = name + "Queue";
 		if(threads < 1)
 			threads = defaultThreadCount;
@@ -54,24 +100,25 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 		}
 		idleThreads = new PropList(runThreads);
 	}
-	public ThreadedRunQueue(String name) {
-		this(name, -1);
+	public ThreadedRunQueue(String name, FutureDelegator delegator) {
+		this(name, delegator, -1);
 	}
 	@Override
-	public QueueFuture nextFuture(final RunThread runThread) {
-		return tasks.read(new WriteReader<QueueFuture, ListAccessor<QueueFuture>>() {
+	public Task nextFuture(final RunThread runThread) {
+		return tasks.read(new WriteReader<Task, ListAccessor<Task>>() {
 			@Override
-			public QueueFuture read(final ListAccessor<QueueFuture> tasksData) {
-				return idleThreads.read(new Reader<QueueFuture, ListAccessor<RunThread>>() {
+			public Task read(final ListAccessor<Task> tasksData) {
+				return idleThreads.read(new Reader<Task, ListAccessor<RunThread>>() {
 					@Override
-					public QueueFuture read(ListAccessor<RunThread> data) {
+					public Task read(ListAccessor<RunThread> data) {
 						Logger.gears(name, "Reading Future");
-						if(tasksData.isTrue()) {
+						Task nextFuture = taskDelegator.nextTask(tasksData);
+						if(nextFuture != null) {
 							idleThreads.remove(runThread);
 							Logger.gears(name, "Found Future");
-							return tasksData.shift();
+							return nextFuture;
 						}
-
+						
 						idleThreads.unique(runThread);
 						Logger.gears(name, "No New Futures");
 						return null;
@@ -82,10 +129,10 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	}
 
 	@Override
-	protected QueueFuture push(final QueueFuture future) {
-		tasks.write(new Writer<ListAccessor<QueueFuture>>() {
+	public Task push(final Task future) {
+		tasks.write(new Writer<ListAccessor<Task>>() {
 			@Override
-			public void write(final ListAccessor<QueueFuture> tasksData) {
+			public void write(final ListAccessor<Task> tasksData) {
 				idleThreads.read(new Reader<Boolean, ListAccessor<RunThread>>() {
 					@Override
 					public Boolean read(ListAccessor<RunThread> data) {

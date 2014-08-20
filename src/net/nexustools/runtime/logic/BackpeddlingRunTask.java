@@ -13,22 +13,28 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.runtime.logic;
+
+import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.concurrent.logic.Writer;
 
 /**
  *
  * @author katelyn
  */
-public abstract class RunTask implements Runnable {
-	
-	/**
-	 * Used during the run method to check whether or
-	 * not this task has been cancelled.
-	 * 
-	 * @return 
-	 */
-	protected boolean isCancelled() {
-		return false; // TODO: Implement
+public class BackpeddlingRunTask<R extends Runnable> extends TrackedQueueFuture<R> {
+
+	public BackpeddlingRunTask(final R runnable, State state) {
+		super(runnable, state);
+		
+		write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
+			@Override
+			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
+				TrackedQueueFuture old = data.replace(runnable, BackpeddlingRunTask.this);
+				if(old != null)
+					old.sCancel();
+			}
+		});
 	}
 	
 }

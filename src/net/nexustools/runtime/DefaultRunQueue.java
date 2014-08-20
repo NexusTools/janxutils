@@ -40,6 +40,18 @@ public class DefaultRunQueue<R extends Runnable> extends ThreadedRunQueue<R> {
 	public DefaultRunQueue(String name) {
 		this(name, -1);
 	}
+	public DefaultRunQueue(String name, Delegator delegator, int threads) {
+		super(name, delegator, threads);
+	}
+	public DefaultRunQueue(String name, Delegator delegator) {
+		this(name, delegator, -1);
+	}
+	public DefaultRunQueue(String name, FutureDelegator delegator, int threads) {
+		super(name, delegator, threads);
+	}
+	public DefaultRunQueue(String name, FutureDelegator delegator) {
+		this(name, delegator, -1);
+	}
 
 	public void write(BaseAccessor data, BaseWriter actor) {
 		lock.write(data, actor);

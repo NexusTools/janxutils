@@ -131,6 +131,11 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 				pushFrame(new SharedLock(0));
 		}
 		@Override
+		public void fastUpgrade() {
+			if(!tryFastUpgrade())
+				upgrade();
+		}
+		@Override
 		public void upgrade() {
 			upgradeCount++;
 			if(upgradeCount > 1)
@@ -255,6 +260,11 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 		public void unlock() {
 			throw new IllegalThreadStateException("This thread does not yet have a lock, and so cannot be unlocked");
 		}
+
+		@Override
+		public void fastUpgrade() {
+			throw new IllegalThreadStateException("This thread does not yet have a lock, and so cannot be upgraded");
+		}
 		
 	};
 	
@@ -322,6 +332,10 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	@Override
 	public boolean tryLock(boolean exclusive) {
 		return current().tryLock(exclusive);
+	}
+
+	public void fastUpgrade() {
+		current().fastUpgrade();
 	}
 
 	@Override

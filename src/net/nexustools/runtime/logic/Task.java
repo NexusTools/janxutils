@@ -13,37 +13,38 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.runtime.logic;
 
-import net.nexustools.concurrent.BaseAccessor;
-import net.nexustools.concurrent.Lockable;
-import net.nexustools.utils.Testable;
+import net.nexustools.runtime.RunQueue;
 
 /**
  *
  * @author katelyn
  */
-public abstract class IfReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
-
-	@Override
-	public final R read(A data, Lockable<A> lock) {
-		lock.lock();
-		try {
-			if(test(data))
-				return read(data);
-			
-			return def();
-		} finally {
-			lock.unlock();
-		}
+public interface Task {
+	
+	public static enum State {
+		Scheduled,
+		WaitingInQueue,
+		Executing,
+		Complete,
+		Aborted,
+		
+		Cancelled
 	}
 	
-	protected R def() {
-		return null;
-	}
-	public abstract R read(A data);
-	public boolean test(A against) {
-		return against.isTrue();
-	}
+	public State state();
+	
+	public boolean isCancelled();
+	public boolean isExecutable();
+	public boolean isWaiting();
+	
+	public boolean didAbort();
+	public boolean isComplete();
+	public boolean isDone();
+	
+	public void cancel();
+	public void execute();
+	public boolean onSchedule();
 	
 }

@@ -13,7 +13,7 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
@@ -27,7 +27,7 @@ import net.nexustools.utils.Testable;
  *
  * @author katelyn
  */
-public class TrackedQueueFuture<R extends Runnable> extends RunnableQueueFuture {
+public class TrackedQueueFuture<R extends Runnable> extends RunTask {
 	
 	private static final PropMap<Runnable, TrackedQueueFuture> tracking = new PropMap();
 

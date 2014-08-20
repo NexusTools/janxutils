@@ -31,12 +31,20 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	public abstract void lock(boolean exclusive);
 	
 	/**
-	 * Upgrade as fast as possible from a shared to a exclusive lock.
+	 * Upgrade by first unlocking fully, than locking again.
 	 * 
 	 * A thread can upgrade multiple times, for each upgrade a call to
 	 * downgrade is required before you can get back to a shared lock.
 	 */
 	public abstract void upgrade();
+	
+	/**
+	 * Upgrade as fast as possible, may or may not require unlocking first.
+	 * 
+	 * A thread can upgrade multiple times, for each upgrade a call to
+	 * downgrade is required before you can get back to a shared lock.
+	 */
+	public abstract void fastUpgrade();
 	/**
 	 * Give up the last exclusive lock we gained by upgrading.
 	 */

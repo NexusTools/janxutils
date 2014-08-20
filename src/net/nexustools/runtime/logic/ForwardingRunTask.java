@@ -13,7 +13,7 @@
  * 
  */
 
-package net.nexustools.runtime.future;
+package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.MapAccessor;
 import net.nexustools.concurrent.logic.SoftWriter;
@@ -22,9 +22,9 @@ import net.nexustools.concurrent.logic.SoftWriter;
  *
  * @author katelyn
  */
-public class ForwardingQueueFuture<R extends Runnable> extends TrackedQueueFuture<R> {
+public class ForwardingRunTask<R extends Runnable> extends TrackedQueueFuture<R> {
 
-	public ForwardingQueueFuture(final R runnable, State state) {
+	public ForwardingRunTask(final R runnable, State state) {
 		super(runnable, state);
 		
 		write(new SoftWriter<MapAccessor<Runnable, TrackedQueueFuture>>() {
@@ -36,7 +36,7 @@ public class ForwardingQueueFuture<R extends Runnable> extends TrackedQueueFutur
 			}
 			@Override
 			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
-				data.put(runnable, ForwardingQueueFuture.this);
+				data.put(runnable, ForwardingRunTask.this);
 			}
 			@Override
 			public void soft(MapAccessor<Runnable, TrackedQueueFuture> data) {

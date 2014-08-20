@@ -21,4 +21,18 @@ import net.nexustools.concurrent.BaseAccessor;
  *
  * @author katelyn
  */
-public abstract class TestReader<A extends BaseAccessor> extends IfReader<Boolean, A> {}
+public abstract class TestReader<A extends BaseAccessor> extends IfReader<Boolean, A> {
+	@Override
+	protected Boolean def() {
+		return false;
+	}
+	
+	public abstract void readV(A data);
+
+	@Override
+	public final Boolean read(A data) {
+		readV(data);
+		return true;
+	}
+	
+}
