@@ -58,13 +58,15 @@ public final class RunQueueScheduler {
 				
 					Logger.gears("Waiting for Scheduled Task", fTask, fTask.when);
 					long rem = fTask.when - System.currentTimeMillis();
-					if(rem > 0) {
+					if(rem > fTask.accuracy) {
 						Logger.gears("Sleeping for " + rem + "ms");
 						try {
-							Thread.sleep(Math.min(rem, 5000));
+							Thread.sleep(Math.min(rem-fTask.accuracy, 5000));
 						} catch(InterruptedException ex) {}
 						continue;
 					}
+					
+					while((fTask.when - System.currentTimeMillis()) > 0);
 					
 					scheduledTasks.remove(fTask);
 					if(fTask.future.isDone()) {
@@ -86,18 +88,18 @@ public final class RunQueueScheduler {
 	
 	private static class FutureTask {
 		public final long when;
+		public final int accuracy;
 		public final RunQueue queue;
 		public final Task future;
 		
-		public FutureTask(int when, RunQueue queue, Task future) {
-			this.when = System.currentTimeMillis() + when;
-			this.queue = queue;
-			this.future = future;
+		public FutureTask(int when, int accuracy, RunQueue queue, Task future) {
+			this(System.currentTimeMillis() + when, accuracy, queue, future);
 		}
-		public FutureTask(long when, RunQueue queue, Task future) {
+		public FutureTask(long when, int accuracy, RunQueue queue, Task future) {
 			this.when = when;
 			this.queue = queue;
 			this.future = future;
+			this.accuracy = accuracy;
 		}
 		public void onQueue() {}
 
@@ -110,18 +112,18 @@ public final class RunQueueScheduler {
 	}
 	private static class RepeatingFutureTask extends FutureTask {
 		public final int interval;
-		public RepeatingFutureTask(int interval, RunQueue queue, Task future) {
-			super(interval, queue, future);
+		public RepeatingFutureTask(int interval, int accuracy, RunQueue queue, Task future) {
+			super(interval, accuracy, queue, future);
 			this.interval = interval;
 		}
-		public RepeatingFutureTask(long when, int interval, RunQueue queue, Task future) {
-			super(when + interval, queue, future);
+		public RepeatingFutureTask(long when, int interval, int accuracy, RunQueue queue, Task future) {
+			super(when + interval, accuracy, queue, future);
 			this.interval = interval;
 		}
 		@Override
 		public void onQueue() {
 			Logger.gears("Repeating", future, when + interval);
-			schedule(new RepeatingFutureTask(when, interval, queue, future.copy(Task.State.Scheduled)));
+			schedule(new RepeatingFutureTask(when, interval, accuracy, queue, future.copy(Task.State.Scheduled)));
 		}
 	}
 	
@@ -160,19 +162,19 @@ public final class RunQueueScheduler {
 		});
 				
 	}
-	public static void schedule(Task task, int when, RunQueue targetQueue) {
-		schedule(new FutureTask(when, targetQueue, task));
+	public static void schedule(Task task, int when, int accuracy, RunQueue targetQueue) {
+		schedule(new FutureTask(when, accuracy, targetQueue, task));
 	}
-	public static void scheduleRepeating(final Task task, int delay, final int repeat, final RunQueue targetQueue) {
+	public static void scheduleRepeating(final Task task, int delay, final int repeat, final int accuracy, final RunQueue targetQueue) {
 		Logger.gears("Scheduling Repeating", task, delay, repeat);
 		if(delay > 0) 
 			schedule(new RunTask(new Runnable() {
 				public void run() {
-					scheduleRepeating(task, 0, repeat, targetQueue);
+					scheduleRepeating(task, 0, accuracy, repeat, targetQueue);
 				}
-			}, Task.State.Scheduled), delay, targetQueue);
+			}, Task.State.Scheduled), delay, accuracy, targetQueue);
 		else
-			schedule(new RepeatingFutureTask(repeat, targetQueue, task));
+			schedule(new RepeatingFutureTask(repeat, accuracy, targetQueue, task));
 	}
 	public static void stopRepeating(final Task task, final RunQueue runQueue) {
 		scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {

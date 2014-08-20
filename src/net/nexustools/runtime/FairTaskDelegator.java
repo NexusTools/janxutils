@@ -185,19 +185,25 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 						samples.remove(0);
 					
 					long lifetime = 0;
+					int sampleCount = 0;
 					for(Long sample : samples) {
 						lifetime += sample;
+						sampleCount++;
 						if(lifetime < 0) {
 							lifetime = Long.MAX_VALUE;
+							sampleCount = maxSampleCount;
 							Logger.gears("Lifetime maxd out...");
 							break;
 						}
 					}
-					Logger.gears("Updating total lifetime", key, lifetime);
 					
-					if(lifetime > 0)
+					if(lifetime > 0) {
+						if(sampleCount < maxSampleCount) // Average out the samples to try and be fair to older clients
+							lifetime *= maxSampleCount / sampleCount;
+						
+						Logger.debug("Updating total lifetime", key, lifetime);
 						totalLifetimeMap.put(key, lifetime);
-					else {
+					} else {
 						lifetimeSamplesMap.remove(key);
 						totalLifetimeMap.remove(key);
 					}

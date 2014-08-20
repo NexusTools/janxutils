@@ -41,7 +41,7 @@ import net.nexustools.utils.log.Logger;
  */
 public class Client<P extends Packet, S extends Server<P, ?>> {
 	
-	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("ClientOut");
+	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("ClientOut", ThreadedRunQueue.Delegator.Fair);
 	private abstract class ReceiveThread extends Thread {
 		public ReceiveThread(String name) {
 			super(name + "In");
@@ -106,12 +106,16 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	final Runnable processSendQueue;
 	final ReceiveThread receiveThread;
 	public Client(String name, final Socket socket, final Server server) throws IOException {
+		final int clientHash = socket.getInetAddress().toString().hashCode();
 		receiveThread = new ReceiveThread(name) {
 			@Override
 			public Runnable packetProcessor(final P packet) {
-				return new Runnable() {
+				return new FairRunnable() {
 					public void run() {
 						packet.recvFromClient(Client.this, server);
+					}
+					public int fairHashCode() {
+						return clientHash;
 					}
 				};
 			}
@@ -122,7 +126,6 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		};
 		Logger.debug(socket.getInetAddress().toString());
 		processSendQueue = new FairRunnable() {
-			private int clientHash = socket.getInetAddress().toString().hashCode();
 			public void run() {
 				writeOut();
 			}
@@ -140,12 +143,16 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		receiveThread.start();
 	}
 	public Client(String name, final Socket socket, RunQueue runQueue, PacketRegistry packetRegistry) throws IOException {
+		final int clientHash = socket.getInetAddress().toString().hashCode();
 		receiveThread = new ReceiveThread(name) {
 			@Override
 			public Runnable packetProcessor(final P packet) {
-				return new Runnable() {
+				return new FairRunnable() {
 					public void run() {
 						packet.recvFromServer(Client.this);
+					}
+					public int fairHashCode() {
+						return clientHash;
 					}
 				};
 			}
@@ -154,9 +161,12 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 				return Client.this;
 			}
 		};
-		processSendQueue = new Runnable() {
+		processSendQueue = new FairRunnable() {
 			public void run() {
 				writeOut();
+			}
+			public int fairHashCode() {
+				return clientHash;
 			}
 		};
 		

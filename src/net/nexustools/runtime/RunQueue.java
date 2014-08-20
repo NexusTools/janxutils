@@ -73,31 +73,31 @@ public abstract class RunQueue<R extends Runnable, T> {
 			return null;
 		return push(future);
 	}
-	public final Task scheduleRepeating(R runnable, int delay, int repeat, Placement placement) {
+	public final Task scheduleRepeating(R runnable, int delay, int repeat, int accuracy, Placement placement) {
 		Task future = wrap(runnable, Task.State.Scheduled, placement);
 		if(future.isDone())
 			return null;
-		RunQueueScheduler.scheduleRepeating(future, delay, repeat, this);
+		RunQueueScheduler.scheduleRepeating(future, delay, repeat, accuracy, this);
 		return future;
 	}
 	public final Task scheduleRepeating(R runnable, int repeat, Placement placement) {
-		return scheduleRepeating(runnable, 0, repeat, placement);
+		return scheduleRepeating(runnable, 0, repeat, 5, placement);
 	}
 	public final Task scheduleRepeating(R runnable, int delay, int repeat) {
-		return scheduleRepeating(runnable, delay, repeat, Placement.NormalPlacement);
+		return scheduleRepeating(runnable, delay, repeat, 5, Placement.NormalPlacement);
 	}
 	public final Task scheduleRepeating(R runnable, int repeat) {
-		return scheduleRepeating(runnable, 0, repeat, Placement.NormalPlacement);
+		return scheduleRepeating(runnable, 0, repeat, 5, Placement.NormalPlacement);
 	}
-	public final Task schedule(R runnable, int when, Placement placement) {
+	public final Task schedule(R runnable, int when, int accuracy, Placement placement) {
 		Task future = wrap(runnable, Task.State.Scheduled, placement);
 		if(future.isDone())
 			return null;
-		RunQueueScheduler.schedule(future, when, this);
+		RunQueueScheduler.schedule(future, when, accuracy, this);
 		return future;
 	}
 	public final Task schedule(R runnable, int when) {
-		return schedule(runnable, when, Placement.NormalPlacement);
+		return schedule(runnable, when, 5, Placement.NormalPlacement);
 	}
 	public final Task push(R runnable) {
 		return push(runnable, Placement.ReplaceExisting);

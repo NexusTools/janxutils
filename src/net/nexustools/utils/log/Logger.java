@@ -41,7 +41,7 @@ public class Logger extends Thread {
 	private static final Level minLevel;
 	
 	static {
-		Level mLevel = Level.Gears;
+		Level mLevel = Level.Debug;
 		String strLevel = System.getProperty("logger");
 		if(strLevel != null)
 			for(Level level : Level.values())
