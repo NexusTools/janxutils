@@ -114,12 +114,15 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 						killNext = false;
 						future.execute();
 					}
-				} catch (StopRepeating ex) {
-					RunQueueScheduler.stopRepeating(future, cQueue);
 				} catch (InterruptedException ex) {
 					Logger.gears(name, "Wokeup");
 				} catch (RuntimeException run) {
-					run.printStackTrace();
+					Logger.Level level = Logger.Level.Warning;
+					if(run instanceof StopRepeating) {
+						RunQueueScheduler.stopRepeating(future, cQueue);
+						level = Logger.Level.Gears;
+					}
+					Logger.exception(level, run);
 				}
 			} while (true);
 		}

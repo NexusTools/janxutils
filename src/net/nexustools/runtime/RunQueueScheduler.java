@@ -44,16 +44,18 @@ public final class RunQueueScheduler {
 		@Override
 		public void run() {
 			while(true) {
-				FutureTask fTask = scheduledTasks.first();
-				if(fTask == null) {
-					Logger.gears("Waiting for more tasks");
-					try {
-						Thread.sleep(60000 * 60 * 5);
-					} catch (InterruptedException ex) {}
-					continue;
-				}
-				
+				FutureTask fTask;
 				try {
+					try {
+						fTask = scheduledTasks.first();
+					} catch(IndexOutOfBoundsException ex) {
+						Logger.gears("Waiting for more tasks");
+						try {
+							Thread.sleep(60000 * 60 * 5);
+						} catch (InterruptedException ie) {}
+						continue;
+					}
+				
 					Logger.gears("Waiting for Scheduled Task", fTask, fTask.when);
 					long rem = fTask.when - System.currentTimeMillis();
 					if(rem > 0) {
@@ -92,6 +94,11 @@ public final class RunQueueScheduler {
 			this.queue = queue;
 			this.future = future;
 		}
+		public FutureTask(long when, RunQueue queue, Task future) {
+			this.when = when;
+			this.queue = queue;
+			this.future = future;
+		}
 		public void onQueue() {}
 
 		@Override
@@ -107,10 +114,14 @@ public final class RunQueueScheduler {
 			super(interval, queue, future);
 			this.interval = interval;
 		}
+		public RepeatingFutureTask(long when, int interval, RunQueue queue, Task future) {
+			super(when + interval, queue, future);
+			this.interval = interval;
+		}
 		@Override
 		public void onQueue() {
-			Logger.gears("Repeating", future);
-			scheduleRepeating(future.copy(Task.State.Scheduled), 0, interval, queue);
+			Logger.gears("Repeating", future, when + interval);
+			schedule(new RepeatingFutureTask(when, interval, queue, future.copy(Task.State.Scheduled)));
 		}
 	}
 	
@@ -124,10 +135,10 @@ public final class RunQueueScheduler {
 	});
 	public static Prop<Thread> schedulerThread = new Prop<Thread>();
 	
-	public static class StopRepeating extends java.lang.RuntimeException {}
+	public static class StopRepeating extends RuntimeException {}
 	
 	private static void schedule(final FutureTask entry) {
-		Logger.info(Logger.Level.Gears, "Scheduling", entry);
+		Logger.gears("Scheduling", entry.future);
 		scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
 			@Override
 			public void write(final ListAccessor<FutureTask> taskList) {
@@ -153,7 +164,7 @@ public final class RunQueueScheduler {
 		schedule(new FutureTask(when, targetQueue, task));
 	}
 	public static void scheduleRepeating(final Task task, int delay, final int repeat, final RunQueue targetQueue) {
-		Logger.info(Logger.Level.Gears, "Scheduling Repeating", task, delay, repeat);
+		Logger.gears("Scheduling Repeating", task, delay, repeat);
 		if(delay > 0) 
 			schedule(new RunTask(new Runnable() {
 				public void run() {
@@ -168,10 +179,14 @@ public final class RunQueueScheduler {
 			@Override
 			public void write(ListAccessor<FutureTask> data) {
 				Iterator<FutureTask> iterator = data.iterator();
+				Logger.gears("Searchng for task to stop", task);
 				while(iterator.hasNext()) {
 					FutureTask entry = iterator.next();
-					if(entry.future.equals(task) && entry.queue.equals(runQueue))
+					if(entry.future.equals(task) && entry.queue.equals(runQueue)) {
+						Logger.gears("Removing", task);
 						iterator.remove();
+						break;
+					}
 				}
 			}
 		});

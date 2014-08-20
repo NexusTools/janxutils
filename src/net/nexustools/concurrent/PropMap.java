@@ -44,7 +44,10 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			return map.get(key);
 		}
 		public V get(K key, V def) {
-			return map.getOrDefault(key, def);
+			V val = map.get(key);
+			if(val == null)
+				val = def;
+			return val;
 		}
 		public V take(K key) {
 			return map.remove(key);

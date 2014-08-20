@@ -22,6 +22,7 @@ import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
 import net.nexustools.utils.Testable;
 /**
  *
@@ -94,6 +95,7 @@ public abstract class DefaultTask implements Task {
 		});
 	}
 	public final void execute(Testable<Void> isRunning) {
+		boolean stopRepeating = false;
 		if(state.read(new WriteReader<Boolean, PropAccessor<State>>() {
 					@Override
 					public Boolean read(PropAccessor<State> data) {
@@ -105,8 +107,13 @@ public abstract class DefaultTask implements Task {
 					}
 				})) {
 			try {
+			
 				runThread.set(Thread.currentThread());
-				executeImpl(isRunning);
+				try {
+					executeImpl(isRunning);
+				} catch(StopRepeating ex) {
+					stopRepeating = true;
+				}
 				state.write(new IfWriter<PropAccessor<State>>() {
 					@Override
 					public void write(PropAccessor<State> data) {
@@ -124,6 +131,8 @@ public abstract class DefaultTask implements Task {
 				runThread.clear();
 			}
 		}
+		if(stopRepeating)
+			throw new StopRepeating();
 	}
 	
 	public boolean onSchedule() {
