@@ -28,7 +28,6 @@ import net.nexustools.utils.log.Logger;
  *
  * @author katelyn
  * @param <R>
- * @param <F>
  */
 public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread> {
 	

@@ -24,7 +24,6 @@ import net.nexustools.runtime.future.RunnableQueueFuture;
  *
  * @author katelyn
  * @param <R>
- * @param <F>
  * @param <T>
  */
 public abstract class RunQueue<R extends Runnable, T> {

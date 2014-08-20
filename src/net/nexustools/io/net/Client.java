@@ -43,7 +43,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	private static final ThreadedRunQueue sendQueue = new ThreadedRunQueue("ClientOut");
 	private abstract class ReceiveThread extends Thread {
 		public ReceiveThread(String name) {
-			super(name + "-in");
+			super(name + "In");
 			setDaemon(true);
 		}
 		public abstract Runnable packetProcessor(P packet);
@@ -189,7 +189,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		this(name, open(host, port, protocol), runQueue, packetRegistry);
 	}
 	public Client(String name, String host, int port, Protocol protocol, PacketRegistry packetRegistry) throws IOException {
-		this(name, host, port, protocol, new ThreadedRunQueue(name + "-RunQueue"), packetRegistry);
+		this(name, host, port, protocol, new ThreadedRunQueue(name), packetRegistry);
 	}
 	
 	public final void addClientListener(ClientListener listener) {
