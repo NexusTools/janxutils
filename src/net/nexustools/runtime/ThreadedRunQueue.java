@@ -65,13 +65,13 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	private final PropList<RunThread> idleThreads;
 	private final PropList<Task> tasks = new PropList();
 	public ThreadedRunQueue(String name, float multiplier) {
-		this(name, Delegator.Fair, (int)(defaultThreadCount*multiplier));
+		this(name, Delegator.FCFS, (int)(defaultThreadCount*multiplier));
 	}
 	public ThreadedRunQueue(String name, int threads) {
-		this(name, Delegator.Fair, threads);
+		this(name, Delegator.FCFS, threads);
 	}
 	public ThreadedRunQueue(String name) {
-		this(name, Delegator.Fair, -1);
+		this(name, Delegator.FCFS, -1);
 	}
 	public ThreadedRunQueue(String name, Delegator delegator, float multiplier) {
 		this(name, delegator, (int)(defaultThreadCount*multiplier));

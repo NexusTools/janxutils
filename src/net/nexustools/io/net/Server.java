@@ -16,6 +16,8 @@
 package net.nexustools.io.net;
 
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.VoidReader;
@@ -39,10 +41,10 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 		UDP
 	}
 	
-	public static StreamServer spawn(int port, Protocol protocol) throws IOException {
+	public static ServerSocket spawn(int port, Protocol protocol) throws IOException {
 		switch(protocol) {
 			case TCP:
-				return new TCPStreamServer(port);
+				return new ServerSocket(port);
 		}
 		throw new UnsupportedOperationException();
 	}
@@ -50,7 +52,7 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 	final RunQueue runQueue;
 	protected final PacketRegistry packetRegistry;
 	final PropList<C> clients = new PropList<C>();
-	final StreamServer streamServer;
+	final ServerSocket streamServer;
 	
 	public Server(int port, Protocol protocol) throws IOException {
 		this(spawn(port, protocol), new PacketRegistry());
@@ -61,10 +63,10 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 	public Server(int port, Protocol protocol, PacketRegistry packetRegistry, RunQueue runQueue) throws IOException {
 		this(spawn(port, protocol), packetRegistry, runQueue);
 	}
-	public Server(StreamServer streamServer, PacketRegistry packetRegistry) {
+	public Server(ServerSocket streamServer, PacketRegistry packetRegistry) {
 		this(streamServer, packetRegistry, new ThreadedRunQueue(streamServer.toString()));
 	}
-	protected Server(StreamServer streamServer, PacketRegistry packetRegistry, RunQueue runQueue) {
+	protected Server(ServerSocket streamServer, PacketRegistry packetRegistry, RunQueue runQueue) {
 		super(streamServer.toString() + "-AcceptListener");
 		this.packetRegistry = packetRegistry;
 		this.streamServer = streamServer;
@@ -72,7 +74,7 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 		start();
 	}
 	
-	public C createClient(Pair<DataInputStream,DataOutputStream> socket) {
+	public C createClient(Socket socket) throws IOException {
 		return (C) new Client("Client", socket, this);
 	}
 	
@@ -94,7 +96,7 @@ public class Server<P extends Packet, C extends Client<P, ? extends Server>> ext
 	public void run() {
 		try {
 			while(true) {
-				C client = createClient(streamServer.nextPendingStream());
+				C client = createClient(streamServer.accept());
 				Logger.debug("Client Connected", client);
 				// Dispatch connect event
 				clients.push(client);

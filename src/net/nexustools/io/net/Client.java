@@ -29,6 +29,7 @@ import net.nexustools.event.EventDispatcher;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 import net.nexustools.io.net.Server.Protocol;
+import net.nexustools.runtime.FairTaskDelegator.FairRunnable;
 import net.nexustools.runtime.RunQueue;
 import net.nexustools.runtime.ThreadedRunQueue;
 import net.nexustools.utils.Pair;
@@ -84,15 +85,11 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 		}
 	}
 	
-	public static Pair<DataInputStream,DataOutputStream> open(String host, int port, Protocol protocol) throws IOException {
+	public static Socket open(String host, int port, Protocol protocol) throws IOException {
 		switch(protocol) {
 			case TCP:
 				Logger.gears("Opening TCP Socket", host, port);
-				
-				Socket socket = new Socket(host, port);
-				Pair pair = new Pair(new DataInputStream(socket.getInputStream()), new DataOutputStream(socket.getOutputStream()));
-				Logger.gears("Opened", socket, pair);
-				return pair;
+				return new Socket(host, port);
 		}
 		
 		throw new UnsupportedDataTypeException();
@@ -106,38 +103,9 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	protected final Pair<DataInputStream,DataOutputStream> socket;
 	final DefaultEventDispatcher<?, ClientListener, ClientListener.ClientEvent> eventDispatcher;
 	final DefaultEventDispatcher<?, PacketListener, PacketListener.PacketEvent> packetDispatcher;
-	final Runnable processSendQueue = new Runnable() {
-		public void run() {
-			for(P packet : packetQueue.take())
-				try {
-					int packetID = packetRegistry.idFor(packet);
-					Logger.gears("Writing Packet", packetID, packet);
-
-					byte[] data;
-					try {
-						data = packet.data(Client.this);
-					} catch(Throwable t) {
-						Logger.warn("Error generating packet contents");
-						Logger.warn("Client may now become unstable");
-						Logger.exception(Logger.Level.Warning, t);
-						continue;
-					}
-
-					Logger.debug(socket.v);
-					socket.v.writeShort(packetID);
-					socket.v.write(data);
-					socket.v.flush();
-
-					Logger.gears("Written and Flushed");
-				} catch (IOException ex) {
-					Logger.exception(ex);
-				} catch (NoSuchMethodException ex) {
-					Logger.exception(ex);
-				}
-		}
-	};
+	final Runnable processSendQueue;
 	final ReceiveThread receiveThread;
-	public Client(String name, Pair<DataInputStream,DataOutputStream> socket, final Server server) {
+	public Client(String name, final Socket socket, final Server server) throws IOException {
 		receiveThread = new ReceiveThread(name) {
 			@Override
 			public Runnable packetProcessor(final P packet) {
@@ -152,16 +120,26 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 				return server;
 			}
 		};
+		Logger.debug(socket.getInetAddress().toString());
+		processSendQueue = new FairRunnable() {
+			private int clientHash = socket.getInetAddress().toString().hashCode();
+			public void run() {
+				writeOut();
+			}
+			public int fairHashCode() {
+				return clientHash;
+			}
+		};
 		
 		eventDispatcher = new DefaultEventDispatcher(server.runQueue);
 		packetDispatcher = new DefaultEventDispatcher(server.runQueue);
 		this.packetRegistry = server.packetRegistry;
 		this.runQueue = server.runQueue;
-		this.socket = socket;
+		this.socket = new Pair(new DataInputStream(socket.getInputStream()), new DataOutputStream(socket.getOutputStream()));
 		
 		receiveThread.start();
 	}
-	public Client(String name, final Pair<DataInputStream,DataOutputStream> socket, RunQueue runQueue, PacketRegistry packetRegistry) {
+	public Client(String name, final Socket socket, RunQueue runQueue, PacketRegistry packetRegistry) throws IOException {
 		receiveThread = new ReceiveThread(name) {
 			@Override
 			public Runnable packetProcessor(final P packet) {
@@ -176,12 +154,17 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 				return Client.this;
 			}
 		};
+		processSendQueue = new Runnable() {
+			public void run() {
+				writeOut();
+			}
+		};
 		
 		this.runQueue = runQueue;
 		eventDispatcher = new DefaultEventDispatcher(runQueue);
 		packetDispatcher = new DefaultEventDispatcher(runQueue);
 		this.packetRegistry = packetRegistry;
-		this.socket = socket;
+		this.socket = new Pair(new DataInputStream(socket.getInputStream()), new DataOutputStream(socket.getOutputStream()));
 		
 		receiveThread.start();
 	}
@@ -190,6 +173,35 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	}
 	public Client(String name, String host, int port, Protocol protocol, PacketRegistry packetRegistry) throws IOException {
 		this(name, host, port, protocol, new ThreadedRunQueue(name), packetRegistry);
+	}
+	
+	protected void writeOut() {
+		for(P packet : packetQueue.take())
+			try {
+				int packetID = packetRegistry.idFor(packet);
+				Logger.gears("Writing Packet", packetID, packet);
+
+				byte[] data;
+				try {
+					data = packet.data(Client.this);
+				} catch(Throwable t) {
+					Logger.warn("Error generating packet contents");
+					Logger.warn("Client may now become unstable");
+					Logger.exception(Logger.Level.Warning, t);
+					continue;
+				}
+
+				Logger.debug(socket.v);
+				socket.v.writeShort(packetID);
+				socket.v.write(data);
+				socket.v.flush();
+
+				Logger.gears("Written and Flushed");
+			} catch (IOException ex) {
+				Logger.exception(ex);
+			} catch (NoSuchMethodException ex) {
+				Logger.exception(ex);
+			}
 	}
 	
 	public final void addClientListener(ClientListener listener) {

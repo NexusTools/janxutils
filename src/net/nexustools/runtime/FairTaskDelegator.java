@@ -110,18 +110,22 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	public static int hashFor(Task task) {
+		if(task instanceof FairTarget)
+			return ((FairTarget)task).fairHashCode();
 		if(task instanceof RunTask) {
 			Runnable runnable = ((RunTask)task).runnable;
 			if(runnable instanceof FairTarget)
 				return ((FairTarget)runnable).fairHashCode();
 			return runnable.hashCode();
-		} else
-			return task.hashCode();
+		}
+		
+		return task.hashCode();
 	}
 	
-	public static interface FairTarget extends Runnable {
+	public static interface FairTarget {
 		public int fairHashCode();
 	}
+	public static interface FairRunnable extends Runnable, FairTarget {}
 	public static interface LifetimeMultiplier extends Runnable {
 		public int lifetimeMultiplier();
 	}
@@ -134,7 +138,10 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	private final PropMap<Integer, Long> totalLifetimeMap = new PropMap();
 	private final Comparator<F> comparator = new Comparator<F>() {
 		public int compare(F o1, F o2) {
-			return (int) (lifetimeFor(o1) - lifetimeFor(o2));
+			long when = lifetimeFor(o1) - lifetimeFor(o2);
+			if(when > Integer.MAX_VALUE)
+				return Integer.MAX_VALUE;
+			return (int)when;
 		}
 	};
 	public FairTaskDelegator() {
@@ -205,7 +212,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	private long lifetimeFor(F queueFuture) {
-		return lifetimeMap.get(hashFor(queueFuture));
+		return lifetimeMap.get(hashFor(queueFuture), 0L);
 	}
 	
 	protected F wrap(final F task) {

@@ -23,6 +23,8 @@ import net.nexustools.concurrent.logic.BaseWriter;
 import net.nexustools.concurrent.logic.IfUpdateWriter;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.utils.Testable;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -60,18 +62,27 @@ public class SortedPropList<I> extends PropList<I> {
 	}
 
 	@Override
-	public <R> R read(BaseReader<R, ListAccessor<I>> reader) {
-		write(new IfWriter<ListAccessor<I>>() {
-			public boolean test(PropAccessor<I> against) {
-				return dirty;
-			}
-			@Override
-			public void write(ListAccessor<I> data) {
-				Collections.sort(list, comparator);
-				dirty = false;
+	public <R> R read(final BaseReader<R, ListAccessor<I>> reader) {
+		return super.read(new BaseReader<R, ListAccessor<I>>() {
+			public R read(ListAccessor<I> data, Lockable<ListAccessor<I>> lock) {
+				lock.lock();
+				try {
+					if(lock.tryFastUpgradeTest(new Testable() {
+								public boolean test(Object against) {
+									return dirty;
+								}
+							})) {
+						Logger.gears("List is dirty, sorting before read");
+						Collections.sort(list, comparator);
+						dirty = false;
+					}
+
+					return reader.read(data, lock);
+				} finally {
+					lock.unlock();
+				}
 			}
 		});
-		return super.read(reader);
 	}
 	
 	public Comparator<I> getComparator() {

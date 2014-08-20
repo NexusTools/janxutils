@@ -44,7 +44,7 @@ public final class RunQueueScheduler {
 		@Override
 		public void run() {
 			while(true) {
-				FutureTask fTask = scheduledTasks.pop();
+				FutureTask fTask = scheduledTasks.first();
 				if(fTask == null) {
 					Logger.gears("Waiting for more tasks");
 					try {
@@ -55,16 +55,16 @@ public final class RunQueueScheduler {
 				
 				try {
 					Logger.gears("Waiting for Scheduled Task", fTask, fTask.when);
-					while(!fTask.future.isDone()) {
-						long rem = fTask.when - System.currentTimeMillis();
-						if(rem > 0) {
-							Logger.gears("Sleeping for " + rem + "ms");
-							try {
-								Thread.sleep(Math.min(rem, 5000));
-							} catch(InterruptedException ex) {}
-						} else
-							break;
+					long rem = fTask.when - System.currentTimeMillis();
+					if(rem > 0) {
+						Logger.gears("Sleeping for " + rem + "ms");
+						try {
+							Thread.sleep(Math.min(rem, 5000));
+						} catch(InterruptedException ex) {}
+						continue;
 					}
+					
+					scheduledTasks.remove(fTask);
 					if(fTask.future.isDone()) {
 						Logger.gears("Task was Cancelled", fTask);
 						continue;
@@ -116,7 +116,7 @@ public final class RunQueueScheduler {
 	
 	private static final PropList<FutureTask> scheduledTasks = new SortedPropList<FutureTask>(new Comparator<FutureTask>() {
 		public int compare(FutureTask o1, FutureTask o2) {
-			long when = o2.when - o1.when;
+			long when = o1.when - o2.when;
 			if(when > Integer.MAX_VALUE)
 				return Integer.MAX_VALUE;
 			return (int)when;

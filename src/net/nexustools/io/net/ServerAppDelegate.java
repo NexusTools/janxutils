@@ -16,6 +16,7 @@
 package net.nexustools.io.net;
 
 import java.io.IOException;
+import java.net.Socket;
 import net.nexustools.DefaultAppDelegate;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.io.DataInputStream;
@@ -34,7 +35,7 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 	private Prop<Runnable> mainLoop = new Prop();
 	protected final PacketRegistry packetRegistry;
 	public ServerAppDelegate(String[] args, String name, String organization, PacketRegistry packetRegistry, float multiplier) {
-		super(args, name, organization, new ThreadedRunQueue(name, multiplier));
+		super(args, name, organization, new ThreadedRunQueue(name, ThreadedRunQueue.Delegator.Fair, multiplier));
 		this.packetRegistry = packetRegistry;
 	}
 	public ServerAppDelegate(String[] args, String name, String organization, float multiplier) {
@@ -49,7 +50,7 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 	protected C createClient(String host, int port) throws IOException {
 		return (C)new Client(name + "Client", host, port, Protocol.TCP, packetRegistry);
 	}
-    protected C createClient(Pair<DataInputStream,DataOutputStream> socket, S server) throws IOException {
+    protected C createClient(Socket socket, S server) throws IOException {
         return (C)new Client(name + "Client", socket, server);
     }
 	protected S createServer(int port) throws IOException {
