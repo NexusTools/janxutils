@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.utils.ClassUtils;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.Pair;
 
@@ -30,7 +31,7 @@ import net.nexustools.utils.Pair;
  */
 public class DefaultPropMap<K, V> extends PropMap<K, V> {
 	
-	final Creator<V, ?> creator;
+	final Creator<V, K> creator;
 	final MapAccessor<K, V> accessor = new MapAccessor<K, V>() {
 		final MapAccessor<K, V> accessor = DefaultPropMap.super.directAccessor();
 		public V get(final K key) {
@@ -97,25 +98,14 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 			return accessor.iterator();
 		}
 	};
-	public DefaultPropMap(final Class<? extends V> valueClass, Type type) throws NoSuchMethodException {
-		this(new Creator<V, Void>() {
-			final Constructor<? extends V> constructor = valueClass.getConstructor();
-			public V create(Void using) {
-				try {
-					return valueClass.newInstance();
-				} catch (InstantiationException ex) {
-					throw new RuntimeException(ex);
-				} catch (IllegalAccessException ex) {
-					throw new RuntimeException(ex);
-				}
-			}
-		}, type);
+	public DefaultPropMap(final Class<? extends K> keyClass, final Class<? extends V> valueClass, Type type) throws NoSuchMethodException {
+		this(ClassUtils.creator(valueClass, keyClass), type);
 	}
-	public DefaultPropMap(Creator<V, ?> creator, Type type) {
+	public DefaultPropMap(Creator<V, K> creator, Type type) {
 		super(type);
 		this.creator = creator;
 	}
-	public DefaultPropMap(Creator<V, ?> creator) {
+	public DefaultPropMap(Creator<V, K> creator) {
 		this(creator, Type.HashMap);
 	}
 

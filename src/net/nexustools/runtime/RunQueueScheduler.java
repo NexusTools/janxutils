@@ -27,6 +27,7 @@ import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.log.Logger;
+import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
  *
@@ -127,12 +128,10 @@ public final class RunQueueScheduler {
 		}
 	}
 	
-	private static final PropList<FutureTask> scheduledTasks = new SortedPropList<FutureTask>(new Comparator<FutureTask>() {
-		public int compare(FutureTask o1, FutureTask o2) {
-			long when = o1.when - o2.when;
-			if(when > Integer.MAX_VALUE)
-				return Integer.MAX_VALUE;
-			return (int)when;
+	private static final PropList<FutureTask> scheduledTasks = new SortedPropList<FutureTask>(new DescLongTypeComparator<FutureTask>() {
+		@Override
+		public long value(FutureTask o) {
+			return o.when;
 		}
 	});
 	public static Prop<Thread> schedulerThread = new Prop<Thread>();

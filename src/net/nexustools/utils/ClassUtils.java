@@ -15,8 +15,12 @@
 
 package net.nexustools.utils;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,6 +36,55 @@ public class ClassUtils {
 				bestMatch = entry;
 		}
 		return bestMatch;
+	}
+	
+	public static <C, U> Creator<C, U> creator(Class<? extends C> create, Class<? extends U> using) {
+		try {
+			final Constructor<? extends C> constructor = create.getConstructor(using);
+			return new Creator<C, U>() {
+				public C create(U using) {
+					try {
+						return constructor.newInstance(using);
+					} catch (InstantiationException ex) {
+						throw new RuntimeException(ex);
+					} catch (IllegalAccessException ex) {
+						throw new RuntimeException(ex);
+					} catch (IllegalArgumentException ex) {
+						throw new RuntimeException(ex);
+					} catch (InvocationTargetException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+			};
+		} catch (NoSuchMethodException ex) {
+		} catch (SecurityException ex) {
+		}
+		
+		try {
+			final Constructor<? extends C> constructor = create.getConstructor();
+			return new Creator<C, U>() {
+				public C create(U using) {
+					try {
+						return constructor.newInstance();
+					} catch (InstantiationException ex) {
+						throw new RuntimeException(ex);
+					} catch (IllegalAccessException ex) {
+						throw new RuntimeException(ex);
+					} catch (IllegalArgumentException ex) {
+						throw new RuntimeException(ex);
+					} catch (InvocationTargetException ex) {
+						throw new RuntimeException(ex);
+					}
+				}
+			};
+		} catch (NoSuchMethodException ex) {
+			throw new UnsupportedOperationException("No compatible constructors.");
+		} catch (SecurityException ex) {
+			throw new UnsupportedOperationException("No compatible constructors.");
+		}
+	}
+	public static Creator<?, ?> creator(Class<?> create) {
+		return creator(create, Void.class);
 	}
 	
 }

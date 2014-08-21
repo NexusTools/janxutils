@@ -54,7 +54,6 @@ public class FieldDefinition {
 		final net.nexustools.data.Adaptor dataAdaptor = net.nexustools.data.Adaptor.resolveAdaptor(ffield.getType());
 		if(instruction.mutableType)
 			adaptor = new Adaptor() {
-
 				@Override
 				public void read(Object target, DataInputStream in) throws IOException {
 					try {
@@ -63,7 +62,6 @@ public class FieldDefinition {
 						throw new IOException(ex);
 					}
 				}
-
 				@Override
 				public void write(Object target, DataOutputStream out) throws IOException {
 					try {
@@ -72,7 +70,6 @@ public class FieldDefinition {
 						throw new IOException(ex);
 					}
 				}
-
 			};
 		else {
 			if(instruction.neverNull || dataAdaptor.isPrimitive()) // Primitives are considered neverNull

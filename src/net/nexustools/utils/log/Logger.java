@@ -21,12 +21,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.WeakHashMap;
-
 import net.nexustools.Application;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
  *
@@ -279,9 +279,10 @@ public class Logger extends Thread {
 						it.remove();
 					}
 				}
-				Collections.sort(readyMessages, new Comparator<Message>() {
-					public int compare(Message o1, Message o2) {
-						return (int)(o1.timestamp - o2.timestamp);
+				Collections.sort(readyMessages, new DescLongTypeComparator<Message>() {
+					@Override
+					public long value(Message o) {
+						return o.timestamp;
 					}
 				});
 			
