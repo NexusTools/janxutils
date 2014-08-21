@@ -48,7 +48,7 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 					}
 					@Override
 					public V read(MapAccessor<K, V> data) {
-						V val = creator.create(null);
+						V val = creator.create(key);
 						data.put(key, val);
 						return val;
 					}
