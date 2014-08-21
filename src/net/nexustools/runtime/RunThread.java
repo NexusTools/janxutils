@@ -60,7 +60,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					setPriority(10);
 					break;
 			}
-			Logger.debug(name, "Spawned");
+			Logger.gears(name, "Spawned");
 			setDaemon(true);
 			setName(name);
 			start();
@@ -69,7 +69,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 		RunQueue cQueue;
 		@Override
 		public void run() {
-			Logger.gears(name, "Entered");
+			Logger.gears("Entered");
 			// Make the queue this thread was created for current.
 			queue.read(new IfReader<Void, PropAccessor<Q>>() {
 				@Override
@@ -80,7 +80,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 			});
 			killNext = false;
 			do {
-				Logger.gears(name, "Retreiving Work");
+				Logger.gears("Retreiving Work");
 				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
@@ -106,16 +106,16 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					Logger.gears(future);
 					
 					if (future == null) {
-						Logger.gears(name, "Went Idle");
+						Logger.gears("Went Idle");
 						Thread.sleep(60000 * 5);
 						killNext = true;
 					} else {
-						Logger.gears(name, "Executing", future);
+						Logger.gears("Executing", future);
 						killNext = false;
 						future.execute();
 					}
 				} catch (InterruptedException ex) {
-					Logger.gears(name, "Wokeup");
+					Logger.gears("Wokeup");
 				} catch (RuntimeException run) {
 					Logger.Level level = Logger.Level.Warning;
 					if(run instanceof StopRepeating) {

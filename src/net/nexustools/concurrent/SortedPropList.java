@@ -39,9 +39,15 @@ public class SortedPropList<I> extends PropList<I> {
 	}
 	
 	public void dirtyOperation(final Runnable operation) {
-		write(new BaseWriter<ListAccessor<I>>() {
+		super.write(new BaseWriter<ListAccessor<I>>() {
 			public void write(ListAccessor<I> data, Lockable lock) {
-				operation.run();
+				lock.lock(true);
+				try {
+					dirty = true;
+					operation.run();
+				} finally {
+					lock.unlock();
+				}
 			}
 		});
 	}

@@ -228,14 +228,15 @@ public class Logger extends Thread {
 		
 	}
 	
-	protected static class Expander {
-		int len = 0;
+	protected static class Fitter {
+		float len = 0;
 		static final boolean enabled = System.getProperty("loggerwhitespace", "enabled").equalsIgnoreCase("enabled");
 		public String expand(String string) {
 			if(string.length() > len)
 				len = string.length();
 			else {
-				int rem = len - string.length();
+				int ceilLen = (int)Math.ceil(len);
+				int rem = ceilLen - string.length();
 				boolean front = false;
 				while(rem-- > 0) {
 					if(front = !front)
@@ -243,6 +244,8 @@ public class Logger extends Thread {
 					else
 						string = ' ' + string;
 				}
+				if(ceilLen > 1)
+					len -= 0.4;
 			}
 			return string;
 		}
@@ -260,8 +263,8 @@ public class Logger extends Thread {
 	public void run() {
 		final WeakHashMap<String, String> classNames = new WeakHashMap();
 		final ArrayList<Message> messages = new ArrayList();
-		final Expander threadName = new Expander();
-		final Expander className = new Expander();
+		final Fitter threadName = new Fitter();
+		final Fitter className = new Fitter();
 		
 		while(true) {
 			messages.addAll(messageQueue.take());

@@ -93,8 +93,9 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 			try {
 				internal.execute();
 			} finally {
+				start = System.currentTimeMillis() - start;
 				Logger.gears("Execution took " + start + "ms", key);
-				delegator.pushLifetime(key, System.currentTimeMillis() - start);
+				delegator.pushLifetime(key, start);
 			}
 		}
 		public boolean onSchedule() {
@@ -153,11 +154,15 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	private void pushLifetime(final int hash, final long time) {
-		lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
-			@Override
-			public void write(MapAccessor<Integer, Long> data) {
-				Logger.gears("Pushing Fairness Lifetime", hash, time, FairTaskDelegator.this);
-				data.put(hash, data.get(hash, 0L) + time);
+		queue.dirtyOperation(new Runnable() {
+			public void run() {
+				lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
+					@Override
+					public void write(MapAccessor<Integer, Long> data) {
+						Logger.gears("Pushing Fairness Lifetime", hash, time, FairTaskDelegator.this);
+						data.put(hash, data.get(hash, 0L) + time);
+					}
+				});
 			}
 		});
 	}
@@ -167,13 +172,17 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 			@Override
 			public void readV(MapAccessor<Integer, Long> data) {
 				Logger.gears("Updating Fairness Lifetimes", FairTaskDelegator.this);
+				ArrayList<Integer> processedKeys = new ArrayList();
 				for(Pair<Integer, Long> entry : data) {
+					Logger.gears(entry);
+					processedKeys.add(entry.i);
 					ArrayList<Long> samples = lifetimeSamplesMap.get(entry.i);
 					if(samples == null) {
 						if(entry.v < 1) // Skip creating entry
 							continue;
 						
 						samples = new ArrayList();
+						lifetimeSamplesMap.put(entry.i, samples);
 					}
 					samples.add(entry.v);
 				}
@@ -181,18 +190,23 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 				
 				for(int key : lifetimeSamplesMap.keySet()) {
 					ArrayList<Long> samples = lifetimeSamplesMap.get(key);
-					if(samples.size() >= maxSampleCount)
+					if(!processedKeys.contains(key))
+						samples.add(0L);
+					if(samples.size() >= maxSampleCount) {
+						Logger.gears("Shifting sample", key);
 						samples.remove(0);
+					}
 					
 					long lifetime = 0;
 					int sampleCount = 0;
+					Logger.gears("Reading samples", key, samples.size());
 					for(Long sample : samples) {
 						lifetime += sample;
 						sampleCount++;
 						if(lifetime < 0) {
 							lifetime = Long.MAX_VALUE;
 							sampleCount = maxSampleCount;
-							Logger.gears("Lifetime maxd out...");
+							Logger.gears("Lifetime maxed out...");
 							break;
 						}
 					}
@@ -201,9 +215,10 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 						if(sampleCount < maxSampleCount) // Average out the samples to try and be fair to older clients
 							lifetime *= maxSampleCount / sampleCount;
 						
-						Logger.debug("Updating total lifetime", key, lifetime);
+						Logger.gears("Updating total lifetime", key, lifetime);
 						totalLifetimeMap.put(key, lifetime);
 					} else {
+						Logger.gears("Resetting total lifetime", key);
 						lifetimeSamplesMap.remove(key);
 						totalLifetimeMap.remove(key);
 					}

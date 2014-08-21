@@ -91,7 +91,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 		this.name = name + "Queue";
 		if(threads < 1)
 			threads = defaultThreadCount;
-		Logger.gears("Creating", threads, "RunThreads for", this.name);
+		Logger.debug("Creating", threads, "RunThreads for", this.name);
 		ArrayList<RunThread> runThreads = new ArrayList();
 		while(threads > 0) {
 			RunThread runThread = new RunThread(this.name + '-' + threads, this);

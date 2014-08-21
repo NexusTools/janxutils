@@ -16,6 +16,7 @@
 package net.nexustools.runtime;
 
 import java.util.Comparator;
+import java.util.List;
 import net.nexustools.concurrent.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.SortedPropList;
@@ -27,7 +28,7 @@ import net.nexustools.runtime.logic.Task;
  */
 public abstract class SortedTaskDelegator<F extends Task> implements FutureDelegator<F> {
 	
-	protected final PropList<F> queue;
+	protected final SortedPropList<F> queue;
 	public SortedTaskDelegator() {
 		queue = new SortedPropList(comparator());
 	}
@@ -35,7 +36,9 @@ public abstract class SortedTaskDelegator<F extends Task> implements FutureDeleg
 	public abstract Comparator<F> comparator();
 
 	public F nextTask(ListAccessor<F> queue) {
-		this.queue.pushAll(queue.take());
+		List<F> queueCopy = queue.take();
+		if(queueCopy.size() > 0)
+			this.queue.pushAll(queue.take());
 		return this.queue.shift();
 	}
 	
