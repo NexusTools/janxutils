@@ -96,7 +96,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	}
 	
 	protected final RunQueue runQueue;
-	final PacketRegistry packetRegistry;
+	final PacketRegistry<P> packetRegistry;
 	final Condition shutdown = new Condition();
 	final Prop<Boolean> isAlive = new Prop(true);
 	final PropList<P> packetQueue = new PropList();
@@ -188,24 +188,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	protected void writeOut() {
 		for(P packet : packetQueue.take())
 			try {
-				int packetID = packetRegistry.idFor(packet);
-				Logger.gears("Writing Packet", packetID, packet);
-
-				byte[] data;
-				try {
-					data = packet.data(Client.this);
-				} catch(Throwable t) {
-					Logger.warn("Error generating packet contents");
-					Logger.warn("Client may now become unstable");
-					Logger.exception(Logger.Level.Warning, t);
-					continue;
-				}
-
-				Logger.debug(socket.v);
-				socket.v.writeShort(packetID);
-				socket.v.write(data);
-				socket.v.flush();
-
+				packetRegistry.write(socket.v, this, packet);
 				Logger.gears("Written and Flushed");
 			} catch (IOException ex) {
 				Logger.exception(ex);
@@ -231,23 +214,7 @@ public class Client<P extends Packet, S extends Server<P, ?>> {
 	}
 	
 	public P nextPacket() throws IOException {
-		Logger.gears("Waiting for packet", this);
-		short packetID;
-		try {
-			packetID = socket.i.readShort();
-		} catch(EOFException eof) {
-			throw new DisconnectedException(eof);
-		}
-		Logger.gears("Reading packet", packetID);
-		
-		P packet = (P)packetRegistry.create(packetID);
-		try {
-			packet.read(socket.i, this);
-			Logger.gears("Readed packet", packet);
-		} catch (UnsupportedOperationException ex) {
-			throw new IOException(ex);
-		}
-		return packet;
+		return (P) packetRegistry.read(socket.i, this);
 	}
 	
 	public void send(final P packet) {

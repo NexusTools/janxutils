@@ -15,10 +15,16 @@
 
 package net.nexustools.io.net;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import net.nexustools.concurrent.PropList;
+import java.util.ArrayList;
+import javax.activation.UnsupportedDataTypeException;
+import net.nexustools.io.DataInputStream;
+import net.nexustools.io.DataOutputStream;
 import net.nexustools.utils.Pair;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -26,9 +32,15 @@ import net.nexustools.utils.Pair;
  */
 public class PacketRegistry<P extends Packet> {
 	
-	class Entry extends Pair<Constructor<? extends P>, Class<? extends P>> {
+	private static enum Type {
+		Byte,
+		Short,
+		Integer
+	}
+	
+	static class Entry extends Pair<Constructor<?>, Class<?>> {
 		
-		public Entry(Constructor<? extends P> constructor, Class<? extends P> clazz) {
+		public Entry(Constructor<?> constructor, Class<?> clazz) {
 			super(constructor, clazz);
 		}
 
@@ -44,25 +56,118 @@ public class PacketRegistry<P extends Packet> {
 		
 	}
 	
-	final PropList<Entry> registered = new PropList();
+	Type packetIDType;
+	ArrayList<Entry> entryList = new ArrayList();
+	Entry[] registered;
 	
 	public void register(Class<? extends P> packetClass) throws NoSuchMethodException {
-		if(registered.length() >= 0xFFFF)
+		if(entryList.size() >= 0xFFFF)
 			throw new RuntimeException("There is a limit of 0xFFFF packet types, to add more make SubPackets or override the nextPacket method with your own implementation.");
-		registered.unique(new Entry(packetClass.getConstructor(), packetClass));
+		entryList.add(new Entry(packetClass.getConstructor(), packetClass));
 	}
 	
-	public short idFor(Packet packet) throws NoSuchMethodException {
+	void finish() {
+		registered = entryList.toArray(new Entry[entryList.size()]);
+		entryList = null;
+		
+		if(registered.length > 0xFFFF)
+			packetIDType = Type.Integer;
+		else if(registered.length > 0xFF)
+			packetIDType = Type.Short;
+		else
+			packetIDType = Type.Byte;
+	}
+	
+	public int idFor(Packet packet) throws NoSuchMethodException {
 		return idFor((Class<? extends P>)packet.getClass());
 	}
 	
-	public short idFor(Class<? extends P> packetClass) throws NoSuchMethodException {
-		return (short) registered.indexOf(new Entry(packetClass.getConstructor(), packetClass));
+	public int idFor(Class<? extends P> packetClass) throws NoSuchMethodException {
+		int pos = 0;
+		for(Entry entry : registered) {
+			if(entry.v == packetClass)
+				return pos;
+			pos++;
+		}
+		return -1;
 	}
 	
-	public P create(short id) {
+	public P read(DataInputStream inStream, Client client) throws IOException {
+		Logger.gears("Waiting for packet", this);
+		int packetID;
 		try {
-			return registered.get(id).i.newInstance();
+			switch(packetIDType) {
+				case Integer:
+					packetID = inStream.readInt();
+					break;
+
+
+				case Short:
+					packetID = inStream.readShort();
+					break;
+
+
+				case Byte:
+					packetID = inStream.read();
+					break;
+					
+				default:
+					throw new UnsupportedOperationException();
+			}
+		} catch(EOFException eof) {
+			throw new DisconnectedException(eof);
+		}
+		Logger.gears("Reading packet", packetID);
+		
+		P packet = create(packetID);
+		try {
+			packet.read(inStream, client);
+			Logger.gears("Readed packet", packet);
+		} catch (UnsupportedOperationException ex) {
+			throw new IOException(ex);
+		}
+		return packet;
+	}
+	
+	public void write(DataOutputStream outStream, Client client, Packet packet) throws IOException, NoSuchMethodException {
+		int packetID = idFor(packet);
+		Logger.gears("Writing Packet", packetID, packet);
+
+		byte[] data;
+		try {
+			data = packet.data(client);
+		} catch(Throwable t) {
+			Logger.warn("Error generating packet contents");
+			Logger.warn("Client may now become unstable");
+			Logger.exception(Logger.Level.Warning, t);
+			return;
+		}
+
+		switch(packetIDType) {
+			case Integer:
+				outStream.writeInt(packetID);
+				break;
+				
+				
+			case Short:
+				outStream.writeShort(packetID);
+				break;
+				
+				
+			case Byte:
+				outStream.write(packetID);
+				break;
+					
+			default:
+				throw new UnsupportedOperationException();
+		}
+		outStream.write(data);
+		outStream.flush();
+	}
+	
+	public P create(int id) {
+		try {
+			return (P)registered[id].i.newInstance();
 		} catch (InstantiationException ex) {
 			throw new RuntimeException(ex);
 		} catch (IllegalAccessException ex) {

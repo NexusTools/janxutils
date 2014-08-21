@@ -63,15 +63,21 @@ public abstract class ServerAppDelegate<C extends Client, S extends Server> exte
 	protected void launch(String[] args) {
 		try {
 			int id = 0;
-			Logger.debug("Poluating Packet Registry", this);
+			Logger.quote(Logger.Level.Debug, "Poluating Packet Registry for", this);
 			populate(packetRegistry);
-			Logger.info(packetRegistry.registered.length() + " Packets Registered", this);
+			packetRegistry.finish();
+			int len = packetRegistry.registered.length;
+			Logger.quote(len + " Packets Registered for", this);
+			if(len > 0xFFFF)
+				len = 8;
+			else if(len > 0xFF)
+				len = 4;
+			else
+				len = 2;
 			
-			for(Object raw : packetRegistry.registered) {
-				PacketRegistry.Entry entry = (PacketRegistry.Entry)raw;
-				
+			for(PacketRegistry.Entry entry : packetRegistry.registered) {
 				String idStr = Integer.toHexString(id++).toUpperCase();
-				while(idStr.length() < 4)
+				while(idStr.length() < len)
 					idStr = "0" + idStr;
 				Logger.quote(Logger.Level.Debug, "0x" + idStr, ((Class)entry.v).getName());
 			}
