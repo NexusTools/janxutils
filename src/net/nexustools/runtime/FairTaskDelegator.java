@@ -25,7 +25,6 @@ import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.IfWriter;
-import net.nexustools.concurrent.logic.VoidReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
@@ -61,7 +60,6 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 			this.internal = internal;
 			this.delegator = delegator;
 		}
-		
 		public Task.State state() {
 			return internal.state();
 		}
@@ -168,9 +166,9 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	private void updateLifetimes() {
-		lifetimeMap.read(new VoidReader<MapAccessor<Integer, Long>>() {
+		lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
 			@Override
-			public void readV(MapAccessor<Integer, Long> data) {
+			public void write(MapAccessor<Integer, Long> data) {
 				Logger.gears("Updating Fairness Lifetimes", FairTaskDelegator.this);
 				ArrayList<Integer> processedKeys = new ArrayList();
 				for(Pair<Integer, Long> entry : data) {

@@ -104,7 +104,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 		this(name, delegator, -1);
 	}
 	@Override
-	public Task nextFuture(final RunThread runThread) {
+	public Task pop(final RunThread runThread) {
 		return tasks.read(new WriteReader<Task, ListAccessor<Task>>() {
 			@Override
 			public Task read(final ListAccessor<Task> tasksData) {

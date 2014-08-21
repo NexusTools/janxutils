@@ -75,7 +75,7 @@ public class FieldDefinition {
 
 			};
 		else {
-			if(instruction.neverNull)
+			if(instruction.neverNull || dataAdaptor.isPrimitive()) // Primitives are considered neverNull
 				adaptor = new Adaptor() {
 
 					@Override

@@ -80,7 +80,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 			});
 			killNext = false;
 			do {
-				Logger.gears("Retreiving Work");
+				Logger.gears("Retreiving Task");
 				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
 					@Override
 					public Boolean read(PropAccessor<NativeRunThread> data) {
@@ -90,7 +90,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 								cQueue = data.get();
 								if(cQueue == null)
 									return null;
-								return cQueue.nextFuture(RunThread.this);
+								return cQueue.pop(RunThread.this);
 							}
 						});
 						if(future == null && killNext) {

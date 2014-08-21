@@ -15,6 +15,9 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.concurrent.logic.VoidReader;
+import net.nexustools.concurrent.logic.Writer;
+
 /**
  *
  * @author kate
@@ -42,10 +45,54 @@ public class Condition {
 	public void start() {
 		condition.set(false);
 	}
+	public void ifFalse(final Runnable block) {
+		condition.read(new VoidReader<PropAccessor<Boolean>>() {
+			@Override
+			public void readV(PropAccessor<Boolean> data) {
+				if(!data.get())
+					block.run();
+			}
+		});
+	}
+	public void ifTrue(final Runnable block) {
+		condition.read(new VoidReader<PropAccessor<Boolean>>() {
+			@Override
+			public void readV(PropAccessor<Boolean> data) {
+				if(data.get())
+					block.run();
+			}
+		});
+	}
+	public void ifRun(final Runnable trueBlock, final Runnable falseBlock) {
+		condition.read(new VoidReader<PropAccessor<Boolean>>() {
+			@Override
+			public void readV(PropAccessor<Boolean> data) {
+				if(data.get())
+					trueBlock.run();
+				else
+					falseBlock.run();
+			}
+		});
+	}
 	public void finish() {
 		condition.set(true);
 		for(Thread thread : waitingThreads)
 			thread.interrupt();
+	}
+	public void finish(final Runnable finalize) {
+		condition.write(new Writer<PropAccessor<Boolean>>() {
+			@Override
+			public void write(PropAccessor<Boolean> data) {
+				data.set(true);
+				finalize.run();
+			}
+		});
+		for(Thread thread : waitingThreads)
+			thread.interrupt();
+	}
+
+	public boolean isFinished() {
+		return condition.get();
 	}
 	
 }

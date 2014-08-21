@@ -37,8 +37,24 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		LinkedHashMap
 	}
 	
+	public static Map create(Type type) {
+		switch(type) {
+			case HashMap:
+				return new HashMap();
+				
+			case WeakHashMap:
+				return new WeakHashMap();
+				
+			case LinkedHashMap:
+				return new LinkedHashMap();
+				
+			default:
+				throw new UnsupportedOperationException();
+		}
+	}
+	
+	private Map<K,V> map;
 	private final Type type;
-	private final Map<K,V> map;
 	private final MapAccessor<K,V> directAccessor = new MapAccessor<K,V>() {
 		public V get(K key) {
 			return map.get(key);
@@ -92,9 +108,11 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			return map.put(key, value);
 		}
 		public Map<K, V> take() {
-			Map<K, V> copy = copy();
-			map.clear();
-			return copy;
+			try {
+				return map;
+			} finally {
+				map = create(type);
+			}
 		}
 		public void putAll(Iterable<Pair<K, V>> iterable) {
 			for(Pair<K,V> entry : iterable)
@@ -105,22 +123,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		}
 	};
 	public PropMap(Type type) {
-		switch(this.type = type) {
-			case HashMap:
-				map = new HashMap();
-				break;
-				
-			case WeakHashMap:
-				map = new WeakHashMap();
-				break;
-				
-			case LinkedHashMap:
-				map = new LinkedHashMap();
-				break;
-				
-			default:
-				throw new UnsupportedOperationException();
-		}
+		map = create(this.type = type);
 	}
 	public PropMap() {
 		this(Type.HashMap);

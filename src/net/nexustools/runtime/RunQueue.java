@@ -51,7 +51,7 @@ public abstract class RunQueue<R extends Runnable, T> {
 	
 	protected RunQueue() {}
 	public abstract String name();
-	protected Task wrap(R runnable, Task.State state, Placement placement) {
+	protected Task createTask(R runnable, Task.State state, Placement placement) {
 		switch(placement) {
 			case NormalPlacement:
 				return new RunTask(runnable, state);
@@ -68,13 +68,13 @@ public abstract class RunQueue<R extends Runnable, T> {
 		}
 	}
 	public final Task push(R runnable, Placement placement) {
-		Task future = wrap(runnable, Task.State.WaitingInQueue, placement);
+		Task future = createTask(runnable, Task.State.WaitingInQueue, placement);
 		if(future.isDone())
 			return null;
 		return push(future);
 	}
 	public final Task scheduleRepeating(R runnable, int delay, int repeat, int accuracy, Placement placement) {
-		Task future = wrap(runnable, Task.State.Scheduled, placement);
+		Task future = createTask(runnable, Task.State.Scheduled, placement);
 		if(future.isDone())
 			return null;
 		RunQueueScheduler.scheduleRepeating(future, delay, repeat, accuracy, this);
@@ -90,11 +90,11 @@ public abstract class RunQueue<R extends Runnable, T> {
 		return scheduleRepeating(runnable, 0, repeat, 5, Placement.NormalPlacement);
 	}
 	public final Task schedule(R runnable, int when, int accuracy, Placement placement) {
-		Task future = wrap(runnable, Task.State.Scheduled, placement);
-		if(future.isDone())
+		Task task = createTask(runnable, Task.State.Scheduled, placement);
+		if(task.isDone())
 			return null;
-		RunQueueScheduler.schedule(future, when, accuracy, this);
-		return future;
+		RunQueueScheduler.schedule(task, when, accuracy, this);
+		return task;
 	}
 	public final Task schedule(R runnable, int when) {
 		return schedule(runnable, when, 5, Placement.NormalPlacement);
@@ -102,8 +102,8 @@ public abstract class RunQueue<R extends Runnable, T> {
 	public final Task push(R runnable) {
 		return push(runnable, Placement.ReplaceExisting);
 	}
-	public abstract Task nextFuture(T requestSource);
-	public abstract Task push(Task future);
+	public abstract Task pop(T requestSource);
+	public abstract Task push(Task task);
 	
 	public abstract int countThreads();
 	
