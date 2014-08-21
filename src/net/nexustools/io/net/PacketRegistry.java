@@ -26,7 +26,7 @@ import net.nexustools.utils.Pair;
  */
 public class PacketRegistry<P extends Packet> {
 	
-	public class Entry extends Pair<Constructor<? extends P>, Class<? extends P>> {
+	class Entry extends Pair<Constructor<? extends P>, Class<? extends P>> {
 		
 		public Entry(Constructor<? extends P> constructor, Class<? extends P> clazz) {
 			super(constructor, clazz);
@@ -47,6 +47,8 @@ public class PacketRegistry<P extends Packet> {
 	final PropList<Entry> registered = new PropList();
 	
 	public void register(Class<? extends P> packetClass) throws NoSuchMethodException {
+		if(registered.length() >= 0xFFFF)
+			throw new RuntimeException("There is a limit of 0xFFFF packet types, to add more make SubPackets or override the nextPacket method with your own implementation.");
 		registered.unique(new Entry(packetClass.getConstructor(), packetClass));
 	}
 	
