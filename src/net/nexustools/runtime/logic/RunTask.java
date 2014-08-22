@@ -26,7 +26,7 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 	private static final ThreadLocal<RunTask> currentQueueFuture = new ThreadLocal();
 	private static final ThreadLocal<Testable<Void>> currentTestable = new ThreadLocal();
 	
-	public static RunTask currentQueueFuture() {
+	public static RunTask current() {
 		return currentQueueFuture.get();
 	}
 	
