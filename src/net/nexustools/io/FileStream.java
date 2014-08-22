@@ -19,8 +19,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.util.Iterator;
 import java.util.WeakHashMap;
+import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.utils.Creator;
 import net.nexustools.utils.WeakArrayList;
 import net.nexustools.utils.log.Logger;
 
@@ -35,11 +42,11 @@ public class FileStream extends Stream {
 	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
 	private RandomAccessFile randomAccessFile;
 	private final boolean writable;
-	private final String path;
+	private final File internal;
 	
 	public FileStream(String path, boolean writable) throws FileNotFoundException, IOException {
+		this.internal = new File(path);
 		this.writable = writable;
-		this.path = path;
 		//ensureOpen();
 	}
 	
@@ -50,13 +57,14 @@ public class FileStream extends Stream {
 	protected final void ensureOpen() throws FileNotFoundException, IOException {
 		if(randomAccessFile == null) {
 			if(writable) {
+				String path = internal.getAbsolutePath();
 				String parentPath = path.substring(0, path.lastIndexOf("/"));
 				Logger.debug(parentPath);
 				File parentFile = new File(parentPath);
 				if(!parentFile.exists() && !parentFile.mkdirs())
 					throw new IOException(getURL() + ": Unable to create directory structure");
 			}
-			randomAccessFile = new RandomAccessFile(path, writable ? "rw" : "r");
+			randomAccessFile = new RandomAccessFile(internal, writable ? "rw" : "r");
 			randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
 		}
 	}
@@ -68,7 +76,7 @@ public class FileStream extends Stream {
 	
 	@Override
 	public String getPath() {
-		return path;
+		return internal.getAbsolutePath();
 	}
 	
 	public static Stream getStream(String filePath) throws IOException {
@@ -82,7 +90,7 @@ public class FileStream extends Stream {
 		else {
 			fileStream = instanceCache.get(filePath);
 			if(fileStream == null) {
-				Logger.debug("Creating FileStream: " + filePath);
+				Logger.gears("Creating FileStream: " + filePath);
 				fileStream = new FileStream(filePath);
 				instanceCache.put(filePath, fileStream);
 			}
@@ -148,7 +156,7 @@ public class FileStream extends Stream {
 					if(deleteOnExit.isEmpty())
 						return;
 					
-					Logger.debug("Cleaning remaining deleteOnExit FileStreams...");
+					Logger.gears("Cleaning remaining deleteOnExit FileStreams...");
 					for(FileStream fStream : deleteOnExit)
 						try {
 							fStream.deleteAsMarked();
@@ -189,18 +197,85 @@ public class FileStream extends Stream {
 
 	private void deleteAsMarked() throws IOException {
 		close();
-		(new File(path)).delete();
+		internal.delete();
+	}
+	
+	public boolean exists() {
+		return internal.exists();
+	}
+	
+	public Iterable<String> children() {
+		return new Iterable<String>() {
+			public Iterator<String> iterator() {
+				return new Iterator<String>() {
+					final String[] children = internal.list();
+					int pos = -1;
+					public boolean hasNext() {
+						return pos + 1 < children.length;
+					}
+					public String next() {
+						return children[++pos];
+					}
+				};
+			}
+		};
+	}
+	
+	public boolean hasChildren() {
+		return internal.isDirectory();
 	}
 
+	final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
 	@Override
 	public String getMimeType() {
-		try {
-			Method method = File.class.getMethod("probeContentType", String.class);
-			String type = (String)method.invoke(null, getPath());
-			if(type != null)
-				return type;
-		} catch(Throwable t) {}
-		return super.getMimeType(); //To change body of generated methods, choose Tools | Templates.
+		String type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
+			@Override
+			public String soft(PropAccessor<Creator<String, File>> data) {
+				return data.get().create(internal);
+			}
+			@Override
+			public String read(PropAccessor<Creator<String, File>> data) {
+				ClassLoader cl = ClassLoader.getSystemClassLoader();
+				try {
+					final Class<?> pathClass = cl.loadClass("java.nio.file.Path");
+					final Class<?> pathsClass = cl.loadClass("java.nio.file.Paths");
+					final Class<?> filesClass = cl.loadClass("java.nio.file.Files");
+					
+					data.set(new Creator<String, File>() {
+						final Method pathsGet = pathsClass.getMethod("get", URI.class);
+						final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
+						{
+							create(internal); // Test it once
+							Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
+						}
+						public String create(File using) {
+							try {
+								return (String) probeContentType.invoke(null, pathsGet.invoke(null, internal.toURI()));
+							} catch (IllegalAccessException ex) {
+								return null;
+							} catch (IllegalArgumentException ex) {
+								return null;
+							} catch (InvocationTargetException ex) {
+								return null;
+							}
+						}
+					});
+				} catch(Throwable t) {
+					data.set(new Creator<String, File>() {
+						public String create(File using) {
+							return null;
+						}
+					});
+					Logger.exception(Logger.Level.Debug, t);
+				}
+				
+				return data.get().create(internal);
+			}
+		});
+		if(type != null)
+			return type;
+		
+		return super.getMimeType();
 	}
 	
 }

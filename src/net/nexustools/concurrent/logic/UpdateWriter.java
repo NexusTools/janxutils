@@ -23,30 +23,21 @@ import net.nexustools.utils.Testable;
  *
  * @author katelyn
  */
-public abstract class SoftUpdateWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
+public abstract class UpdateWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
 
 	@Override
 	public final void write(A data, Lockable lock) {
 		lock.lock();
 		try {
-			if(test(data)) {
-				try {
-					if(!lock.tryFastUpgrade()) {
-						lock.upgrade();
-						if(!test(data))
-							return;
-					}
-					write(data);
-				} finally {
-					lock.downgrade();
-				}
-			}
-			update(data);
+			lock.fastUpgrade();
+			write(data);
+			lock.downgrade();
+			update();
 		} finally {
 			lock.unlock();
 		}
 	}
 	public abstract void write(A data);
-	public abstract void update(A data);
+	public abstract void update();
 	
 }

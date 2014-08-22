@@ -110,7 +110,9 @@ public class Application {
 				data.set(app);
 				for(Path path : Path.values())
 					try {
-						bindSynthScheme(path.scheme, uriForPath(app.pathUri(path)));
+						String pathUri = app.pathUri(path);
+						bindSynthScheme(path.scheme, pathUri);
+						Logger.warn(path.scheme + "://", "bound to", pathUri);
 					} catch(Throwable t) {
 						Logger.warn(path.scheme + "://", "is not supported by this AppDelegate.");
 						Stream.remove(path.scheme);

@@ -18,7 +18,6 @@ package net.nexustools.utils.log;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import net.nexustools.Application;

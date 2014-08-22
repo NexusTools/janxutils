@@ -52,10 +52,10 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 			delegator.updateLifetimes();
 		}
 	}
-	private static class TrackedTask implements Task {
+	private static class TimedTask implements Task {
 		private final Task internal;
 		private final FairTaskDelegator delegator;
-		public TrackedTask(Task internal, FairTaskDelegator delegator) {
+		public TimedTask(Task internal, FairTaskDelegator delegator) {
 			if(internal == null)
 				throw new NullPointerException();
 			
@@ -102,7 +102,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 			return internal.onSchedule();
 		}
 		public Task copy(State state) {
-			return new TrackedTask(internal.copy(state), delegator);
+			return new TimedTask(internal.copy(state), delegator);
 		}
 		@Override
 		public String toString() {
@@ -235,7 +235,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	protected F wrap(final F task) {
-		return (F)new TrackedTask(task, this);
+		return (F)new TimedTask(task, this);
 	}
 
 	@Override

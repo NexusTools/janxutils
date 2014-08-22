@@ -216,6 +216,16 @@ public class SubStream extends Stream {
 		return range.start() + "-" + range.end() + "@" + stream.getURL();
 	}
 
+	@Override
+	public boolean hasChildren() {
+		return stream.hasChildren();
+	}
+
+	@Override
+	public Iterable<String> children() throws IOException {
+		return stream.children();
+	}
+
 	/**
 	 * Returns the Stream this SubStream is a range of.
 	 * 

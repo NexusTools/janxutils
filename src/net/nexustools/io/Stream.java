@@ -25,12 +25,14 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.nexustools.AppDelegate;
 import net.nexustools.utils.IOUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -114,11 +116,7 @@ public abstract class Stream {
 				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
 					Matcher matcher = substreamPattern.matcher(path);
 					if(matcher.matches())
-						try {
-							return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
-						} catch (URISyntaxException ex) {
-							throw new IOException(ex);
-						}
+						return Stream.open(matcher.group(3), supportWriting).createSubSectorStream(Long.valueOf(matcher.group(1)), Long.valueOf(matcher.group(2)));
 					else
 						throw new IOException("Malformed substream:" + path);
 				}
@@ -280,8 +278,13 @@ public abstract class Stream {
 	 * @return A Stream compatible with the URL String given
 	 * @throws IOException
 	 */
-	public static Stream open(String uri, boolean supportWriting) throws IOException, URISyntaxException {
-		return open(new URI(uri), supportWriting);
+	public static Stream open(String uri, boolean supportWriting) throws IOException {
+		try {
+			Logger.debug("Opening Stream", uri);
+			return open(new URI(uri), supportWriting);
+		} catch(URISyntaxException ex) {
+			return FileStream.getStream(uri, supportWriting);
+		}
 	}
 
 	/**
@@ -833,6 +836,18 @@ public abstract class Stream {
 		}catch (IOException ex) {
 			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
 		}
+	}
+	
+	public boolean exists() {
+		return true;
+	}
+	
+	public Iterable<String> children() throws IOException {
+		throw new IOException(getURL() + " has no children");
+	}
+	
+	public boolean hasChildren() {
+		return false;
 	}
 	
 //	/**

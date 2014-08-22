@@ -20,16 +20,14 @@ import net.nexustools.concurrent.logic.UpdateReader;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
 import java.util.Collection;
-import net.nexustools.runtime.logic.Task;
 
 /**
  *
  * @author katelyn
  * @param <T>
  */
-public class Prop<T> extends DefaultReadWriteConcurrency<PropAccessor<T>> implements PropAccessor<T> {
+public class Prop<T> extends AbstractProp<T> {
 
-	private T value;
 	private final PropAccessor<T> directAccessor = new PropAccessor<T>() {
 		public T get() {
 			return value;
@@ -54,83 +52,12 @@ public class Prop<T> extends DefaultReadWriteConcurrency<PropAccessor<T>> implem
 			}
 		}
 	};
-	public static <T> boolean isTrueHeiristic(T value) {
-		if(value == null)
-			return false;
-
-		if(value instanceof String)
-			return ((String)value).length() > 0;
-		if(value instanceof Boolean)
-			return ((Boolean)value);
-		if(value instanceof Double)
-			return ((Double)value) != 0;
-		if(value instanceof Float)
-			return ((Float)value) != 0;
-		if(value instanceof Byte)
-			return ((Byte)value) != 0;
-		if(value instanceof Short)
-			return ((Short)value) != 0;
-		if(value instanceof Integer)
-			return ((Integer)value) != 0;
-		if(value instanceof Long)
-			return ((Long)value) != 0;
-		if(value instanceof Collection)
-			return ((Collection)value).size() > 0;
-
-		return true;
-	}
 	public Prop() {}
 	Prop(Lockable lock, T value) {
-		super(lock);
-		this.value = value;
+		super(lock, value);
 	}
 	public Prop(T value) {
-		this.value = value;
-	}
-
-	public boolean isset() {
-		return read(new Reader<Boolean, PropAccessor<T>>() {
-			@Override
-			public Boolean read(PropAccessor<T> data) {
-				return data.isset();
-			}
-		});
-	}
-
-	public void clear() {
-		write(new Writer<PropAccessor<T>>() {
-			@Override
-			public void write(PropAccessor<T> data) {
-				data.clear();
-			}
-		});
-	}
-
-	public T get() {
-		return read(new Reader<T, PropAccessor<T>>() {
-			@Override
-			public T read(PropAccessor<T> data) {
-				return data.get();
-			}
-		});
-	}
-
-	public void set(final T value) {
-		write(new Writer<PropAccessor<T>>() {
-			@Override
-			public void write(PropAccessor<T> data) {
-				data.set(value);
-			}
-		});
-	}
-
-	public boolean isTrue() {
-		return read(new Reader<Boolean, PropAccessor<T>>() {
-			@Override
-			public Boolean read(PropAccessor<T> data) {
-				return data.isTrue();
-			}
-		});
+		super(value);
 	}
 
 	@Override
@@ -138,26 +65,4 @@ public class Prop<T> extends DefaultReadWriteConcurrency<PropAccessor<T>> implem
 		return directAccessor;
 	}
 
-	public T take() {
-		return read(new WriteReader<T, PropAccessor<T>>() {
-			@Override
-			public T read(PropAccessor<T> data) {
-				return data.take();
-			}
-		});
-	}
-	
-	public boolean update(final T newValue) {
-		return read(new UpdateReader<PropAccessor<T>>() {
-			@Override
-			public void update(PropAccessor<T> data) {
-				data.set(newValue);
-			}
-			@Override
-			public boolean needUpdate(PropAccessor<T> against) {
-				return !newValue.equals(against);
-			}
-		});
-	}
-	
 }

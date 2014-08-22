@@ -16,21 +16,21 @@
 package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.concurrent.logic.SoftUpdateWriter;
 import net.nexustools.concurrent.logic.Writer;
 
 /**
  *
  * @author katelyn
  */
-public class BackpeddlingRunTask<R extends Runnable> extends TrackedQueueFuture<R> {
+public class BackpeddlingRunTask<R extends Runnable> extends TrackedTask<R> {
 
 	public BackpeddlingRunTask(final R runnable, State state) {
 		super(runnable, state);
-		
-		write(new Writer<MapAccessor<Runnable, TrackedQueueFuture>>() {
+		write(new Writer<MapAccessor<Runnable, TrackedTask>>() {
 			@Override
-			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
-				TrackedQueueFuture old = data.replace(runnable, BackpeddlingRunTask.this);
+			public void write(MapAccessor<Runnable, TrackedTask> data) {
+				TrackedTask old = data.replace(runnable, BackpeddlingRunTask.this);
 				if(old != null)
 					old.sCancel();
 			}

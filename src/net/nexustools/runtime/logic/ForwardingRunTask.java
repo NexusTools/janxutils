@@ -16,30 +16,30 @@
 package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.concurrent.logic.SoftUpdateWriter;
 import net.nexustools.concurrent.logic.SoftWriter;
 
 /**
  *
  * @author katelyn
  */
-public class ForwardingRunTask<R extends Runnable> extends TrackedQueueFuture<R> {
+public class ForwardingRunTask<R extends Runnable> extends TrackedTask<R> {
 
 	public ForwardingRunTask(final R runnable, State state) {
 		super(runnable, state);
-		
-		write(new SoftWriter<MapAccessor<Runnable, TrackedQueueFuture>>() {
-			TrackedQueueFuture found;
+		write(new SoftWriter<MapAccessor<Runnable, TrackedTask>>() {
+			TrackedTask found;
 			@Override
-			public boolean test(MapAccessor<Runnable, TrackedQueueFuture> against) {
+			public boolean test(MapAccessor<Runnable, TrackedTask> against) {
 				found = against.get(runnable);
 				return found == null || found.isDone();
 			}
 			@Override
-			public void write(MapAccessor<Runnable, TrackedQueueFuture> data) {
+			public void write(MapAccessor<Runnable, TrackedTask> data) {
 				data.put(runnable, ForwardingRunTask.this);
 			}
 			@Override
-			public void soft(MapAccessor<Runnable, TrackedQueueFuture> data) {
+			public void soft(MapAccessor<Runnable, TrackedTask> data) {
 				sCancel();
 			}
 		});
