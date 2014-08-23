@@ -62,7 +62,7 @@ public class FileStream extends Stream {
 				Logger.debug(parentPath);
 				File parentFile = new File(parentPath);
 				if(!parentFile.exists() && !parentFile.mkdirs())
-					throw new IOException(getURL() + ": Unable to create directory structure");
+					throw new IOException(toURL() + ": Unable to create directory structure");
 			}
 			randomAccessFile = new RandomAccessFile(internal, writable ? "rw" : "r");
 			randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
@@ -70,12 +70,12 @@ public class FileStream extends Stream {
 	}
 	
 	@Override
-	public String getScheme() {
+	public String scheme() {
 		return "file";
 	}
 	
 	@Override
-	public String getPath() {
+	public String path() {
 		return internal.getAbsolutePath();
 	}
 	
@@ -216,6 +216,9 @@ public class FileStream extends Stream {
 					public String next() {
 						return children[++pos];
 					}
+					public void remove() {
+						throw new UnsupportedOperationException("Not supported.");
+					}
 				};
 			}
 		};
@@ -225,9 +228,9 @@ public class FileStream extends Stream {
 		return internal.isDirectory();
 	}
 
-	final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
+	static final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
 	@Override
-	public String getMimeType() {
+	public String mimeType() {
 		String type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
 			@Override
 			public String soft(PropAccessor<Creator<String, File>> data) {
@@ -275,7 +278,12 @@ public class FileStream extends Stream {
 		if(type != null)
 			return type;
 		
-		return super.getMimeType();
+		return super.mimeType();
+	}
+
+	@Override
+	public boolean isHidden() {
+		return internal.isHidden();
 	}
 	
 }

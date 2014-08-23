@@ -144,11 +144,11 @@ public class CachingStream extends Stream {
 	}
 
 	@Override
-	public String getMimeType() {
+	public String mimeType() {
 		if(mimetype != null)
 			return mimetype;
 		
-		return super.getMimeType();
+		return super.mimeType();
 	}
 
 	@Override
@@ -157,18 +157,23 @@ public class CachingStream extends Stream {
 	}
 	
 	@Override
-	public String getScheme() {
-		return localCache.getScheme();
+	public String scheme() {
+		return localCache.scheme();
 	}
 
 	@Override
-	public String getPath() {
-		return localCache.getPath();
+	public String path() {
+		return localCache.path();
 	}
 
 	@Override
-	public String getURL() {
-		return localCache.getURL();
+	public String toURL() {
+		return localCache.toURL();
+	}
+
+	@Override
+	public boolean isHidden() {
+		return true;
 	}
 	
 }

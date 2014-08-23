@@ -35,7 +35,7 @@ public final class NullStream extends Stream {
 		}
 
 		@Override
-		public String getURL() {
+		public String toURL() {
 			return "null:";
 		}
 	
@@ -51,12 +51,12 @@ public final class NullStream extends Stream {
 	protected NullStream() {}
 
 	@Override
-	public String getScheme() {
+	public String scheme() {
 		return "null";
 	}
 
 	@Override
-	public String getPath() {
+	public String path() {
 		return "";
 	}
 
@@ -96,12 +96,17 @@ public final class NullStream extends Stream {
 	}
 
 	@Override
+	public boolean isHidden() {
+		return true;
+	}
+
+	@Override
 	public final long size() {
 		return 0L;
 	}
 	
 	@Override
-	public String getURL() {
+	public String toURL() {
 		return "null:";
 	}
 	

@@ -154,17 +154,22 @@ public class MemoryStream extends Stream {
 	}
 
 	@Override
-	public String getScheme() {
+	public String scheme() {
 		return "memory:";
 	}
 
 	@Override
-	public String getPath() {
+	public String path() {
 		return buffer.length + "@" + id;
 	}
 
 	public boolean isEmpty() {
 		return size <= 0;
+	}
+
+	@Override
+	public boolean isHidden() {
+		return false;
 	}
 	
 }

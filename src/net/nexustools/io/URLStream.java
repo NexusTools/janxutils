@@ -182,17 +182,17 @@ public class URLStream extends CachingStream {
 	}
 
 	@Override
-	public String getScheme() {
+	public String scheme() {
 		return url.getProtocol();
 	}
 
 	@Override
-	public String getPath() {
+	public String path() {
 		return url.getPath();
 	}
 
 	@Override
-	public String getURL() {
+	public String toURL() {
 		return url.toExternalForm();
 	}
 	

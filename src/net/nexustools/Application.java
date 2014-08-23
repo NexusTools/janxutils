@@ -15,13 +15,13 @@
 
 package net.nexustools;
 
+import net.nexustools.io.Stream;
 import net.nexustools.AppDelegate.Path;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.io.Stream;
 import static net.nexustools.io.Stream.bindSynthScheme;
-import static net.nexustools.io.Stream.uriForPath;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -29,8 +29,12 @@ import net.nexustools.utils.log.Logger;
  * @author kate
  */
 public class Application {
-	private static long offset = 0;
 	private static final Prop<AppDelegate> delegate = new Prop();
+	private static long offset = 0;
+	
+	static {
+		Logger.installSystem();
+	}
 		
 	protected static String str(long time, int len) {
 		String val = String.valueOf(time);
@@ -101,22 +105,43 @@ public class Application {
 		return System.getProperty("apporg", "NexusTools");
 	}
 	
-	public static void setDelegate(final AppDelegate app) {
-		delegate.write(new Writer<PropAccessor<AppDelegate>>() {
+	private static void setDelegate0(PropAccessor<AppDelegate> data, AppDelegate app) {
+		Logger.quote("Starting AppDelegate", app);
+
+		data.set(app);
+		for(Path path : Path.values())
+			try {
+				String pathUri = app.pathUri(path);
+				bindSynthScheme(path.scheme, pathUri);
+				Logger.debug(path.scheme + "://", "bound to", pathUri);
+			} catch(Throwable t) {
+				Logger.warn(path.scheme + "://", "is not supported by this AppDelegate.");
+				Stream.remove(path.scheme);
+			}
+	}
+	
+	public static void setDelegateIfNone(final AppDelegate app) {
+		delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
+			@Override
+			public boolean test(PropAccessor<AppDelegate> against) {
+				return !against.isset();
+			}
 			@Override
 			public void write(PropAccessor<AppDelegate> data) {
-				Logger.quote(data.isset() ? "Switching To" : "Spawned AppDelegate", app);
-				
-				data.set(app);
-				for(Path path : Path.values())
-					try {
-						String pathUri = app.pathUri(path);
-						bindSynthScheme(path.scheme, pathUri);
-						Logger.warn(path.scheme + "://", "bound to", pathUri);
-					} catch(Throwable t) {
-						Logger.warn(path.scheme + "://", "is not supported by this AppDelegate.");
-						Stream.remove(path.scheme);
-					}
+				setDelegate0(data, app);
+			}
+		});
+	}
+	
+	public static void setDelegate(final AppDelegate app) {
+		delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
+			@Override
+			public boolean test(PropAccessor<AppDelegate> against) {
+				return app != against.get();
+			}
+			@Override
+			public void write(PropAccessor<AppDelegate> data) {
+				setDelegate0(data, app);
 			}
 		});
 	}

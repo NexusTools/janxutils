@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import net.nexustools.AppDelegate;
 import net.nexustools.utils.IOUtils;
+import net.nexustools.utils.StringUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -337,19 +338,19 @@ public abstract class Stream {
 	 * @throws IOException
 	 */
 	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name, boolean writeable) throws IOException, URISyntaxException {
-		Stream stream = open(effectiveURL, writeable).getEffectiveStream();
+		Stream stream = open(effectiveURL, writeable).effectiveStream();
 		final URI reportedURI = new URI(reportedURL);
 		return new SubStream(stream) {
 			@Override
-			public String getScheme() {
+			public String scheme() {
 				return reportedURI.getScheme();
 			}
 			@Override
-			public String getPath() {
+			public String path() {
 				return reportedURI.getPath();
 			}
 			@Override
-			public String getURL() {
+			public String toURL() {
 				return reportedURL;
 			}
 			@Override
@@ -502,6 +503,12 @@ public abstract class Stream {
 	 * @throws IOException
 	 */
 	public abstract long size() throws IOException;
+	
+	public abstract boolean isHidden();
+	
+	public String sizeStr() throws IOException{
+		return StringUtils.stringForSize(size());
+	}
 
 	/**
 	 * Returns the remaining number of bytes from the current
@@ -617,7 +624,7 @@ public abstract class Stream {
 				StringBuilder builder = new StringBuilder();
 				builder.append(getClass().getName());
 				builder.append('(');
-				builder.append(getURL());
+				builder.append(toURL());
 				builder.append(')');
 
 				return builder.toString();
@@ -661,7 +668,7 @@ public abstract class Stream {
 	 */
 	public final OutputStream createOutputStream() throws IOException {
 		if(!canWrite())
-			throw new IOException(getURL() + ": Can not be written to...");
+			throw new IOException(toURL() + ": Can not be written to...");
 		
 		final SubStream subStream = createSubSectorStream();
 		return new EfficientOutputStream() {
@@ -681,7 +688,7 @@ public abstract class Stream {
 				StringBuilder builder = new StringBuilder();
 				builder.append(getClass().getName());
 				builder.append('(');
-				builder.append(getURL());
+				builder.append(toURL());
 				builder.append(')');
 
 				return builder.toString();
@@ -728,7 +735,7 @@ public abstract class Stream {
 	 * 
 	 * @return
 	 */
-	public Stream getEffectiveStream() {
+	public Stream effectiveStream() {
 		return this;
 	}
 
@@ -738,16 +745,26 @@ public abstract class Stream {
 	 * @see Stream.open
 	 * @return
 	 */
-	public String getURL() {
+	public String toURL() {
+		return toURI().toString();
+	}
+
+	/**
+	 * Return a URL String for this Stream
+	 * 
+	 * @see Stream.open
+	 * @return
+	 */
+	public URI toURI() {
 		try {
-			return (new URI(getScheme(), null, getPath(), null)).toString();
+			return new URI(scheme(), null, path(), null);
 		} catch (URISyntaxException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
 	
-	public abstract String getScheme();
-	public abstract String getPath();
+	public abstract String scheme();
+	public abstract String path();
 	
 	/**
 	 * Provides the default toString implementation for Streams
@@ -770,7 +787,7 @@ public abstract class Stream {
 		StringBuilder builder = new StringBuilder();
 		builder.append(name);
 		builder.append('(');
-		builder.append(stream.getURL());
+		builder.append(stream.toURL());
 		builder.append(')');
 		
 		return builder.toString();
@@ -786,8 +803,8 @@ public abstract class Stream {
 	 * 
 	 * @return
 	 */
-	public final String getExtension() {
-		String url = getURL();
+	public final String extension() {
+		String url = toURL();
 		int lastPos = url.lastIndexOf('.');
 		if(lastPos > -1)
 			return url.substring(lastPos+1);
@@ -800,8 +817,8 @@ public abstract class Stream {
 	 * 
 	 * @return MimeType or null
 	 */
-	public String getMimeType() {
-		String extension = getExtension();
+	public String mimeType() {
+		String extension = extension();
 		if(extension != null) {
 			String mime = mimeForExt.get(extension);
 			if(mime != null)
@@ -822,11 +839,11 @@ public abstract class Stream {
 			try {
 				stream = Stream.open(toString());
 			} catch(IOException t) {
-				stream = Stream.open(getURL());
+				stream = Stream.open(toURL());
 			} catch(URISyntaxException t) {
-				stream = Stream.open(getURL());
+				stream = Stream.open(toURL());
 			} catch(RuntimeException t) {
-				stream = Stream.open(getURL());
+				stream = Stream.open(toURL());
 			}
 			if(autoSeek)
 				stream.seek(pos());
@@ -843,7 +860,7 @@ public abstract class Stream {
 	}
 	
 	public Iterable<String> children() throws IOException {
-		throw new IOException(getURL() + " has no children");
+		throw new IOException(toURL() + " has no children");
 	}
 	
 	public boolean hasChildren() {

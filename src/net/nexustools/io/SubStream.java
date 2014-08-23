@@ -16,6 +16,7 @@
 package net.nexustools.io;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * A Stream that uses other Streams,
@@ -139,8 +140,8 @@ public class SubStream extends Stream {
 	}
 	
 	@Override
-	public String getMimeType() {
-		return stream.getMimeType();
+	public String mimeType() {
+		return stream.mimeType();
 	}
 
 	@Override
@@ -174,13 +175,13 @@ public class SubStream extends Stream {
 			return stream.createSubSectorStream(range);
 		return super.createSubSectorStream(range); //To change body of generated methods, choose Tools | Templates.
 	}
-	
+
 	@Override
-	public String getURL() {
+	public URI toURI() {
 		if(!range.isSubRange())
-			return stream.getURL();
+			return stream.toURI();
 		
-		return super.getURL();
+		return super.toURI();
 	}
 	
 	@Override
@@ -200,20 +201,20 @@ public class SubStream extends Stream {
 	 * @return
 	 */
 	@Override
-	public Stream getEffectiveStream() {
+	public Stream effectiveStream() {
 		if(!range.isSubRange())
-			return this.stream.getEffectiveStream();
-		return super.getEffectiveStream();
+			return this.stream.effectiveStream();
+		return super.effectiveStream();
 	}
 
 	@Override
-	public String getScheme() {
+	public String scheme() {
 		return "substream";
 	}
 
 	@Override
-	public String getPath() {
-		return range.start() + "-" + range.end() + "@" + stream.getURL();
+	public String path() {
+		return range.start() + "-" + range.end() + "@" + stream.toURL();
 	}
 
 	@Override
@@ -224,6 +225,11 @@ public class SubStream extends Stream {
 	@Override
 	public Iterable<String> children() throws IOException {
 		return stream.children();
+	}
+
+	@Override
+	public boolean isHidden() {
+		return stream.isHidden();
 	}
 
 	/**

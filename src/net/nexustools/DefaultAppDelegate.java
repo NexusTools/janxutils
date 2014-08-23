@@ -17,11 +17,10 @@ package net.nexustools;
 
 import java.io.File;
 
-import static net.nexustools.Application.defaultName;
-import static net.nexustools.Application.defaultOrganization;
 import net.nexustools.io.Stream;
 import net.nexustools.runtime.RunQueue;
-import net.nexustools.utils.log.Logger;
+import static net.nexustools.Application.defaultName;
+import static net.nexustools.Application.defaultOrganization;
 
 /**
  *
@@ -44,26 +43,28 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		this.name = name;
 		this.organization = organization;
 		runQueue = queue;
-		install();
 		
-		Logger.installSystem();
 		queue.push(new Runnable() {
 			public void run() {
+				Application.setDelegateIfNone(DefaultAppDelegate.this);
 				launch(args);
 			}
 		});
+	}
+
+	public void mainLoop() {
+		Application.setDelegate(this);
 	}
 	
 	public final R queue() {
 		return runQueue;
 	}
 	
-	public final void install() {
-		Application.setDelegate(this);
-	}
-	
 	public String pathUri(Path path) {
 		switch(path) {
+			case Working:
+				return Stream.uriForPath(System.getProperty("user.dir"));
+				
 			case Temporary:
 				String tempDir = System.getenv("TMPDIR");
 				if(tempDir == null)
@@ -71,7 +72,10 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 				return Stream.uriForPath(tempDir);
 
 			case UserHome:
-				return Stream.uriForPath(System.getProperty("user.home"));
+				String homeDir = System.getenv("HOME");
+				if(homeDir == null)
+					homeDir = Stream.uriForPath(System.getProperty("user.home"));
+				return homeDir;
 
 			case Configuration:
 			{

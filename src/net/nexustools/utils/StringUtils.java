@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.SecureRandom;
 import net.nexustools.io.MemoryStream;
 import net.nexustools.io.Stream;
 import static net.nexustools.io.StreamUtils.DefaultMemoryMax;
@@ -127,7 +128,7 @@ public class StringUtils {
 	};
 	public static String randomString(int len) {
 		char[] string = new char[len];
-		java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+		SecureRandom secureRandom = new SecureRandom();
 		for(int i=0; i<len; i++)
 			string[i] = letters[(int)(secureRandom.nextDouble()*letters.length)];
 		return new String(string);
@@ -140,6 +141,36 @@ public class StringUtils {
 		errorWriter.flush();
 
 		return errors.toString();
+	}
+	
+	public static String stringForSize(long bytes) {
+		return stringForSize((double)bytes);
+	}
+	
+	public static String stringForSize(double bytes) {
+		String suffix = "b";
+		if(bytes >= 1024) {
+			bytes /= 1024;
+			suffix = "kb";
+		}
+		if(bytes >= 1024) {
+			bytes /= 1024;
+			suffix = "mb";
+		}
+		if(bytes >= 1024) {
+			bytes /= 1024;
+			suffix = "gb";
+		}
+		if(bytes >= 1024) {
+			bytes /= 1024;
+			suffix = "tb";
+		}
+		if(bytes >= 1024) {
+			bytes /= 1024;
+			suffix = "pb";
+		}
+		
+		return Math.ceil(bytes*10)/10 + suffix;
 	}
 	
 }
