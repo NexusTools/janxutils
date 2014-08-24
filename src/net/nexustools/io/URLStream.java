@@ -15,6 +15,7 @@
 
 package net.nexustools.io;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.PropAccessor;
@@ -43,10 +45,11 @@ public class URLStream extends Stream {
 	private static final WeakHashMap<String, URLStream> instanceCache = new WeakHashMap();
 	private final URL internal;
 	
-	protected static URLConnection open(URL url, boolean head) throws IOException {
-		URLConnection connection = url.openConnection();
-		connection.setDoOutput(!head);
-		connection.setDoInput(false);
+	protected URLConnection open() throws IOException {
+		URLConnection connection = internal.openConnection();
+		connection.setUseCaches(true);
+		connection.setDoOutput(false);
+		connection.setDoInput(true);
 		Logger.debug("Opening URLConnection", connection);
 		connection.connect();
 		return connection;
@@ -84,10 +87,10 @@ public class URLStream extends Stream {
 	@Override
 	public long size() throws IOException {
 		try {
-			return detectedConnectionLength.read(new SoftWriteReader<Long, PropAccessor<Creator<Long, URLConnection>>>() {
+			long size = detectedConnectionLength.read(new SoftWriteReader<Long, PropAccessor<Creator<Long, URLConnection>>>() {
 				@Override
 				public Long soft(PropAccessor<Creator<Long, URLConnection>> data) throws IOException {
-					return data.get().create(open(internal, true));
+					return data.get().create(open());
 				}
 				@Override
 				public Long read(PropAccessor<Creator<Long, URLConnection>> data) throws IOException {
@@ -118,9 +121,12 @@ public class URLStream extends Stream {
 							}
 						};
 					}
-					return creator.create(open(internal, true));
+					return creator.create(open());
 				}
 			});
+			if(size > -1)
+				return size;
+			throw new IOException("Server not sending size");
 		} catch (InvocationTargetException ex) {
 			throw NXUtils.unwrapIOException(ex);
 		}
@@ -133,7 +139,12 @@ public class URLStream extends Stream {
 	
 	@Override
 	public boolean exists() throws IOException {
-		throw new IOException("Existance cannot be determined");
+		try {
+			open();
+		} catch(FileNotFoundException t) {
+			return false;
+		}
+		return true;
 	}
 	
 	@Override
@@ -147,8 +158,22 @@ public class URLStream extends Stream {
 	}
 
 	@Override
+	public String mimeType() {
+		String type = null;
+		try {
+			type = open().getContentType();
+		} catch (IOException ex) {}
+		if(type == null)
+			type = super.mimeType();
+		return type;
+	}
+
+	@Override
 	public long lastModified() throws IOException {
-		throw new IOException("Last modified cannot be determined.");
+		long lastModified = open().getLastModified();
+		if(lastModified > 0)
+			return lastModified;
+		throw new IOException("Server is not sending a modification time");
 	}
 
 	@Override
@@ -158,7 +183,7 @@ public class URLStream extends Stream {
 
 	@Override
 	public InputStream createInputStream(long p) throws IOException {
-		InputStream inStream = open(internal, false).getInputStream();
+		InputStream inStream = open().getInputStream();
 		inStream.skip(p);
 		return inStream;
 	}
