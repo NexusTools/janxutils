@@ -17,9 +17,9 @@ package net.nexustools.runtime;
 
 import java.util.Comparator;
 import java.util.Iterator;
-import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.SortedPropList;
 import net.nexustools.concurrent.logic.SoftWriter;

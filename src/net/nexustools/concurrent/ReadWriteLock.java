@@ -15,6 +15,8 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.MapAccessor;
+import net.nexustools.data.accessor.BaseAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;

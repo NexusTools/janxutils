@@ -13,19 +13,17 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.data.buffer;
 
-import net.nexustools.data.accessor.BaseAccessor;
+import java.util.ListIterator;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public interface BufferIterator<T> extends ListIterator<T> {
+	
+	public void add(T... e);
+	public void remove(int count);
 	
 }

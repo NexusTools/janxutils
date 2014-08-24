@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.BaseAccessor;
 import java.util.ArrayList;
 
 /**

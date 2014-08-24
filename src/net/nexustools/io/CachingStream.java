@@ -106,6 +106,11 @@ public class CachingStream extends Stream {
 	}
 
 	@Override
+	public boolean canRead() {
+		return true;
+	}
+
+	@Override
 	public void flush() throws IOException {
 		throw new IOException("Cannot flush LocalCacheStream");
 	}
@@ -169,6 +174,11 @@ public class CachingStream extends Stream {
 	@Override
 	public String toURL() {
 		return localCache.toURL();
+	}
+
+	@Override
+	public long lastModified() {
+		return localCache.lastModified();
 	}
 
 	@Override

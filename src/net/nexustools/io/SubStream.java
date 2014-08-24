@@ -165,6 +165,11 @@ public class SubStream extends Stream {
 	}
 
 	@Override
+	public boolean canRead() {
+		return stream.canRead();
+	}
+
+	@Override
 	public void flush() throws IOException {
 		stream.flush();
 	}
@@ -230,6 +235,11 @@ public class SubStream extends Stream {
 	@Override
 	public boolean isHidden() {
 		return stream.isHidden();
+	}
+
+	@Override
+	public long lastModified() {
+		return stream.lastModified();
 	}
 
 	/**

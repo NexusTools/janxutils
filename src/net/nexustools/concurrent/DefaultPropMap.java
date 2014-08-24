@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.MapAccessor;
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.Map;
@@ -87,9 +88,6 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 		}
 		public boolean isTrue() {
 			return accessor.isTrue();
-		}
-		public boolean isset() {
-			return accessor.isset();
 		}
 		public void clear() {
 			accessor.clear();

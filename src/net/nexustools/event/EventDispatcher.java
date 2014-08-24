@@ -18,7 +18,7 @@ package net.nexustools.event;
 import java.util.EventListener;
 import java.util.List;
 import net.nexustools.concurrent.logic.IfWriter;
-import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.runtime.RunQueue;
 import net.nexustools.utils.log.Logger;

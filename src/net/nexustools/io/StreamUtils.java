@@ -28,7 +28,7 @@ import java.io.OutputStream;
 public class StreamUtils {
 	
 	public static final short DefaultMemoryMax = 8192;
-	public static final short DefaultCopySize = DefaultMemoryMax;
+	public static final short DefaultCopySize = Short.MAX_VALUE;
 	
 	public static void copy(InputStream inStream, OutputStream outStream) throws IOException {
 		copy(inStream, outStream, DefaultMemoryMax);

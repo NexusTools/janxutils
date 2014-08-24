@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.logic.IfReader;
 
 /**

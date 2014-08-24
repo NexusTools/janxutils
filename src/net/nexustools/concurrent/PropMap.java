@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
@@ -139,15 +140,6 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 			@Override
 			public Boolean read(MapAccessor<K, V> data) {
 				return data.isTrue();
-			}
-		});
-	}
-
-	public boolean isset() {
-		return read(new Reader<Boolean, MapAccessor<K, V>>() {
-			@Override
-			public Boolean read(MapAccessor<K, V> data) {
-				return data.isset();
 			}
 		});
 	}

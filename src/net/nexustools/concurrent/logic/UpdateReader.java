@@ -15,7 +15,7 @@
 
 package net.nexustools.concurrent.logic;
 
-import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.data.accessor.BaseAccessor;
 
 /**
  *

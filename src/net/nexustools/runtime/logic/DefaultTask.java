@@ -16,7 +16,7 @@
 package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.Prop;
-import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.TestReader;

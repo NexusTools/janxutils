@@ -16,7 +16,7 @@
 package net.nexustools.runtime;
 
 import java.util.ArrayList;
-import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;

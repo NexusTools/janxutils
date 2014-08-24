@@ -15,7 +15,7 @@
 
 package net.nexustools.runtime;
 
-import net.nexustools.concurrent.ListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.runtime.logic.Task;
 
 /**

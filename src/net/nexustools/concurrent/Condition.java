@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.VoidReader;
 import net.nexustools.concurrent.logic.Writer;
 

@@ -13,16 +13,26 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.data.accessor;
+
+import java.util.ListIterator;
 
 /**
  *
  * @author katelyn
  */
-public interface PropAccessor<T> extends BaseAccessor {
+public interface IterableAccessor<T, C, R, S extends IterableAccessor<T, C, R, S>> extends DataAccessor<T, C, R>, Iterable<T> {
 	
-	public T get();
-	public void set(T value);
-	public T take();
+	public static interface Iterator<T> {
+		public void iterate(ListIterator<T> it);
+	}
+	
+	public void iterate(Iterator<T> iterator);
+	public void iterate(Iterator<T> iterator, int at);
+	public S sorted(Comparable<T> sortMethod);
+	
+	public int length();
+	public T[] copy();
+	public T[] take();
 	
 }

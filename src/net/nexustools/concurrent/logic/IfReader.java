@@ -15,7 +15,7 @@
 
 package net.nexustools.concurrent.logic;
 
-import net.nexustools.concurrent.BaseAccessor;
+import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.Lockable;
 import net.nexustools.utils.Testable;
 

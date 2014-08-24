@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import net.nexustools.data.accessor.ListAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -178,14 +179,6 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 			@Override
 			public Boolean read(ListAccessor<I> data) {
 				return data.isTrue();
-			}
-		});
-	}
-	public boolean isset() {
-		return read(new Reader<Boolean, ListAccessor<I>>() {
-			@Override
-			public Boolean read(ListAccessor<I> data) {
-				return data.isset();
 			}
 		});
 	}

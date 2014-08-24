@@ -15,11 +15,14 @@
 
 package net.nexustools.concurrent;
 
-import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.concurrent.logic.UpdateReader;
-import net.nexustools.concurrent.logic.Reader;
-import net.nexustools.concurrent.logic.WriteReader;
 import java.util.Collection;
+import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.concurrent.logic.Reader;
+import net.nexustools.concurrent.logic.UpdateReader;
+import net.nexustools.concurrent.logic.WriteReader;
+import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -129,6 +132,20 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 			@Override
 			public boolean needUpdate(PropAccessor<T> against) {
 				return !newValue.equals(against);
+			}
+		});
+	}
+
+	public void set(final T value, final Testable<T> test) {
+		write(new BaseWriter<PropAccessor<T>>() {
+			public void write(PropAccessor<T> data, Lockable lock) {
+				lock.lock();
+				try {
+					if(lock.tryFastUpgradeTest(test))
+						data.set(value);
+				} finally {
+					lock.unlock();
+				}
 			}
 		});
 	}

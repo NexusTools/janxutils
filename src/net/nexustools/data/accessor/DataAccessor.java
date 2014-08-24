@@ -13,19 +13,23 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
-
-import net.nexustools.data.accessor.BaseAccessor;
+package net.nexustools.data.accessor;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
+public interface DataAccessor<T, C, R> extends BaseAccessor {
+	
+	public static enum Reference {
+		Strong,
+		Soft,
+		Weak
 	}
+	
+	public C type();
+	public R refType();
+	public boolean isTrue();
+	public void clear();
 	
 }

@@ -13,19 +13,18 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.data.buffer;
 
-import net.nexustools.data.accessor.BaseAccessor;
+import net.nexustools.data.accessor.DataAccessor.Reference;
+import net.nexustools.data.accessor.IterableAccessor;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public interface TypeBuffer<T> extends IterableAccessor<T, Class<T>, Reference, TypeBuffer<T>> {
+	
+	public BufferIterator<T> bufferIterator();
+	public BufferIterator<T> bufferIterator(int at);
 	
 }

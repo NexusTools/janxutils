@@ -13,19 +13,12 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
-
-import net.nexustools.data.accessor.BaseAccessor;
+package net.nexustools.data.buffer;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public class MapTypeBuffer {
 	
 }

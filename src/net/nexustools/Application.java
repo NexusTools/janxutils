@@ -18,7 +18,7 @@ package net.nexustools;
 import net.nexustools.io.Stream;
 import net.nexustools.AppDelegate.Path;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.Writer;
 import static net.nexustools.io.Stream.bindSynthScheme;

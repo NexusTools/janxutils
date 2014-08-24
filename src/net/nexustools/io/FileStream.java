@@ -25,7 +25,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.concurrent.PropAccessor;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.WeakArrayList;
@@ -207,19 +207,33 @@ public class FileStream extends Stream {
 	public Iterable<String> children() {
 		return new Iterable<String>() {
 			public Iterator<String> iterator() {
-				return new Iterator<String>() {
-					final String[] children = internal.list();
-					int pos = -1;
-					public boolean hasNext() {
-						return pos + 1 < children.length;
-					}
-					public String next() {
-						return children[++pos];
-					}
-					public void remove() {
-						throw new UnsupportedOperationException("Not supported.");
-					}
-				};
+				final String[] children = internal.list();
+				
+				if(children != null && children.length > 0)
+					return new Iterator<String>() {
+						int pos = -1;
+						public boolean hasNext() {
+							return pos + 1 < children.length;
+						}
+						public String next() {
+							return children[++pos];
+						}
+						public void remove() {
+							throw new UnsupportedOperationException("Not supported.");
+						}
+					};
+				else
+					return new Iterator<String>() {
+						public boolean hasNext() {
+							return false;
+						}
+						public String next() {
+							throw new UnsupportedOperationException("Not supported.");
+						}
+						public void remove() {
+							throw new UnsupportedOperationException("Not supported.");
+						}
+					};
 			}
 		};
 	}
@@ -284,6 +298,16 @@ public class FileStream extends Stream {
 	@Override
 	public boolean isHidden() {
 		return internal.isHidden();
+	}
+
+	@Override
+	public long lastModified() {
+		return internal.lastModified();
+	}
+
+	@Override
+	public boolean canRead() {
+		return internal.canRead();
 	}
 	
 }

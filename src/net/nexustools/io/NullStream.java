@@ -81,6 +81,11 @@ public final class NullStream extends Stream {
 	}
 
 	@Override
+	public boolean canRead() {
+		return false;
+	}
+
+	@Override
 	public final void flush() throws IOException {
 		throw new IOException("NullSectorStream cannot be flushed...");
 	}
@@ -98,6 +103,11 @@ public final class NullStream extends Stream {
 	@Override
 	public boolean isHidden() {
 		return true;
+	}
+
+	@Override
+	public long lastModified() {
+		return 0;
 	}
 
 	@Override

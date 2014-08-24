@@ -15,6 +15,7 @@
 
 package net.nexustools.io;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -48,7 +49,9 @@ public class MemoryStream extends Stream {
 	
 	public MemoryStream(InputStream inStream, short max) throws IOException {
 		this(sizeForStream(inStream));
-		StreamUtils.copy(inStream, createOutputStream(), max);
+		try {
+			StreamUtils.copy(inStream, createOutputStream(), max);
+		} catch(EOFException ex) {}
 	}
 	
 	public MemoryStream(InputStream inStream) throws IOException {
@@ -133,6 +136,11 @@ public class MemoryStream extends Stream {
 	}
 
 	@Override
+	public boolean canRead() {
+		return true;
+	}
+
+	@Override
 	public void flush() throws IOException {}
 
 	@Override
@@ -151,6 +159,11 @@ public class MemoryStream extends Stream {
 	@Override
 	public long size() throws IOException {
 		return size;
+	}
+
+	@Override
+	public long lastModified() {
+		return 0; // Do I even care to track this?
 	}
 
 	@Override

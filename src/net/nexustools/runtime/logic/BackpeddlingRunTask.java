@@ -15,7 +15,7 @@
 
 package net.nexustools.runtime.logic;
 
-import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.logic.SoftUpdateWriter;
 import net.nexustools.concurrent.logic.Writer;
 

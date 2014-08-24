@@ -13,29 +13,36 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.data.impl;
 
-import java.util.Map;
-import net.nexustools.utils.Pair;
+import net.nexustools.data.accessor.DataAccessor.Reference;
 
 /**
  *
  * @author katelyn
  */
-public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
+public class BasicProp<T> extends AbstractProp<T> {
 	
-	public V get(K key);
-	public V get(K key, V def);
 	
-	public void remove(K key);
-	public void put(K key, V value);
-	public void putAll(Iterable<Pair<K,V>> iterable);
-	public void putAll(Map<K,V> iterable);
-	public V replace(K key, V value);
-	public boolean has(K key);
-	public Map<K, V> copy();
-	
-	public V take(K key);
-	public Map<K,V> take();
+	protected T storage;
+	public BasicProp(Class<T> typeClass, T object) {
+		super(typeClass);
+		storage = object;
+	}
+	public BasicProp(T object) {
+		storage = object;
+	}
+
+	public final T get() {
+		return storage;
+	}
+
+	public final void set(T value) {
+		storage = value;
+	}
+
+	public final Reference refType() {
+		return Reference.Strong;
+	}
 	
 }

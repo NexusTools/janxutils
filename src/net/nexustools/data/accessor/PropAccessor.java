@@ -13,19 +13,21 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.data.accessor;
 
-import net.nexustools.data.accessor.BaseAccessor;
+import net.nexustools.utils.Testable;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public interface PropAccessor<T> extends BaseAccessor {
+	
+	public T get();
+	public void set(T value);
+	public void set(T value, Testable<T> test);
+	public boolean update(T value);
+	public boolean isset();
+	public T take();
 	
 }

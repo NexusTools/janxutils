@@ -13,7 +13,7 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.data.accessor;
 
 /**
  *
@@ -22,7 +22,6 @@ package net.nexustools.concurrent;
 public interface BaseAccessor {
 	
 	public boolean isTrue();
-	public boolean isset();
 	public void clear();
 	
 }

@@ -13,19 +13,29 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.data.accessor;
 
-import net.nexustools.data.accessor.BaseAccessor;
+import java.util.Map;
+import net.nexustools.utils.Pair;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public interface MapAccessor<K,V> extends BaseAccessor, Iterable<Pair<K,V>> {
+	
+	public V get(K key);
+	public V get(K key, V def);
+	
+	public void remove(K key);
+	public void put(K key, V value);
+	public void putAll(Iterable<Pair<K,V>> iterable);
+	public void putAll(Map<K,V> iterable);
+	public V replace(K key, V value);
+	public boolean has(K key);
+	public Map<K, V> copy();
+	
+	public V take(K key);
+	public Map<K,V> take();
 	
 }

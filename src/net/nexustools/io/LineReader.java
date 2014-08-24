@@ -13,19 +13,16 @@
  * 
  */
 
-package net.nexustools.concurrent.logic;
+package net.nexustools.io;
 
-import net.nexustools.data.accessor.BaseAccessor;
+import java.io.IOException;
 
 /**
  *
  * @author katelyn
  */
-public abstract class TestWriteReader<A extends BaseAccessor> extends IfWriteReader<Boolean, A> {
-
-	@Override
-	public Boolean def() {
-		return false;
-	}
+public interface LineReader {
+	
+	public String readNext() throws IOException;
 	
 }

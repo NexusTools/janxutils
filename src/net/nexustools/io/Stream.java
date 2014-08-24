@@ -26,11 +26,8 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import net.nexustools.AppDelegate;
 import net.nexustools.utils.IOUtils;
 import net.nexustools.utils.StringUtils;
 import net.nexustools.utils.log.Logger;
@@ -39,7 +36,7 @@ import net.nexustools.utils.log.Logger;
  *
  * @author katelyn
  */
-public abstract class Stream {
+public abstract class Stream implements Iterable<Stream> {
 	
 	public static final HashMap<String,String> mimeForExt = new HashMap<String,String>() {
 		{
@@ -465,6 +462,8 @@ public abstract class Stream {
 	 * @return
 	 */
 	public abstract boolean canWrite(); // Not all sector streams even support writing
+	
+	public abstract boolean canRead();
 
 	/**
 	 * Flush data to the underlying Stream.
@@ -504,10 +503,47 @@ public abstract class Stream {
 	 */
 	public abstract long size() throws IOException;
 	
+	public abstract long lastModified();
 	public abstract boolean isHidden();
 	
 	public String sizeStr() throws IOException{
-		return StringUtils.stringForSize(size());
+		if(!canRead())
+			throw new IOException("Permission Denied");
+		
+		StringBuilder builder = new StringBuilder();
+		try {
+			builder.append(StringUtils.stringForSize(size()));
+		} catch(IOException ex) {}
+		if(hasChildren()) {
+			int folderCount = 0;
+			int fileCount = 0;
+			
+			for(Stream child : this) {
+				if(child.hasChildren())
+					folderCount ++;
+				else
+					fileCount ++;
+			}
+			if(fileCount > 0) {
+				if(builder.length() > 0)
+					builder.append(", ");
+				builder.append(fileCount);
+				builder.append(" files");
+			}
+			if(folderCount > 0) {
+				if(builder.length() > 0)
+					builder.append(", ");
+				builder.append(folderCount);
+				builder.append(" folders");
+			}
+			if(builder.length() < 1)
+				builder.append("Empty");
+		}
+		
+		if(builder.length() < 1)
+			throw new IOException("Cannot determine size");
+		
+		return builder.toString();
 	}
 
 	/**
@@ -857,6 +893,55 @@ public abstract class Stream {
 	
 	public boolean exists() {
 		return true;
+	}
+
+	public Iterator<Stream> iterator() {
+		Iterator<String> chIT = null;
+		try {
+			chIT = children().iterator();
+		} catch(IOException ex) {}
+		
+		if(chIT != null && chIT.hasNext()) {
+			final Iterator<String> it = chIT;
+			return new Iterator<Stream>() {
+				Stream next;
+				String parentURL;
+				{
+					parentURL = toURL();
+					if(!parentURL.endsWith("/"))
+						parentURL += "/";
+				}
+				public boolean hasNext() {
+					while(next == null && it.hasNext()) {
+						try {
+							next = Stream.open(parentURL + it.next());
+						} catch(Exception ex) {}
+					}
+					return next != null;
+				}
+				public Stream next() {
+					try {
+						return next;
+					} finally {
+						next = null;
+					}
+				}
+				public void remove() {
+					throw new UnsupportedOperationException("Not supported.");
+				}
+			};
+		} else
+			return new Iterator<Stream>() {
+				public boolean hasNext() {
+					return false;
+				}
+				public Stream next() {
+					throw new UnsupportedOperationException(toString() + " has no children");
+				}
+				public void remove() {
+					throw new UnsupportedOperationException("Not supported.");
+				}
+			};
 	}
 	
 	public Iterable<String> children() throws IOException {

@@ -15,11 +15,8 @@
 
 package net.nexustools.concurrent;
 
-import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.concurrent.logic.UpdateReader;
-import net.nexustools.concurrent.logic.Reader;
-import net.nexustools.concurrent.logic.WriteReader;
-import java.util.Collection;
+import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -50,6 +47,17 @@ public class Prop<T> extends AbstractProp<T> {
 			} finally {
 				value = null;
 			}
+		}
+		public void set(T val, Testable<T> test) {
+			if(test.test(val))
+				value = val;
+		}
+		public boolean update(final T val) {
+			if(value != val) {
+				value = val;
+				return true;
+			}
+			return false;
 		}
 	};
 	public Prop() {}

@@ -16,7 +16,7 @@
 package net.nexustools.runtime.logic;
 
 import net.nexustools.concurrent.Lockable;
-import net.nexustools.concurrent.MapAccessor;
+import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
