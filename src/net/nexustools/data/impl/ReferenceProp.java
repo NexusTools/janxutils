@@ -50,7 +50,6 @@ public class ReferenceProp<T> extends AbstractProp<T> {
 				break;
 				
 			default:
-				creator = null;
 				throw new UnsupportedOperationException();
 		}
 	}

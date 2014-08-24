@@ -200,10 +200,12 @@ public class FileStream extends Stream {
 		internal.delete();
 	}
 	
+	@Override
 	public boolean exists() {
 		return internal.exists();
 	}
 	
+	@Override
 	public Iterable<String> children() {
 		return new Iterable<String>() {
 			public Iterator<String> iterator() {
@@ -238,6 +240,7 @@ public class FileStream extends Stream {
 		};
 	}
 	
+	@Override
 	public boolean hasChildren() {
 		return internal.isDirectory();
 	}
@@ -267,7 +270,7 @@ public class FileStream extends Stream {
 						}
 						public String create(File using) {
 							try {
-								return (String) probeContentType.invoke(null, pathsGet.invoke(null, internal.toURI()));
+								return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
 							} catch (IllegalAccessException ex) {
 								return null;
 							} catch (IllegalArgumentException ex) {
