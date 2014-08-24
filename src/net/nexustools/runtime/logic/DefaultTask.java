@@ -15,14 +15,17 @@
 
 package net.nexustools.runtime.logic;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.TestReader;
 import net.nexustools.concurrent.logic.WriteReader;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
+import net.nexustools.utils.log.Logger;
 /**
  *
  * @author katelyn
@@ -66,24 +69,28 @@ public abstract class DefaultTask implements Task {
 	}
 	
 	public void cancel() {
-		state.write(new IfWriter<PropAccessor<State>>() {
-			@Override
-			public void write(PropAccessor<State> data) {
-				state.set(State.Cancelled);
-				runThread.read(new IfReader<Void, PropAccessor<Thread>>() {
-					@Override
-					public Void read(PropAccessor<Thread> data) {
-						data.get().interrupt();
-						return null;
-					}
-				});
-			}
-			@Override
-			public boolean test(PropAccessor<State> against) {
-				State state = against.get();
-				return (state == State.WaitingInQueue || state == State.Scheduled || state == State.Executing);
-			}
-		});
+		try {
+			state.write(new IfWriter<PropAccessor<State>>() {
+				@Override
+				public void write(PropAccessor<State> data) throws InvocationTargetException {
+					state.set(State.Cancelled);
+					runThread.read(new IfReader<Void, PropAccessor<Thread>>() {
+						@Override
+						public Void read(PropAccessor<Thread> data) {
+							data.get().interrupt();
+							return null;
+						}
+					});
+				}
+				@Override
+				public boolean test(PropAccessor<State> against) {
+					State state = against.get();
+					return (state == State.WaitingInQueue || state == State.Scheduled || state == State.Executing);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public final void execute() {
@@ -95,59 +102,67 @@ public abstract class DefaultTask implements Task {
 	}
 	public final void execute(Testable<Void> isRunning) {
 		boolean stopRepeating = false;
-		if(state.read(new WriteReader<Boolean, PropAccessor<State>>() {
-					@Override
-					public Boolean read(PropAccessor<State> data) {
-						if(data.get() == State.WaitingInQueue) {
-							data.set(State.Executing);
-							return true;
-						}
-						return false;
+		try {
+			if(state.read(new WriteReader<Boolean, PropAccessor<State>>() {
+				@Override
+				public Boolean read(PropAccessor<State> data) {
+					if(data.get() == State.WaitingInQueue) {
+						data.set(State.Executing);
+						return true;
 					}
-				})) {
-			try {
-			
-				runThread.set(Thread.currentThread());
-				try {
-					executeImpl(isRunning);
-				} catch(StopRepeating ex) {
-					stopRepeating = true;
+					return false;
 				}
-				state.write(new IfWriter<PropAccessor<State>>() {
-					@Override
-					public void write(PropAccessor<State> data) {
-						state.set(State.Complete);
+			})) {
+				try {
+					
+					runThread.set(Thread.currentThread());
+					try {
+						executeImpl(isRunning);
+					} catch(StopRepeating ex) {
+						stopRepeating = true;
 					}
-					@Override
-					public boolean test(PropAccessor<State> against) {
-						return against.get() == State.Executing;
-					}
-				});
-			} catch (Throwable t) {
-				state.set(State.Aborted);
-				t.printStackTrace();
-			} finally {
-				runThread.clear();
+					state.write(new IfWriter<PropAccessor<State>>() {
+						@Override
+						public void write(PropAccessor<State> data) {
+							state.set(State.Complete);
+						}
+						@Override
+						public boolean test(PropAccessor<State> against) {
+							return against.get() == State.Executing;
+						}
+					});
+				} catch (Throwable t) {
+					state.set(State.Aborted);
+					Logger.exception(t);
+				} finally {
+					runThread.clear();
+				}
 			}
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
 		}
 		if(stopRepeating)
 			throw new StopRepeating();
 	}
 	
 	public boolean onSchedule() {
-		return state.read(new TestReader<PropAccessor<State>>() {
-			@Override
-			public boolean test(PropAccessor<State> against) {
-				return against.get() == State.Scheduled;
-			}
-			@Override
-			public void readV(PropAccessor<State> data) {
-				data.set(State.WaitingInQueue);
-			}
-		});
+		try {
+			return state.read(new TestReader<PropAccessor<State>>() {
+				@Override
+				public boolean test(PropAccessor<State> against) {
+					return against.get() == State.Scheduled;
+				}
+				@Override
+				public void readV(PropAccessor<State> data) {
+					data.set(State.WaitingInQueue);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
-	protected abstract void executeImpl(Testable<Void> isRunning);
+	protected abstract void executeImpl(Testable<Void> isRunning) throws Throwable;
 
 	
 }

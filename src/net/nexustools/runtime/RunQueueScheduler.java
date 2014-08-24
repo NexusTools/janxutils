@@ -15,8 +15,10 @@
 
 package net.nexustools.runtime;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.logging.Level;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.data.accessor.PropAccessor;
@@ -26,6 +28,7 @@ import net.nexustools.concurrent.logic.SoftWriter;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 import net.nexustools.utils.sort.DescLongTypeComparator;
 
@@ -140,25 +143,29 @@ public final class RunQueueScheduler {
 	
 	private static void schedule(final FutureTask entry) {
 		Logger.gears("Scheduling", entry.future);
-		scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
-			@Override
-			public void write(final ListAccessor<FutureTask> taskList) {
-				taskList.push(entry);
-				if(taskList.length() == 1)
-					schedulerThread.write(new SoftWriter<PropAccessor<Thread>>() {
-						@Override
-						public void write(PropAccessor<Thread> data) {
-							Logger.gears("Spawning Scheduler Thread");
-							data.set(new SchedulerThread());
-						}
-						@Override
-						public void soft(PropAccessor<Thread> data) {
-							Logger.gears("Notifying Scheduler Thread");
-							data.get().interrupt();
-						}
-					});
-			}
-		});
+		try {
+			scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
+				@Override
+				public void write(final ListAccessor<FutureTask> taskList) throws InvocationTargetException {
+					taskList.push(entry);
+					if(taskList.length() == 1)
+						schedulerThread.write(new SoftWriter<PropAccessor<Thread>>() {
+							@Override
+							public void write(PropAccessor<Thread> data) {
+								Logger.gears("Spawning Scheduler Thread");
+								data.set(new SchedulerThread());
+							}
+							@Override
+							public void soft(PropAccessor<Thread> data) {
+								Logger.gears("Notifying Scheduler Thread");
+								data.get().interrupt();
+							}
+						});
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 				
 	}
 	public static void schedule(Task task, int when, int accuracy, RunQueue targetQueue) {
@@ -176,21 +183,25 @@ public final class RunQueueScheduler {
 			schedule(new RepeatingFutureTask(repeat, accuracy, targetQueue, task));
 	}
 	public static void stopRepeating(final Task task, final RunQueue runQueue) {
-		scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
-			@Override
-			public void write(ListAccessor<FutureTask> data) {
-				Iterator<FutureTask> iterator = data.iterator();
-				Logger.gears("Searchng for task to stop", task);
-				while(iterator.hasNext()) {
-					FutureTask entry = iterator.next();
-					if(entry.future.equals(task) && entry.queue.equals(runQueue)) {
-						Logger.gears("Removing", task);
-						iterator.remove();
-						break;
+		try {
+			scheduledTasks.write(new Writer<ListAccessor<FutureTask>>() {
+				@Override
+				public void write(ListAccessor<FutureTask> data) {
+					Iterator<FutureTask> iterator = data.iterator();
+					Logger.gears("Searchng for task to stop", task);
+					while(iterator.hasNext()) {
+						FutureTask entry = iterator.next();
+						if(entry.future.equals(task) && entry.queue.equals(runQueue)) {
+							Logger.gears("Removing", task);
+							iterator.remove();
+							break;
+						}
 					}
 				}
-			}
-		});
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 }

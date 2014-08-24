@@ -15,9 +15,13 @@
 
 package net.nexustools.runtime.logic;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.logic.SoftUpdateWriter;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.utils.NXUtils;
 
 /**
  *
@@ -27,14 +31,18 @@ public class BackpeddlingRunTask<R extends Runnable> extends TrackedTask<R> {
 
 	public BackpeddlingRunTask(final R runnable, State state) {
 		super(runnable, state);
-		write(new Writer<MapAccessor<Runnable, TrackedTask>>() {
-			@Override
-			public void write(MapAccessor<Runnable, TrackedTask> data) {
-				TrackedTask old = data.replace(runnable, BackpeddlingRunTask.this);
-				if(old != null)
-					old.sCancel();
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<Runnable, TrackedTask>>() {
+				@Override
+				public void write(MapAccessor<Runnable, TrackedTask> data) {
+					TrackedTask old = data.replace(runnable, BackpeddlingRunTask.this);
+					if(old != null)
+						old.sCancel();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	@Override

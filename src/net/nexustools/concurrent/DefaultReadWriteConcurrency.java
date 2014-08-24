@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
@@ -35,11 +36,11 @@ public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implem
 		this.lock = lock;
 	}
 	
-	public void write(BaseWriter<A> actor) {
+	public void write(BaseWriter<A> actor) throws InvocationTargetException {
 		lock.write(directAccessor(), actor);
 	}
 
-	public <R> R read(BaseReader<R, A> reader) {
+	public <R> R read(BaseReader<R, A> reader) throws InvocationTargetException {
 		return (R)lock.read(directAccessor(), reader);
 	}
 

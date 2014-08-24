@@ -15,12 +15,15 @@
 
 package net.nexustools.event;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
 import java.util.List;
+import java.util.logging.Level;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -68,35 +71,43 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 	}
 	
 	public void add(final L listener) {
-		listeners.write(new IfWriter<ListAccessor<L>>() {
-			@Override
-			public void write(ListAccessor<L> data) {
-				if(!data.isTrue())
-					connect();
-				
-				data.push(listener);
-			}
-			@Override
-			public boolean test(ListAccessor<L> against) {
-				return !against.contains(listener);
-			}
-		});
+		try {
+			listeners.write(new IfWriter<ListAccessor<L>>() {
+				@Override
+				public void write(ListAccessor<L> data) {
+					if(!data.isTrue())
+						connect();
+					
+					data.push(listener);
+				}
+				@Override
+				public boolean test(ListAccessor<L> against) {
+					return !against.contains(listener);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public void remove(final L listener) {
-		listeners.write(new IfWriter<ListAccessor<L>>() {
-			@Override
-			public void write(ListAccessor<L> data) {
-				data.remove(listener);
-				
-				if(!data.isTrue())
-					disconnect();
-			}
-			@Override
-			public boolean test(ListAccessor<L> against) {
-				return against.contains(listener);
-			}
-		});
+		try {
+			listeners.write(new IfWriter<ListAccessor<L>>() {
+				@Override
+				public void write(ListAccessor<L> data) {
+					data.remove(listener);
+					
+					if(!data.isTrue())
+						disconnect();
+				}
+				@Override
+				public boolean test(ListAccessor<L> against) {
+					return against.contains(listener);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public abstract void connect();

@@ -24,12 +24,12 @@ import net.nexustools.data.accessor.BaseAccessor;
 public abstract class VoidReader<A extends BaseAccessor> extends Reader<Void, A> {
 
 	@Override
-	public Void read(A data) {
+	public Void read(A data) throws Throwable {
 		readV(data);
 		return null;
 	}
 	
-	public abstract void readV(A data);
+	public abstract void readV(A data) throws Throwable;
 
 	
 }

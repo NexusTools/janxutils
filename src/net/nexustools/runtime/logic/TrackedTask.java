@@ -15,12 +15,15 @@
 
 package net.nexustools.runtime.logic;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.concurrent.Lockable;
-import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
-import net.nexustools.concurrent.logic.SoftUpdateWriter;
+import net.nexustools.data.accessor.MapAccessor;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 
 /**
@@ -35,11 +38,11 @@ public class TrackedTask<R extends Runnable> extends RunTask {
 		super(runnable, state);
 	}
 	
-	protected void write(BaseWriter<MapAccessor<Runnable, TrackedTask>> writer) {
+	protected void write(BaseWriter<MapAccessor<Runnable, TrackedTask>> writer) throws InvocationTargetException {
 		tracking.write(writer);
 	}
 	
-	protected <R> R read(BaseReader<R, MapAccessor<Runnable, TrackedTask>> reader) {
+	protected <R> R read(BaseReader<R, MapAccessor<Runnable, TrackedTask>> reader) throws InvocationTargetException {
 		return tracking.read(reader);
 	}
 	
@@ -62,37 +65,45 @@ public class TrackedTask<R extends Runnable> extends RunTask {
 				return against.get(runnable) == TrackedTask.this;
 			}
 		};
-		tracking.write(new BaseWriter<MapAccessor<Runnable, TrackedTask>>() {
-			public void write(MapAccessor<Runnable, TrackedTask> data, Lockable lock) {
-				lock.lock();
-				try {
-					block.run();
-					if(isMe.test(data)) {
-						try {
-							boolean failed = false;
-							if(!lock.tryFastUpgrade()) {
-								lock.upgrade();
-								if(!isMe.test(data))
-									failed = true;
+		try {
+			tracking.write(new BaseWriter<MapAccessor<Runnable, TrackedTask>>() {
+				public void write(MapAccessor<Runnable, TrackedTask> data, Lockable lock) throws Throwable {
+					lock.lock();
+					try {
+						block.run();
+						if(isMe.test(data)) {
+							try {
+								boolean failed = false;
+								if(!lock.tryFastUpgrade()) {
+									lock.upgrade();
+									if(!isMe.test(data))
+										failed = true;
+								}
+								if(!failed)
+									data.remove(runnable);
+							} finally {
+								lock.downgrade();
 							}
-							if(!failed)
-								data.remove(runnable);
-						} finally {
-							lock.downgrade();
 						}
+					} finally {
+						lock.unlock();
 					}
-				} finally {
-					lock.unlock();
 				}
-			}
-		});
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	@Override
 	protected void executeImpl(final Testable isRunning) {
 		removeFromTracker(new Runnable() {
 			public void run() {
-				TrackedTask.super.executeImpl(isRunning);
+				try {
+					TrackedTask.super.executeImpl(isRunning);
+				} catch (Throwable ex) {
+					throw NXUtils.unwrapRuntime(ex);
+				}
 			}
 		});
 	}

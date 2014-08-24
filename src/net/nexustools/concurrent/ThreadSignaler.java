@@ -15,8 +15,12 @@
 
 package net.nexustools.concurrent;
 
-import net.nexustools.data.accessor.ListAccessor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.concurrent.logic.IfReader;
+import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.utils.NXUtils;
 
 /**
  *
@@ -41,24 +45,32 @@ public class ThreadSignaler {
 	}
 	
 	public void signalAll() {
-		waitingThreads.read(new IfReader<Void, ListAccessor<Thread>>() {
-			@Override
-			public Void read(ListAccessor<Thread> data) {
-				for(Thread thread : data)
-					thread.interrupt();
-				return null;
-			}
-		});
+		try {
+			waitingThreads.read(new IfReader<Void, ListAccessor<Thread>>() {
+				@Override
+				public Void read(ListAccessor<Thread> data) {
+					for(Thread thread : data)
+						thread.interrupt();
+					return null;
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public void signal() {
-		waitingThreads.read(new IfReader<Void, ListAccessor<Thread>>() {
-			@Override
-			public Void read(ListAccessor<Thread> data) {
-				data.first().interrupt();
-				return null;
-			}
-		});
+		try {
+			waitingThreads.read(new IfReader<Void, ListAccessor<Thread>>() {
+				@Override
+				public Void read(ListAccessor<Thread> data) {
+					data.first().interrupt();
+					return null;
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 }

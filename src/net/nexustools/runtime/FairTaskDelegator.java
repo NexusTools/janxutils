@@ -16,9 +16,11 @@
 package net.nexustools.runtime;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.logging.Level;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.Prop;
@@ -28,6 +30,7 @@ import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Pair;
 import net.nexustools.utils.log.Logger;
 import net.nexustools.utils.sort.AscLongTypeComparator;
@@ -152,75 +155,83 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	}
 	
 	private void pushLifetime(final int hash, final long time) {
-		lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
-			@Override
-			public void write(MapAccessor<Integer, Long> data) {
-				Logger.gears("Pushing Fairness Lifetime", hash, time, FairTaskDelegator.this);
-				data.put(hash, data.get(hash, 0L) + time);
-			}
-		});
+		try {
+			lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
+				@Override
+				public void write(MapAccessor<Integer, Long> data) {
+					Logger.gears("Pushing Fairness Lifetime", hash, time, FairTaskDelegator.this);
+					data.put(hash, data.get(hash, 0L) + time);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	private void updateLifetimes() {
 		queue.dirtyOperation(new Runnable() {
 			public void run() {
-				lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
-					@Override
-					public void write(MapAccessor<Integer, Long> data) {
-						Logger.gears("Updating Fairness Lifetimes", FairTaskDelegator.this);
-						ArrayList<Integer> processedKeys = new ArrayList();
-						for(Pair<Integer, Long> entry : data) {
-							Logger.gears(entry);
-							processedKeys.add(entry.i);
-							ArrayList<Long> samples = lifetimeSamplesMap.get(entry.i);
-							if(samples == null) {
-								if(entry.v < 1) // Skip creating entry
-									continue;
-
-								samples = new ArrayList();
-								lifetimeSamplesMap.put(entry.i, samples);
+				try {
+					lifetimeMap.write(new Writer<MapAccessor<Integer, Long>>() {
+						@Override
+						public void write(MapAccessor<Integer, Long> data) {
+							Logger.gears("Updating Fairness Lifetimes", FairTaskDelegator.this);
+							ArrayList<Integer> processedKeys = new ArrayList();
+							for(Pair<Integer, Long> entry : data) {
+								Logger.gears(entry);
+								processedKeys.add(entry.i);
+								ArrayList<Long> samples = lifetimeSamplesMap.get(entry.i);
+								if(samples == null) {
+									if(entry.v < 1) // Skip creating entry
+										continue;
+									
+									samples = new ArrayList();
+									lifetimeSamplesMap.put(entry.i, samples);
+								}
+								samples.add(entry.v);
 							}
-							samples.add(entry.v);
-						}
-						data.clear();
-
-						for(int key : lifetimeSamplesMap.keySet()) {
-							ArrayList<Long> samples = lifetimeSamplesMap.get(key);
-							if(!processedKeys.contains(key))
-								samples.add(0L);
-							if(samples.size() >= maxSampleCount) {
-								Logger.gears("Shifting sample", key);
-								samples.remove(0);
-							}
-
-							int sampleCount = 0;
-							long lifetime = (long)Integer.MIN_VALUE;
-							Logger.gears("Reading samples", key, samples.size());
-							for(Long sample : samples) {
-								lifetime += sample;
-								sampleCount++;
-								if(lifetime < 0) {
-									lifetime = Long.MAX_VALUE;
-									sampleCount = maxSampleCount;
-									Logger.gears("Lifetime maxed out...");
-									break;
+							data.clear();
+							
+							for(int key : lifetimeSamplesMap.keySet()) {
+								ArrayList<Long> samples = lifetimeSamplesMap.get(key);
+								if(!processedKeys.contains(key))
+									samples.add(0L);
+								if(samples.size() >= maxSampleCount) {
+									Logger.gears("Shifting sample", key);
+									samples.remove(0);
+								}
+								
+								int sampleCount = 0;
+								long lifetime = (long)Integer.MIN_VALUE;
+								Logger.gears("Reading samples", key, samples.size());
+								for(Long sample : samples) {
+									lifetime += sample;
+									sampleCount++;
+									if(lifetime < 0) {
+										lifetime = Long.MAX_VALUE;
+										sampleCount = maxSampleCount;
+										Logger.gears("Lifetime maxed out...");
+										break;
+									}
+								}
+								
+								if(lifetime > Integer.MIN_VALUE) {
+									if(sampleCount < maxSampleCount) // Average out the samples to try and be fair to older clients
+										lifetime *= maxSampleCount / sampleCount;
+									
+									Logger.gears("Updating total lifetime", key, lifetime);
+									totalLifetimeMap.put(key, lifetime);
+								} else {
+									Logger.gears("Resetting total lifetime", key);
+									lifetimeSamplesMap.remove(key);
+									totalLifetimeMap.remove(key);
 								}
 							}
-
-							if(lifetime > Integer.MIN_VALUE) {
-								if(sampleCount < maxSampleCount) // Average out the samples to try and be fair to older clients
-									lifetime *= maxSampleCount / sampleCount;
-
-								Logger.gears("Updating total lifetime", key, lifetime);
-								totalLifetimeMap.put(key, lifetime);
-							} else {
-								Logger.gears("Resetting total lifetime", key);
-								lifetimeSamplesMap.remove(key);
-								totalLifetimeMap.remove(key);
-							}
 						}
-					}
-				});
+					});
+				} catch (InvocationTargetException ex) {
+					throw NXUtils.unwrapRuntime(ex);
+				}
 			}
 		});
 	}
@@ -243,18 +254,22 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 		F nextTask = queue.pop();
 		if(nextTask == null)
 			return null;
-		scheduled.write(new IfWriter<PropAccessor<Boolean>>() {
-			@Override
-			public boolean test(PropAccessor<Boolean> against) {
-				return !against.get();
-			}
-			@Override
-			public void write(PropAccessor<Boolean> data) {
-				Logger.gears("Scheduling Fairness Update Task", FairTaskDelegator.this);
-				fairnessProcessor.scheduleRepeating(new FairnessUpdate(FairTaskDelegator.this), sampleLength);
-				data.set(true);
-			}
-		});
+		try {
+			scheduled.write(new IfWriter<PropAccessor<Boolean>>() {
+				@Override
+				public boolean test(PropAccessor<Boolean> against) {
+					return !against.get();
+				}
+				@Override
+				public void write(PropAccessor<Boolean> data) {
+					Logger.gears("Scheduling Fairness Update Task", FairTaskDelegator.this);
+					fairnessProcessor.scheduleRepeating(new FairnessUpdate(FairTaskDelegator.this), sampleLength);
+					data.set(true);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 		return wrap(nextTask);
 	}
 	

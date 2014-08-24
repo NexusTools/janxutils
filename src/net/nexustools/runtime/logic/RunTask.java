@@ -30,7 +30,7 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 		return currentQueueFuture.get();
 	}
 	
-	public static boolean isCurrentCancelled() {
+	public static boolean isCurrentCancelled() throws Throwable {
 		return !currentTestable.get().test(null);
 	}
 
@@ -41,7 +41,7 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 	}
 
 	@Override
-	protected void executeImpl(Testable<Void> isRunning) {
+	protected void executeImpl(Testable<Void> isRunning) throws Throwable {
 		currentQueueFuture.set(this);
 		try {
 			if(isRunning.test(null)) {

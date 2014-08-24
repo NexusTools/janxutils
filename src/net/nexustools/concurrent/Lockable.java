@@ -15,6 +15,9 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
@@ -61,7 +64,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @param testable The test to run
 	 * @return Returns true if the test remained true after a full upgrade was completed.
 	 */
-	public <I> boolean upgradeTest(I against, Testable<I> testable) {
+	public <I> boolean upgradeTest(I against, Testable<I> testable) throws Throwable {
 		boolean worked = false;
 		lock();
 		try {
@@ -80,7 +83,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 		return worked;
 	}
 	
-	public boolean tryFastUpgradeTest(Testable<Void> testable) {
+	public boolean tryFastUpgradeTest(Testable<Void> testable) throws Throwable {
 		return upgradeTest(null, testable);
 	}
 	
@@ -115,8 +118,14 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @param data
 	 * @param actor 
 	 */
-	public final void write(A data, BaseWriter<A> actor) {
-		actor.write(data, this);
+	public final void write(A data, BaseWriter<A> actor) throws InvocationTargetException {
+		try {
+			actor.write(data, this);
+		} catch (Throwable ex) {
+			if(ex instanceof InvocationTargetException)
+				throw (InvocationTargetException)ex;
+			throw new InvocationTargetException(ex);
+		}
 	}
 	/**
 	 * Runs a Reader using this Lockable.
@@ -125,8 +134,14 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @param reader
 	 * @return  
 	 */
-	public final <R> R read(A data, BaseReader<R, A> reader) {
-		return reader.read(data, this);
+	public final <R> R read(A data, BaseReader<R, A> reader) throws InvocationTargetException{
+		try {
+			return reader.read(data, this);
+		} catch (Throwable ex) {
+			if(ex instanceof InvocationTargetException)
+				throw (InvocationTargetException)ex;
+			throw new InvocationTargetException(ex);
+		}
 	}
 
 	public void invokeLater(Runnable run) {

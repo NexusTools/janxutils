@@ -15,12 +15,15 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.data.accessor.BaseAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
 import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -41,23 +44,27 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 		if(target instanceof ReadWriteConcurrency)
 			return ((ReadWriteConcurrency)target).lockable();
 		
-		return lockMap.read(new SoftWriteReader<Lockable, MapAccessor<Object, ReadWriteLock>>() {
-			Lockable lock;
-			@Override
-			public boolean test(MapAccessor<Object, ReadWriteLock> against) {
-				return (lock = against.get(target)) == null;
-			}
-			@Override
-			public Lockable soft(MapAccessor<Object, ReadWriteLock> data) {
-				return lock;
-			}
-			@Override
-			public Lockable read(MapAccessor<Object, ReadWriteLock> data) {
-				lock = new ReadWriteLock();
-				data.put(target, (ReadWriteLock)lock);
-				return lock;
-			}
-		});
+		try {
+			return lockMap.read(new SoftWriteReader<Lockable, MapAccessor<Object, ReadWriteLock>>() {
+				Lockable lock;
+				@Override
+				public boolean test(MapAccessor<Object, ReadWriteLock> against) {
+					return (lock = against.get(target)) == null;
+				}
+				@Override
+				public Lockable soft(MapAccessor<Object, ReadWriteLock> data) {
+					return lock;
+				}
+				@Override
+				public Lockable read(MapAccessor<Object, ReadWriteLock> data) {
+					lock = new ReadWriteLock();
+					data.put(target, (ReadWriteLock)lock);
+					return lock;
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public static void setVerbose(boolean b) {

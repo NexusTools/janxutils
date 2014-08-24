@@ -15,9 +15,13 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.VoidReader;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.utils.NXUtils;
 
 /**
  *
@@ -47,33 +51,45 @@ public class Condition {
 		condition.set(false);
 	}
 	public void ifFalse(final Runnable block) {
-		condition.read(new VoidReader<PropAccessor<Boolean>>() {
-			@Override
-			public void readV(PropAccessor<Boolean> data) {
-				if(!data.get())
-					block.run();
-			}
-		});
+		try {
+			condition.read(new VoidReader<PropAccessor<Boolean>>() {
+				@Override
+				public void readV(PropAccessor<Boolean> data) {
+					if(!data.get())
+						block.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	public void ifTrue(final Runnable block) {
-		condition.read(new VoidReader<PropAccessor<Boolean>>() {
-			@Override
-			public void readV(PropAccessor<Boolean> data) {
-				if(data.get())
-					block.run();
-			}
-		});
+		try {
+			condition.read(new VoidReader<PropAccessor<Boolean>>() {
+				@Override
+				public void readV(PropAccessor<Boolean> data) {
+					if(data.get())
+						block.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	public void ifRun(final Runnable trueBlock, final Runnable falseBlock) {
-		condition.read(new VoidReader<PropAccessor<Boolean>>() {
-			@Override
-			public void readV(PropAccessor<Boolean> data) {
-				if(data.get())
-					trueBlock.run();
-				else
-					falseBlock.run();
-			}
-		});
+		try {
+			condition.read(new VoidReader<PropAccessor<Boolean>>() {
+				@Override
+				public void readV(PropAccessor<Boolean> data) {
+					if(data.get())
+						trueBlock.run();
+					else
+						falseBlock.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	public void finish() {
 		condition.set(true);
@@ -81,13 +97,17 @@ public class Condition {
 			thread.interrupt();
 	}
 	public void finish(final Runnable finalize) {
-		condition.write(new Writer<PropAccessor<Boolean>>() {
-			@Override
-			public void write(PropAccessor<Boolean> data) {
-				data.set(true);
-				finalize.run();
-			}
-		});
+		try {
+			condition.write(new Writer<PropAccessor<Boolean>>() {
+				@Override
+				public void write(PropAccessor<Boolean> data) {
+					data.set(true);
+					finalize.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 		for(Thread thread : waitingThreads)
 			thread.interrupt();
 	}

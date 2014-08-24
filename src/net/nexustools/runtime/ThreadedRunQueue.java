@@ -15,13 +15,16 @@
 
 package net.nexustools.runtime;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.runtime.logic.Task;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -105,50 +108,58 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 	}
 	@Override
 	public Task pop(final RunThread runThread) {
-		return tasks.read(new WriteReader<Task, ListAccessor<Task>>() {
-			@Override
-			public Task read(final ListAccessor<Task> tasksData) {
-				return idleThreads.read(new Reader<Task, ListAccessor<RunThread>>() {
-					@Override
-					public Task read(ListAccessor<RunThread> data) {
-						Logger.gears(name, "Reading Future");
-						Task nextFuture = taskDelegator.nextTask(tasksData);
-						if(nextFuture != null) {
-							idleThreads.remove(runThread);
-							Logger.gears(name, "Found Future");
-							return nextFuture;
+		try {
+			return tasks.read(new WriteReader<Task, ListAccessor<Task>>() {
+				@Override
+				public Task read(final ListAccessor<Task> tasksData) throws InvocationTargetException {
+					return idleThreads.read(new Reader<Task, ListAccessor<RunThread>>() {
+						@Override
+						public Task read(ListAccessor<RunThread> data) {
+							Logger.gears(name, "Reading Future");
+							Task nextFuture = taskDelegator.nextTask(tasksData);
+							if(nextFuture != null) {
+								idleThreads.remove(runThread);
+								Logger.gears(name, "Found Future");
+								return nextFuture;
+							}
+							
+							idleThreads.unique(runThread);
+							Logger.gears(name, "No New Futures");
+							return null;
 						}
-						
-						idleThreads.unique(runThread);
-						Logger.gears(name, "No New Futures");
-						return null;
-					}
-				});
-			}
-		});
+					});
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	@Override
 	public Task push(final Task future) {
-		tasks.write(new Writer<ListAccessor<Task>>() {
-			@Override
-			public void write(final ListAccessor<Task> tasksData) {
-				idleThreads.read(new Reader<Boolean, ListAccessor<RunThread>>() {
-					@Override
-					public Boolean read(ListAccessor<RunThread> data) {
-						tasksData.push(future);
-						if(data.isTrue()) {
-							Logger.gears("Notifying Idle RunThread");
-							data.pop().notifyTasksAvailable();
-							return true;
+		try {
+			tasks.write(new Writer<ListAccessor<Task>>() {
+				@Override
+				public void write(final ListAccessor<Task> tasksData) throws InvocationTargetException {
+					idleThreads.read(new Reader<Boolean, ListAccessor<RunThread>>() {
+						@Override
+						public Boolean read(ListAccessor<RunThread> data) {
+							tasksData.push(future);
+							if(data.isTrue()) {
+								Logger.gears("Notifying Idle RunThread");
+								data.pop().notifyTasksAvailable();
+								return true;
+							}
+							
+							Logger.gears("No idle RunThreads to Notify");
+							return false;
 						}
-					
-						Logger.gears("No idle RunThreads to Notify");
-						return false;
-					}
-				});
-			}
-		});
+					});
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 		return future;
 	}
 

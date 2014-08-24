@@ -23,6 +23,11 @@ import java.io.OutputStream;
  * @author katelyn
  */
 public abstract class EfficientOutputStream extends OutputStream {
+	
+	public static final EfficientOutputStream Void = new EfficientOutputStream() {
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException {}
+	};
 
 	@Override
 	public void write(int b) throws IOException {

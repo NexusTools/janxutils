@@ -15,9 +15,13 @@
 
 package net.nexustools.runtime.logic;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.logic.SoftUpdateWriter;
 import net.nexustools.concurrent.logic.SoftWriter;
+import net.nexustools.utils.NXUtils;
 
 /**
  *
@@ -27,22 +31,26 @@ public class ForwardingRunTask<R extends Runnable> extends TrackedTask<R> {
 
 	public ForwardingRunTask(final R runnable, State state) {
 		super(runnable, state);
-		write(new SoftWriter<MapAccessor<Runnable, TrackedTask>>() {
-			TrackedTask found;
-			@Override
-			public boolean test(MapAccessor<Runnable, TrackedTask> against) {
-				found = against.get(runnable);
-				return found == null || found.isDone();
-			}
-			@Override
-			public void write(MapAccessor<Runnable, TrackedTask> data) {
-				data.put(runnable, ForwardingRunTask.this);
-			}
-			@Override
-			public void soft(MapAccessor<Runnable, TrackedTask> data) {
-				sCancel();
-			}
-		});
+		try {
+			write(new SoftWriter<MapAccessor<Runnable, TrackedTask>>() {
+				TrackedTask found;
+				@Override
+				public boolean test(MapAccessor<Runnable, TrackedTask> against) {
+					found = against.get(runnable);
+					return found == null || found.isDone();
+				}
+				@Override
+				public void write(MapAccessor<Runnable, TrackedTask> data) {
+					data.put(runnable, ForwardingRunTask.this);
+				}
+				@Override
+				public void soft(MapAccessor<Runnable, TrackedTask> data) {
+					sCancel();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	@Override

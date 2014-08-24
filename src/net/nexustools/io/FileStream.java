@@ -18,17 +18,20 @@ package net.nexustools.io;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.Creator;
-import net.nexustools.utils.WeakArrayList;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -38,34 +41,42 @@ import net.nexustools.utils.log.Logger;
  */
 public class FileStream extends Stream {
 	
-	private static final WeakArrayList<FileStream> deleteOnExit = new WeakArrayList();
 	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
-	private RandomAccessFile randomAccessFile;
-	private final boolean writable;
+	private final Prop<RandomAccessFile> randomAccessFile = new Prop();
 	private final File internal;
 	
-	public FileStream(String path, boolean writable) throws FileNotFoundException, IOException {
+	protected FileStream(String path) throws FileNotFoundException, IOException {
 		this.internal = new File(path);
-		this.writable = writable;
-		//ensureOpen();
 	}
 	
-	public FileStream(String path) throws FileNotFoundException, IOException {
-		this(path, false);
+	protected final RandomAccessFile ensureOpen() throws FileNotFoundException, IOException {
+		return ensureOpen(false);
 	}
-	
-	protected final void ensureOpen() throws FileNotFoundException, IOException {
-		if(randomAccessFile == null) {
-			if(writable) {
-				String path = internal.getAbsolutePath();
-				String parentPath = path.substring(0, path.lastIndexOf("/"));
-				Logger.debug(parentPath);
-				File parentFile = new File(parentPath);
-				if(!parentFile.exists() && !parentFile.mkdirs())
-					throw new IOException(toURL() + ": Unable to create directory structure");
-			}
-			randomAccessFile = new RandomAccessFile(internal, writable ? "rw" : "r");
-			randomAccessFile.getChannel().lock(0L, Long.MAX_VALUE, !writable);
+	protected final RandomAccessFile ensureOpen(final boolean writable) throws IOException {
+		try {
+			return randomAccessFile.read(new SoftWriteReader<RandomAccessFile, PropAccessor<RandomAccessFile>>() {
+				@Override
+				public RandomAccessFile soft(PropAccessor<RandomAccessFile> data) {
+					return data.get();
+				}
+				@Override
+				public RandomAccessFile read(PropAccessor<RandomAccessFile> data) throws IOException {
+					if(writable) {
+						String path = internal.getAbsolutePath();
+						String parentPath = path.substring(0, path.lastIndexOf("/"));
+						Logger.debug(parentPath);
+						File parentFile = new File(parentPath);
+						if(!parentFile.exists() && !parentFile.mkdirs())
+							throw new IOException(toURL() + ": Unable to create directory structure");
+					}
+					RandomAccessFile randomFile;
+					randomAccessFile.set(randomFile = new RandomAccessFile(internal, writable ? "rw" : "r"));
+					randomAccessFile.get().getChannel().lock(0L, Long.MAX_VALUE, !writable);
+					return randomFile;
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapIOException(ex);
 		}
 	}
 	
@@ -79,126 +90,37 @@ public class FileStream extends Stream {
 		return internal.getAbsolutePath();
 	}
 	
-	public static Stream getStream(String filePath) throws IOException {
-		return getStream(filePath, false);
-	}
-	
-	public static synchronized Stream getStream(String filePath, boolean writeable) throws FileNotFoundException, IOException {
+	public static synchronized Stream getStream(String filePath) throws FileNotFoundException, IOException {
 		FileStream fileStream;
-		if(writeable)
-			return new FileStream(filePath, true);
-		else {
-			fileStream = instanceCache.get(filePath);
-			if(fileStream == null) {
-				Logger.gears("Creating FileStream: " + filePath);
-				fileStream = new FileStream(filePath);
-				instanceCache.put(filePath, fileStream);
-			}
+		fileStream = instanceCache.get(filePath);
+		if(fileStream == null) {
+			Logger.gears("Creating FileStream: " + filePath);
+			fileStream = new FileStream(filePath);
+			instanceCache.put(filePath, fileStream);
 		}
 		
-		return fileStream.createSubSectorStream();
-	}
-
-	@Override
-	public void seek(long pos) throws IOException {
-		ensureOpen();
-		randomAccessFile.seek(pos);
-	}
-
-	@Override
-	public long pos() throws IOException {
-		ensureOpen();
-		return randomAccessFile.getFilePointer();
+		return fileStream;
 	}
 
 	@Override
 	public long size() throws IOException {
-		ensureOpen();
-		return randomAccessFile.length();
-	}
-
-	@Override
-	public int read(byte[] buffer, int off, int len) throws IOException {
-		ensureOpen();
-		return randomAccessFile.read(buffer, off, len);
-	}
-
-	@Override
-	public void write(byte[] buffer, int off, int len) throws IOException {
-		ensureOpen();
-		randomAccessFile.write(buffer, off, len);
+		return ensureOpen().length();
 	}
 
 	@Override
 	public boolean canWrite() {
-		return writable;
+		return internal.canWrite();
 	}
 
-	@Override
-	public void flush() throws IOException {}
-
-	private boolean markedForDeletion = false;
-	private static Thread deleteOnExitThread;
 	public void markDeleteOnExit() {
-		if(!writable)
-			throw new RuntimeException("It makes no sense to mark a read-only file as deleteOnExit...");
-		
-		if(markedForDeletion)
-			return;
-		
-		markedForDeletion = true;
-		deleteOnExit.add(this);
-		if(deleteOnExitThread == null) {
-			deleteOnExitThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					if(deleteOnExit.isEmpty())
-						return;
-					
-					Logger.gears("Cleaning remaining deleteOnExit FileStreams...");
-					for(FileStream fStream : deleteOnExit)
-						try {
-							fStream.deleteAsMarked();
-						} catch (Throwable ex) {
-							ex.printStackTrace(System.err);
-						}
-				}
-				
-			}, "deleteOnExitHandler");
-			Runtime.getRuntime().addShutdownHook(deleteOnExitThread);
-		}
-	}
-	
-	@Override
-	protected void finalize() throws Throwable {
-		try {
-			if(markedForDeletion) {
-				deleteAsMarked();
-				deleteOnExit.remove(this);
-			}
-		} catch (Throwable t) {
-			t.printStackTrace(System.err);
-		} finally {
-			super.finalize();
-		}
+		internal.deleteOnExit();
 	}
 	
 	public final boolean isOpen() {
-		return randomAccessFile != null;
+		return randomAccessFile.isset();
 	}
 	
-	public final void close() throws IOException {
-		if(randomAccessFile != null) {
-			randomAccessFile.close();
-			randomAccessFile = null;
-		}
-	}
-
-	private void deleteAsMarked() throws IOException {
-		close();
-		internal.delete();
-	}
+	public final void close() throws IOException {}
 	
 	@Override
 	public boolean exists() {
@@ -248,50 +170,55 @@ public class FileStream extends Stream {
 	static final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
 	@Override
 	public String mimeType() {
-		String type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
-			@Override
-			public String soft(PropAccessor<Creator<String, File>> data) {
-				return data.get().create(internal);
-			}
-			@Override
-			public String read(PropAccessor<Creator<String, File>> data) {
-				ClassLoader cl = ClassLoader.getSystemClassLoader();
-				try {
-					final Class<?> pathClass = cl.loadClass("java.nio.file.Path");
-					final Class<?> pathsClass = cl.loadClass("java.nio.file.Paths");
-					final Class<?> filesClass = cl.loadClass("java.nio.file.Files");
-					
-					data.set(new Creator<String, File>() {
-						final Method pathsGet = pathsClass.getMethod("get", URI.class);
-						final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
-						{
-							create(internal); // Test it once
-							Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
-						}
-						public String create(File using) {
-							try {
-								return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
-							} catch (IllegalAccessException ex) {
-								return null;
-							} catch (IllegalArgumentException ex) {
-								return null;
-							} catch (InvocationTargetException ex) {
+		String type = null;
+		try {
+			type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
+				@Override
+				public String soft(PropAccessor<Creator<String, File>> data) {
+					return data.get().create(internal);
+				}
+				@Override
+				public String read(PropAccessor<Creator<String, File>> data) {
+					ClassLoader cl = ClassLoader.getSystemClassLoader();
+					try {
+						final Class<?> pathClass = cl.loadClass("java.nio.file.Path");
+						final Class<?> pathsClass = cl.loadClass("java.nio.file.Paths");
+						final Class<?> filesClass = cl.loadClass("java.nio.file.Files");
+						
+						data.set(new Creator<String, File>() {
+							final Method pathsGet = pathsClass.getMethod("get", URI.class);
+							final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
+							{
+								create(internal); // Test it once
+								Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
+							}
+							public synchronized String create(File using) {
+								try {
+									return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
+								} catch (IllegalAccessException ex) {
+									return null;
+								} catch (IllegalArgumentException ex) {
+									return null;
+								} catch (InvocationTargetException ex) {
+									return null;
+								}
+							}
+						});
+					} catch(Throwable t) {
+						data.set(new Creator<String, File>() {
+							public String create(File using) {
 								return null;
 							}
-						}
-					});
-				} catch(Throwable t) {
-					data.set(new Creator<String, File>() {
-						public String create(File using) {
-							return null;
-						}
-					});
-					Logger.exception(Logger.Level.Debug, t);
+						});
+						Logger.exception(Logger.Level.Debug, t);
+					}
+					
+					return data.get().create(internal);
 				}
-				
-				return data.get().create(internal);
-			}
-		});
+			});
+		} catch (InvocationTargetException ex) {
+			Logger.exception(Logger.Level.Gears, ex);
+		}
 		if(type != null)
 			return type;
 		
@@ -311,6 +238,37 @@ public class FileStream extends Stream {
 	@Override
 	public boolean canRead() {
 		return internal.canRead();
+	}
+
+	@Override
+	public InputStream createInputStream(long p) throws IOException {
+		return new FileInputStream(ensureOpen()) {
+			boolean open = true;
+			@Override
+			public void close() throws IOException {
+				if(open)
+					open = false;
+			}
+			@Override
+			public synchronized int available() throws IOException {
+				if(!open)
+					throw new IOException("Closed");
+				
+				return super.available();
+			}
+			@Override
+			public synchronized int read(byte[] b, int off, int len) throws IOException {
+				if(!open)
+					throw new IOException("Closed");
+				
+				return super.read(b, off, len);
+			}
+		};
+	}
+
+	@Override
+	public OutputStream createOutputStream(long pos) throws IOException {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 	
 }

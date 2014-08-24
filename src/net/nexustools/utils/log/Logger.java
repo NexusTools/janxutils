@@ -16,6 +16,7 @@
 package net.nexustools.utils.log;
 
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -25,6 +26,7 @@ import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
@@ -93,12 +95,16 @@ public class Logger extends Thread {
 	
 	public static void log(final Message message) {
 		if(message.level.code >= minLevel.code) {
-			logger.messageQueue.write(new Writer<ListAccessor<Message>>() {
-				@Override
-				public void write(ListAccessor<Message> data) {
-					data.push(message);
-				}
-			});
+			try {
+				logger.messageQueue.write(new Writer<ListAccessor<Message>>() {
+					@Override
+					public void write(ListAccessor<Message> data) {
+						data.push(message);
+					}
+				});
+			} catch (InvocationTargetException ex) {
+				throw NXUtils.unwrapRuntime(ex);
+			}
 			logger.interrupt();
 		}
 	}

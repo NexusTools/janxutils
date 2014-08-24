@@ -13,21 +13,17 @@
  * 
  */
 
-package net.nexustools.concurrent;
+package net.nexustools.io;
 
-import net.nexustools.data.accessor.BaseAccessor;
-import net.nexustools.concurrent.logic.BaseReader;
-import net.nexustools.concurrent.logic.BaseWriter;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  *
  * @author katelyn
  */
-public interface ReadWriteConcurrency<A extends BaseAccessor> {
+public interface StreamReader<I extends InputStream> {
 	
-	public A directAccessor();
-	public void write(BaseWriter<A> actor) throws Throwable;
-	public <R> R read(BaseReader<R, A> reader) throws Throwable;
-	public Lockable<A> lockable();
+	public void write(I in) throws IOException;
 	
 }

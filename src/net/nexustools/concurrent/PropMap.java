@@ -15,6 +15,7 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.concurrent.logic.Reader;
@@ -24,6 +25,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Pair;
 
 /**
@@ -136,21 +140,29 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 	}
 
 	public boolean isTrue() {
-		return read(new Reader<Boolean, MapAccessor<K, V>>() {
-			@Override
-			public Boolean read(MapAccessor<K, V> data) {
-				return data.isTrue();
-			}
-		});
+		try {
+			return read(new Reader<Boolean, MapAccessor<K, V>>() {
+				@Override
+				public Boolean read(MapAccessor<K, V> data) {
+					return data.isTrue();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void clear() {
-		write(new Writer<MapAccessor<K, V>>() {
-			@Override
-			public void write(MapAccessor<K, V> data) {
-				data.clear();
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<K, V>>() {
+				@Override
+				public void write(MapAccessor<K, V> data) {
+					data.clear();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public Iterator<Pair<K, V>> iterator() {
@@ -170,103 +182,147 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 	}
 	
 	public V get(final K key) {
-		return read(new Reader<V, MapAccessor<K, V>>() {
-			@Override
-			public V read(MapAccessor<K, V> data) {
-				return data.get(key);
-			}
-		});
+		try {
+			return read(new Reader<V, MapAccessor<K, V>>() {
+				@Override
+				public V read(MapAccessor<K, V> data) {
+					return data.get(key);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public V get(final K key, final V def) {
-		return read(new Reader<V, MapAccessor<K, V>>() {
-			@Override
-			public V read(MapAccessor<K, V> data) {
-				return data.get(key, def);
-			}
-		});
+		try {
+			return read(new Reader<V, MapAccessor<K, V>>() {
+				@Override
+				public V read(MapAccessor<K, V> data) {
+					return data.get(key, def);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void putAll(final Iterable<Pair<K, V>> iterable) {
-		write(new Writer<MapAccessor<K, V>>() {
-			@Override
-			public void write(MapAccessor<K, V> data) {
-				data.putAll(iterable);
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<K, V>>() {
+				@Override
+				public void write(MapAccessor<K, V> data) {
+					data.putAll(iterable);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void putAll(final Map<K, V> map) {
-		write(new Writer<MapAccessor<K, V>>() {
-			@Override
-			public void write(MapAccessor<K, V> data) {
-				data.putAll(map);
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<K, V>>() {
+				@Override
+				public void write(MapAccessor<K, V> data) {
+					data.putAll(map);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public V take(final K key) {
-		return read(new WriteReader<V, MapAccessor<K, V>>() {
-			@Override
-			public V read(MapAccessor<K, V> data) {
-				return data.take(key);
-			}
-		});
+		try {
+			return read(new WriteReader<V, MapAccessor<K, V>>() {
+				@Override
+				public V read(MapAccessor<K, V> data) {
+					return data.take(key);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void put(final K key, final V value) {
-		write(new Writer<MapAccessor<K, V>>() {
-			@Override
-			public void write(MapAccessor<K, V> data) {
-				data.put(key, value);
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<K, V>>() {
+				@Override
+				public void write(MapAccessor<K, V> data) {
+					data.put(key, value);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public void remove(final K key) {
-		write(new Writer<MapAccessor<K, V>>() {
-			@Override
-			public void write(MapAccessor<K, V> data) {
-				data.remove(key);
-			}
-		});
+		try {
+			write(new Writer<MapAccessor<K, V>>() {
+				@Override
+				public void write(MapAccessor<K, V> data) {
+					data.remove(key);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public boolean has(final K key) {
-		return read(new Reader<Boolean, MapAccessor<K, V>>() {
-			@Override
-			public Boolean read(MapAccessor<K, V> data) {
-				return data.has(key);
-			}
-		});
+		try {
+			return read(new Reader<Boolean, MapAccessor<K, V>>() {
+				@Override
+				public Boolean read(MapAccessor<K, V> data) {
+					return data.has(key);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public Map<K, V> copy() {
-		return read(new Reader<Map<K, V>, MapAccessor<K, V>>() {
-			@Override
-			public Map<K, V> read(MapAccessor<K, V> data) {
-				return data.copy();
-			}
-		});
+		try {
+			return read(new Reader<Map<K, V>, MapAccessor<K, V>>() {
+				@Override
+				public Map<K, V> read(MapAccessor<K, V> data) {
+					return data.copy();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	
 	public V replace(final K key, final V value) {
-		return read(new WriteReader<V, MapAccessor<K, V>>() {
-			@Override
-			public V read(MapAccessor<K, V> data) {
-				return data.replace(key, value);
-			}
-		});
+		try {
+			return read(new WriteReader<V, MapAccessor<K, V>>() {
+				@Override
+				public V read(MapAccessor<K, V> data) {
+					return data.replace(key, value);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public Map<K, V> take() {
-		return read(new WriteReader<Map<K, V>, MapAccessor<K, V>>() {
-			@Override
-			public Map<K, V> read(MapAccessor<K, V> data) {
-				return data.take();
-			}
-		});
+		try {
+			return read(new WriteReader<Map<K, V>, MapAccessor<K, V>>() {
+				@Override
+				public Map<K, V> read(MapAccessor<K, V> data) {
+					return data.take();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 }

@@ -26,6 +26,6 @@ import net.nexustools.concurrent.Lockable;
  */
 public interface BaseReader<R, A extends BaseAccessor> {
 	
-	public R read(A data, Lockable<A> lock);
+	public R read(A data, Lockable<A> lock) throws Throwable;
 	
 }

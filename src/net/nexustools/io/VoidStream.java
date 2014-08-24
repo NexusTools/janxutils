@@ -18,24 +18,25 @@ package net.nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 /**
  *
  * @author katelyn
  */
-public final class NullStream extends Stream {
+public final class VoidStream extends Stream {
 	
-	private static final NullStream instance = new NullStream();
+	private static final VoidStream instance = new VoidStream();
 	
-	public static final NullStream instance() {
+	public static final VoidStream instance() {
 		return instance;
 	}
 	
-	protected NullStream() {}
+	protected VoidStream() {}
 
 	@Override
 	public String scheme() {
-		return "null";
+		return "void";
 	}
 
 	@Override
@@ -60,17 +61,17 @@ public final class NullStream extends Stream {
 	
 	@Override
 	public String toURL() {
-		return "null:";
+		return "void:";
 	}
 
 	@Override
 	public InputStream createInputStream(long pos) throws IOException {
-		return EfficientInputStream.Null;
+		throw new IOException("VoidStream cannot be read from.");
 	}
 
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
-		throw new IOException("NullStream cannot be read from.");
+		return EfficientOutputStream.Void;
 	}
 	
 }

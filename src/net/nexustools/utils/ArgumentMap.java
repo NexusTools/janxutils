@@ -15,9 +15,12 @@
 
 package net.nexustools.utils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -77,26 +80,34 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 	}
 	
 	public String getArgumentValue(String key) {
+		return getArgumentValue(key, null);
+	}
+	
+	public String getArgumentValue(String key, String def) {
 		ArrayList<String> values = get(key);
 		if(values == null || values.size() < 1)
-			return null;
+			return def;
 		
 		return values.get(0);
+	}
+	
+	public String getArgumentValue(Collection<String> keys) {
+		return getArgumentValue(keys, null);
+	}
+	
+	public String getArgumentValue(Collection<String> keys, String def) {
+		for(String key : keys) {
+			String arg = getArgumentValue(key);
+			if(arg != null)
+				return arg;
+		}
+		return def;
 	}
 	
 	public void putArgumentValue(String key, String value) {
 		ArrayList<String> values = new ArrayList();
 		values.add(value);
 		put(key, values);
-	}
-	
-	public String getArgumentValue(Collection<String> keys) {
-		for(String key : keys) {
-			String arg = getArgumentValue(key);
-			if(arg != null)
-				return arg;
-		}
-		return null;
 	}
 	
 	protected final void process(String[] args) {
@@ -116,6 +127,42 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 		}
 		if(key != null)
 			init(key);
+	}
+
+	public void readUrl(String arguments) throws UnsupportedEncodingException {
+		if(arguments.length() < 1)
+			return;
+		
+		int nextPos;
+		int lastPos = 0;
+		do {
+			String chunk;
+			nextPos = arguments.indexOf("&", lastPos);
+			System.err.println(arguments.substring(lastPos) + " " + nextPos);
+			if(nextPos > -1)
+				chunk = arguments.substring(lastPos, (lastPos = nextPos+1)-1);
+			else
+				chunk = arguments.substring(lastPos);
+
+			String key, val;
+			int equalPos = chunk.indexOf("=");
+			Logger.info(chunk, equalPos);
+			if(equalPos > -1) {
+				key = chunk.substring(0, equalPos);
+				val = chunk.substring(equalPos+1);
+			} else {
+				key = chunk.substring(0);
+				val = null;
+			}
+			Logger.info(key, val);
+			key = URLDecoder.decode(key, "UTF-8");
+			if(val != null)
+				add(key, URLDecoder.decode(val, "UTF-8"));
+			else
+				init(key);
+		} while(nextPos > 0);
+		
+		System.err.println(this);
 	}
 	
 }

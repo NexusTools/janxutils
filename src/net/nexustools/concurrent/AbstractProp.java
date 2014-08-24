@@ -15,13 +15,17 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.concurrent.logic.BaseWriter;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.UpdateReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 
 /**
@@ -67,87 +71,119 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 	}
 
 	public boolean isset() {
-		return read(new Reader<Boolean, PropAccessor<T>>() {
-			@Override
-			public Boolean read(PropAccessor<T> data) {
-				return data.isset();
-			}
-		});
+		try {
+			return read(new Reader<Boolean, PropAccessor<T>>() {
+				@Override
+				public Boolean read(PropAccessor<T> data) {
+					return data.isset();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void clear() {
-		write(new Writer<PropAccessor<T>>() {
-			@Override
-			public void write(PropAccessor<T> data) {
-				data.clear();
-			}
-		});
+		try {
+			write(new Writer<PropAccessor<T>>() {
+				@Override
+				public void write(PropAccessor<T> data) {
+					data.clear();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public T get() {
-		return read(new Reader<T, PropAccessor<T>>() {
-			@Override
-			public T read(PropAccessor<T> data) {
-				return data.get();
-			}
-		});
+		try {
+			return read(new Reader<T, PropAccessor<T>>() {
+				@Override
+				public T read(PropAccessor<T> data) {
+					return data.get();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void set(final T value) {
-		write(new Writer<PropAccessor<T>>() {
-			@Override
-			public void write(PropAccessor<T> data) {
-				data.set(value);
-			}
-		});
+		try {
+			write(new Writer<PropAccessor<T>>() {
+				@Override
+				public void write(PropAccessor<T> data) {
+					data.set(value);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public boolean isTrue() {
-		return read(new Reader<Boolean, PropAccessor<T>>() {
-			@Override
-			public Boolean read(PropAccessor<T> data) {
-				return data.isTrue();
-			}
-		});
+		try {
+			return read(new Reader<Boolean, PropAccessor<T>>() {
+				@Override
+				public Boolean read(PropAccessor<T> data) {
+					return data.isTrue();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	@Override
 	public abstract PropAccessor<T> directAccessor();
 
 	public T take() {
-		return read(new WriteReader<T, PropAccessor<T>>() {
-			@Override
-			public T read(PropAccessor<T> data) {
-				return data.take();
-			}
-		});
+		try {
+			return read(new WriteReader<T, PropAccessor<T>>() {
+				@Override
+				public T read(PropAccessor<T> data) {
+					return data.take();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public boolean update(final T newValue) {
-		return read(new UpdateReader<PropAccessor<T>>() {
-			@Override
-			public void update(PropAccessor<T> data) {
-				data.set(newValue);
-			}
-			@Override
-			public boolean needUpdate(PropAccessor<T> against) {
-				return !newValue.equals(against);
-			}
-		});
+		try {
+			return read(new UpdateReader<PropAccessor<T>>() {
+				@Override
+				public void update(PropAccessor<T> data) {
+					data.set(newValue);
+				}
+				@Override
+				public boolean needUpdate(PropAccessor<T> against) {
+					return !newValue.equals(against);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 
 	public void set(final T value, final Testable<T> test) {
-		write(new BaseWriter<PropAccessor<T>>() {
-			public void write(PropAccessor<T> data, Lockable lock) {
-				lock.lock();
-				try {
-					if(lock.tryFastUpgradeTest(test))
-						data.set(value);
-				} finally {
-					lock.unlock();
+		try {
+			write(new BaseWriter<PropAccessor<T>>() {
+				public void write(PropAccessor<T> data, Lockable lock) throws Throwable {
+					lock.lock();
+					try {
+						if(lock.tryFastUpgradeTest(test))
+							data.set(value);
+					} finally {
+						lock.unlock();
+					}
 				}
-			}
-		});
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 }

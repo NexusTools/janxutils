@@ -14,6 +14,8 @@
  */
 package net.nexustools.runtime;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.logic.IfReader;
@@ -21,6 +23,7 @@ import net.nexustools.concurrent.logic.SoftWriter;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
 import net.nexustools.runtime.logic.Task;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -70,38 +73,46 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 		@Override
 		public void run() {
 			Logger.gears("Entered");
-			// Make the queue this thread was created for current.
-			queue.read(new IfReader<Void, PropAccessor<Q>>() {
-				@Override
-				public Void read(PropAccessor<Q> data) {
-					data.get().makeCurrent();
-					return null;
-				}
-			});
+			try {
+				// Make the queue this thread was created for current.
+				queue.read(new IfReader<Void, PropAccessor<Q>>() {
+					@Override
+					public Void read(PropAccessor<Q> data) {
+						data.get().makeCurrent();
+						return null;
+					}
+				});
+			} catch (InvocationTargetException ex) {
+				throw NXUtils.unwrapRuntime(ex);
+			}
 			killNext = false;
 			do {
 				Logger.gears("Retreiving Task");
-				if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
-					@Override
-					public Boolean read(PropAccessor<NativeRunThread> data) {
-						future = queue.read(new IfReader<Task, PropAccessor<Q>>() {
-							@Override
-							public Task read(PropAccessor<Q> data) {
-								cQueue = data.get();
-								if(cQueue == null)
-									return null;
-								return cQueue.pop(RunThread.this);
+				try {
+					if(thread.read(new WriteReader<Boolean, PropAccessor<NativeRunThread>>() {
+						@Override
+						public Boolean read(PropAccessor<NativeRunThread> data) throws InvocationTargetException {
+							future = queue.read(new IfReader<Task, PropAccessor<Q>>() {
+								@Override
+								public Task read(PropAccessor<Q> data) {
+									cQueue = data.get();
+									if(cQueue == null)
+										return null;
+									return cQueue.pop(RunThread.this);
+								}
+							});
+							if(future == null && killNext) {
+								Logger.debug(name, "Quit");
+								data.clear();
+								return true;
 							}
-						});
-						if(future == null && killNext) {
-							Logger.debug(name, "Quit");
-							data.clear();
-							return true;
+							return false;
 						}
-						return false;
-					}
-				}))
-					return;
+					}))
+						return;
+				} catch (InvocationTargetException ex) {
+					throw NXUtils.unwrapRuntime(ex);
+				}
 				try {
 					Logger.gears(future);
 					
@@ -145,16 +156,20 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 
 	public void notifyTasksAvailable() {
 		Logger.gears("Notifying Tasks Available", this);
-		thread.write(new SoftWriter<PropAccessor<NativeRunThread>>() {
-			@Override
-			public void write(PropAccessor<NativeRunThread> data) {
-				data.set(new NativeRunThread());
-			}
-			@Override
-			public void soft(PropAccessor<NativeRunThread> data) {
-				data.get().interrupt();
-			}
-		});
+		try {
+			thread.write(new SoftWriter<PropAccessor<NativeRunThread>>() {
+				@Override
+				public void write(PropAccessor<NativeRunThread> data) {
+					data.set(new NativeRunThread());
+				}
+				@Override
+				public void soft(PropAccessor<NativeRunThread> data) {
+					data.get().interrupt();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
 	}
 	
 	public void connect(Q q) {

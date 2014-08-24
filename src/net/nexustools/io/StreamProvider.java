@@ -42,6 +42,6 @@ public interface StreamProvider {
 	 * @return
 	 * @throws java.io.IOException
 	 */
-	public Stream open(String path, URI raw, boolean supportWriting) throws IOException;
+	public Stream open(String path, URI raw) throws IOException;
 	
 }

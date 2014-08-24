@@ -15,8 +15,8 @@
 
 package net.nexustools.concurrent;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.MapAccessor;
-import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.utils.ClassUtils;
 import net.nexustools.utils.Creator;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Pair;
 
 /**
@@ -38,22 +39,26 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 		public V get(final K key) {
 			V val = accessor.get(key);
 			if(val == null)
-				val = lock.read(accessor, new SoftWriteReader<V, MapAccessor<K, V>>() {
-					@Override
-					public boolean test(MapAccessor<K, V> against) {
-						return !against.has(key);
-					}
-					@Override
-					public V soft(MapAccessor<K, V> data) {
-						return data.get(key);
-					}
-					@Override
-					public V read(MapAccessor<K, V> data) {
-						V val = creator.create(key);
-						data.put(key, val);
-						return val;
-					}
-				});
+				try {
+					val = lock.read(accessor, new SoftWriteReader<V, MapAccessor<K, V>>() {
+						@Override
+						public boolean test(MapAccessor<K, V> against) {
+							return !against.has(key);
+						}
+						@Override
+						public V soft(MapAccessor<K, V> data) {
+							return data.get(key);
+						}
+						@Override
+						public V read(MapAccessor<K, V> data) {
+							V val = creator.create(key);
+							data.put(key, val);
+							return val;
+						}
+					});
+				} catch (InvocationTargetException ex) {
+					throw NXUtils.unwrapRuntime(ex);
+				}
 			return val;
 		}
 		public V get(K key, V def) {

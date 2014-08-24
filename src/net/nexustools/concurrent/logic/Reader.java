@@ -25,7 +25,7 @@ import net.nexustools.concurrent.Lockable;
 public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R, A> {
 
 	@Override
-	public final R read(A data, Lockable<A> lock) {
+	public final R read(A data, Lockable<A> lock) throws Throwable {
 		try {
 			lock.lock();
 			return read(data);
@@ -34,7 +34,7 @@ public abstract class Reader<R, A extends BaseAccessor> implements BaseReader<R,
 		}
 	}
 	
-	public abstract R read(A data);
+	public abstract R read(A data) throws Throwable;
 	
 	
 	

@@ -15,7 +15,10 @@
 
 package net.nexustools.concurrent;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 
 /**
@@ -49,8 +52,12 @@ public class Prop<T> extends AbstractProp<T> {
 			}
 		}
 		public void set(T val, Testable<T> test) {
-			if(test.test(val))
-				value = val;
+			try {
+				if(test.test(val))
+					value = val;
+			} catch (Throwable ex) {
+				throw NXUtils.unwrapRuntime(ex);
+			}
 		}
 		public boolean update(final T val) {
 			if(value != val) {

@@ -16,6 +16,8 @@
 package net.nexustools.io;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 
 /**
@@ -125,16 +127,6 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public void seek(long pos) throws IOException {
-		stream.seek(Math.min(pos, size()) + range.start());
-	}
-
-	@Override
-	public long pos() {
-		return pos;
-	}
-
-	@Override
 	public long size() throws IOException {
 		return Math.min(stream.size() - range.start(), range.size());
 	}
@@ -144,20 +136,6 @@ public class SubStream extends Stream {
 		return stream.mimeType();
 	}
 
-	@Override
-	public int read(byte[] buffer, int offset, int len) throws IOException {
-		stream.seek(pos);
-		len = stream.read(buffer, offset, len);
-		pos = stream.pos();
-		return len;
-	}
-
-	@Override
-	public void write(byte[] buffer, int offset, int len) throws IOException {
-		stream.seek(pos);
-		stream.write(buffer, offset, (int) (Math.min(range.end(), offset+len)-offset));
-		pos = stream.pos();
-	}
 
 	@Override
 	public boolean canWrite() {
@@ -167,18 +145,6 @@ public class SubStream extends Stream {
 	@Override
 	public boolean canRead() {
 		return stream.canRead();
-	}
-
-	@Override
-	public void flush() throws IOException {
-		stream.flush();
-	}
-
-	@Override
-	public SubStream createSubSectorStream(Range range) {
-		if(!range.isSubRange())
-			return stream.createSubSectorStream(range);
-		return super.createSubSectorStream(range); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
@@ -233,12 +199,12 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public boolean isHidden() {
+	public boolean isHidden() throws IOException {
 		return stream.isHidden();
 	}
 
 	@Override
-	public long lastModified() {
+	public long lastModified() throws IOException {
 		return stream.lastModified();
 	}
 
@@ -253,6 +219,20 @@ public class SubStream extends Stream {
 
 	public Range getRange() {
 		return range;
+	}
+
+	@Override
+	public InputStream createInputStream(long pos) throws IOException {
+		if(range.isSubRange())
+			throw new UnsupportedOperationException();
+		return stream.createInputStream(pos);
+	}
+
+	@Override
+	public OutputStream createOutputStream(long pos) throws IOException {
+		if(range.isSubRange())
+			throw new UnsupportedOperationException();
+		return stream.createOutputStream(pos);
 	}
 	
 }

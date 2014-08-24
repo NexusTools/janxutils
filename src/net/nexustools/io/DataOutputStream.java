@@ -37,8 +37,8 @@ public class DataOutputStream extends java.io.DataOutputStream {
 	public DataOutputStream(Stream stream) throws IOException {
 		this(stream.createOutputStream());
 	}
-	public DataOutputStream(String uri) throws URISyntaxException, URISyntaxException, IOException {
-		this(Stream.open(uri, true));
+	public DataOutputStream(String uri) throws IOException {
+		this(Stream.open(uri));
 	}
 
 	public void writeObject(Object object, Class<?> type) throws IOException {

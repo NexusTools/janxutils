@@ -61,5 +61,9 @@ public class Pair<I, V> {
 	public String toString() {
 		return "Pair(" + i + ", " + v + ")";
 	}
+
+	public Pair<I, V> copy() {
+		return new Pair(i, v);
+	}
 	
 }

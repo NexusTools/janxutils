@@ -32,6 +32,6 @@ public interface Testable<I> {
 		}
 	};
 	
-	public boolean test(I against);
+	public boolean test(I against) throws Throwable;
 	
 }

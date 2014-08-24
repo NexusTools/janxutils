@@ -54,7 +54,7 @@ public class TemporaryFileStream extends FileStream {
 	}
 
 	public TemporaryFileStream(String name) throws FileNotFoundException, IOException {
-		super(getTemporaryFileName(name), true);
+		super(getTemporaryFileName(name));
 		Logger.debug("Created Temporary File: " + path());
 		markDeleteOnExit();
 	}

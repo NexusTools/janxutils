@@ -16,6 +16,8 @@
 package net.nexustools.data.impl;
 
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.Testable;
 
@@ -71,8 +73,14 @@ public abstract class AbstractProp<T> implements PropAccessor<T> {
 	}
 
 	public void set(T value, Testable<T> condition) {
-		if(condition.test(get()))
-			set(value);
+		try {
+			if(condition.test(get()))
+				set(value);
+		} catch (Throwable ex) {
+			if(ex instanceof RuntimeException)
+				throw (RuntimeException)ex;
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public boolean update(T value) {

@@ -26,6 +26,8 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.nexustools.utils.IOUtils;
@@ -62,11 +64,21 @@ public abstract class Stream implements Iterable<Stream> {
 	/**
 	 * Returns the NullStream instance
 	 * 
-	 * @see NullStream.getInstance
+	 * @see NullStream.instance
 	 * @return
 	 */
 	public static final NullStream Null() {
-		return NullStream.getInstance();
+		return NullStream.instance();
+	}
+	
+	/**
+	 * Returns the VoidStream instance
+	 * 
+	 * @see VoidStream.instance
+	 * @return
+	 */
+	public static final VoidStream Void() {
+		return VoidStream.instance();
 	}
 	
 	private static final HashMap<String, StreamProvider> providers = new HashMap<String, StreamProvider>() {
@@ -77,7 +89,7 @@ public abstract class Stream implements Iterable<Stream> {
 					return "memory";
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) {
+				public Stream open(String path, URI raw) {
 					if(path.length() > 0)
 						return new MemoryStream(Integer.valueOf(path.split("@")[0]));
 					else
@@ -90,8 +102,18 @@ public abstract class Stream implements Iterable<Stream> {
 					return "null";
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) {
+				public Stream open(String path, URI raw) {
 					return Null();
+				}
+			});
+			put("void", new StreamProvider() {
+				@Override
+				public String scheme() {
+					return "void";
+				}
+				@Override
+				public Stream open(String path, URI raw) {
+					return Void();
 				}
 			});
 			put("file", new StreamProvider() {
@@ -100,11 +122,11 @@ public abstract class Stream implements Iterable<Stream> {
 					return "file";
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
-					return FileStream.getStream(path, supportWriting);
+				public Stream open(String path, URI raw) throws IOException {
+					return FileStream.getStream(path);
 				}
 			});
-			put("substream", new StreamProvider() {
+			/*put("substream", new StreamProvider() {
 				final Pattern substreamPattern = Pattern.compile("^(\\d+)\\-(\\d+)@(.+)$");
 				@Override
 				public String scheme() {
@@ -118,21 +140,19 @@ public abstract class Stream implements Iterable<Stream> {
 					else
 						throw new IOException("Malformed substream:" + path);
 				}
-			});
+			});*/
 			put("resource", new StreamProvider() {
 				@Override
 				public String scheme() {
 					return "resource";
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
-					if(supportWriting)
-						throw new UnsupportedOperationException("Resources do not support writing.");
+				public Stream open(String path, URI raw) throws IOException {
 					URL resource = Stream.class.getResource(path);
 					if(resource == null)
 						throw new IOException("No such resource found: " + path);
 					try {
-						return Stream.synthesize(resource.toExternalForm(), raw.toString(), "ResourceSynth", false);
+						return Stream.synthesize(resource.toExternalForm(), raw.toString(), "ResourceSynth");
 					} catch (URISyntaxException ex) {
 						throw new RuntimeException(ex);
 					}
@@ -144,14 +164,8 @@ public abstract class Stream implements Iterable<Stream> {
 					return "input";
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
-					if(supportWriting)
-						throw new UnsupportedOperationException("Input Streams do not support writing by their nature.");
-					try {
-						return Stream.open(path);
-					} catch (URISyntaxException ex) {
-						throw new IOException(ex);
-					}
+				public Stream open(String path, URI raw) throws IOException {
+					return Stream.open(path);
 				}
 			});
 		}
@@ -164,9 +178,7 @@ public abstract class Stream implements Iterable<Stream> {
 					return null;
 				}
 				@Override
-				public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
-					if(supportWriting)
-						throw new UnsupportedOperationException("URLStreams do not support writing yet.");
+				public Stream open(String path, URI raw) throws IOException {
 					return URLStream.getStream(raw);
 				}
 			});
@@ -177,56 +189,6 @@ public abstract class Stream implements Iterable<Stream> {
 		URI uri = (new File(filePath)).toURI();
 		return uri.toString();
 	}
-	
-	static {
-		//for(StreamProvider provider : ServiceLoader.load(StreamProvider.class))
-		//	registerProvider(provider);
-	}
-	
-//	public static void initAppAliases(String name, String organization) {
-//		initAppAliases(name, organization, true);
-//	}
-//	
-//	public static void initAppAliases(String name, String organization, boolean overwriteTemp) {
-//		String userHome = System.getProperty("user.home");
-//		if(!userHome.endsWith(File.separator))
-//			userHome += File.separator;
-//		
-//		boolean hasOrg = false;
-//		String configPath = userHome + "Library" + File.separator + "Application Support";
-//		if(!(new File(configPath)).isDirectory()) {
-//			configPath = userHome + "Application Data";
-//			if(!(new File(configPath)).isDirectory())
-//				configPath = userHome + ".config";
-//			else {
-//				configPath = userHome + "." + organization.toLowerCase();
-//				hasOrg = true;
-//			}
-//		}
-//		if(!hasOrg)
-//			configPath += File.separator + organization;
-//		configPath += File.separator + name;
-//		
-//		bindSynthScheme("config", uriForPath(configPath));
-//		
-//		configPath += File.separator;
-//		bindSynthScheme("maps", uriForPath(configPath + "Maps"));
-//		bindSynthScheme("music", uriForPath(configPath + "Music"));
-//		bindSynthScheme("sounds", uriForPath(configPath + "Sounds"));
-//		bindSynthScheme("assets", uriForPath(configPath + "Assets"));
-//		bindSynthScheme("graphics", uriForPath(configPath + "Graphics"));
-//		bindSynthScheme("sprites", uriForPath(configPath + "Sprites"));
-//		bindSynthScheme("worlds", uriForPath(configPath + "Worlds"));
-//		bindSynthScheme("saves", uriForPath(configPath + "Saves"));
-//		
-//		if(overwriteTemp) {
-//			String tempPath = System.getProperty("java.io.tmpdir");
-//			if(!tempPath.endsWith(File.separator))
-//				tempPath += File.separator;
-//			tempPath += organization + File.separator + name;
-//			bindSynthScheme("temp", uriForPath(tempPath));
-//		}
-//	}
 	
 	/**
 	 * Registers a new {@link StreamProvider}
@@ -243,26 +205,6 @@ public abstract class Stream implements Iterable<Stream> {
 			providers.put(protocol, provider);
 	}
 
-	private static final Pattern wrapperPattern = Pattern.compile("^[^\\(]+\\((.+)\\)$");
-	private static final Pattern lazyPattern = Pattern.compile("^(\\w+)\\:([^/]+.+)$");
-
-	/**
-	 * Parse and attempt to return a new Stream
-	 * using a registered {@link StreamProvider}.
-	 * 
-	 * This method is also capable of unwrapping {@link InputStream}
-	 * and {@link DataInputStream}s returned by a Stream to return
-	 * the original Stream
-	 * 
-	 * @param url URL String to parse
-	 * @return A Stream compatible with the URL String given
-	 * @throws IOException
-	 * @throws java.net.URISyntaxException
-	 */
-	public static Stream open(String url) throws IOException, URISyntaxException {
-		return open(url, false);
-	}
-
 	/**
 	 * Parse and attempt to return a new Stream
 	 * using a registered {@link StreamProvider}.
@@ -272,16 +214,15 @@ public abstract class Stream implements Iterable<Stream> {
 	 * the original Stream
 	 * 
 	 * @param uri URI String to parse
-	 * @param supportWriting Whether or not the Stream needs to support writing
 	 * @return A Stream compatible with the URL String given
 	 * @throws IOException
 	 */
-	public static Stream open(String uri, boolean supportWriting) throws IOException {
+	public static Stream open(String uri) throws IOException {
 		try {
 			Logger.debug("Opening Stream", uri);
-			return open(new URI(uri), supportWriting);
+			return open(new URI(uri));
 		} catch(URISyntaxException ex) {
-			return FileStream.getStream(uri, supportWriting);
+			return FileStream.getStream(uri);
 		}
 	}
 
@@ -298,17 +239,17 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @return A Stream compatible with the URL String given
 	 * @throws IOException
 	 */
-	public static Stream open(URI uri, boolean supportWriting) throws IOException {
+	public static Stream open(URI uri) throws IOException {
 		if(uri.getScheme() != null) {
 			{
 				StreamProvider provider = providers.get(uri.getScheme());
 				if(provider != null)
-					return provider.open(uri.getPath(), uri, supportWriting);
+					return provider.open(uri.getPath(), uri);
 			}
 			
 			for(StreamProvider provider : fallbackProviders)
 				try {
-					return provider.open(uri.getPath(), uri, supportWriting);
+					return provider.open(uri.getPath(), uri);
 				} catch(UnsupportedOperationException ex) {} // Ignore incompatible streams
 			
 			throw new IOException("No handler found for URI: " + uri.toString());
@@ -317,11 +258,7 @@ public abstract class Stream implements Iterable<Stream> {
 	}
 	
 	public static Stream open(File file) throws IOException {
-		return open(file, false);
-	}
-	
-	public static Stream open(File file, boolean supportWriting) throws IOException {
-		return FileStream.getStream(file.getAbsolutePath(), supportWriting);
+		return FileStream.getStream(file.getAbsolutePath());
 	}
 	
 	/**
@@ -334,8 +271,8 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @return
 	 * @throws IOException
 	 */
-	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name, boolean writeable) throws IOException, URISyntaxException {
-		Stream stream = open(effectiveURL, writeable).effectiveStream();
+	protected static Stream synthesize(String effectiveURL, final String reportedURL, final String name) throws IOException, URISyntaxException {
+		Stream stream = open(effectiveURL).effectiveStream();
 		final URI reportedURI = new URI(reportedURL);
 		return new SubStream(stream) {
 			@Override
@@ -370,23 +307,8 @@ public abstract class Stream implements Iterable<Stream> {
 		return open(uri).createInputStream();
 	}
 
-	/**
-	 * Opens a Stream and returns a new {@link DataInputStream}
-	 * 
-	 * @param uri URI String to open
-	 * @return
-	 * @throws IOException
-	 */
-	public static DataInputStream openDataInputStream(String uri) throws IOException, URISyntaxException {
-		return open(uri).createDataInputStream();
-	}
-
 	public static OutputStream openOutputStream(String uri) throws IOException, URISyntaxException {
 		return open(uri).createOutputStream();
-	}
-
-	public static DataOutputStream openDataOutputStream(String url) throws IOException, URISyntaxException {
-		return open(url).createDataOutputStream();
 	}
 
 	/**
@@ -398,7 +320,7 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @throws java.net.URISyntaxException
 	 */
 	public static void copy(String from, String to) throws IOException, URISyntaxException {
-		copy(Stream.open(from), Stream.open(to, true));
+		copy(Stream.open(from), Stream.open(to));
 	}
 
 	/**
@@ -421,9 +343,9 @@ public abstract class Stream implements Iterable<Stream> {
 				return scheme;
 			}
 			@Override
-			public Stream open(String path, URI raw, boolean supportWriting) throws IOException {
+			public Stream open(String path, URI raw) throws IOException {
 				try {
-					return Stream.synthesize(uriForPath + URLEncoder.encode(path.substring(1), "UTF-8").replace("+", "%20").replace("%2F", "/"), raw.toString(), "Alias[" + scheme + "]", supportWriting);
+					return Stream.synthesize(uriForPath + URLEncoder.encode(path.substring(1), "UTF-8").replace("+", "%20").replace("%2F", "/"), raw.toString(), "Alias[" + scheme + "]");
 				} catch (URISyntaxException ex) {
 					throw new RuntimeException(ex);
 				}
@@ -434,66 +356,15 @@ public abstract class Stream implements Iterable<Stream> {
 	public static void remove(String scheme) {
 		providers.remove(scheme);
 	}
-	
-	/**
-	 * Read bytes from this Stream
-	 * 
-	 * @param buffer Buffer to read into
-	 * @param off Offset to read into
-	 * @param len Length of data to try and read
-	 * @return Number of bytes read
-	 * @throws IOException
-	 */
-	public abstract int read(byte[] buffer, int off, int len) throws IOException;
-
-	/**
-	 * Write bytes to this Stream
-	 * 
-	 * @param buffer Buffer to write data from
-	 * @param off Offset to write from
-	 * @param len Length of data to write
-	 * @throws IOException
-	 */
-	public abstract void write(byte[] buffer, int off, int len) throws IOException;
 
 	/**
 	 * Indicates whether or not this Stream supports writing
 	 * 
 	 * @return
 	 */
-	public abstract boolean canWrite(); // Not all sector streams even support writing
+	public abstract boolean canWrite(); 
 	
 	public abstract boolean canRead();
-
-	/**
-	 * Flush data to the underlying Stream.
-	 * 
-	 * This method is rarely implemented and would
-	 * only be useful when this Stream uses a buffering mechanism.
-	 * 
-	 * @throws IOException
-	 */
-	public abstract void flush() throws IOException;
-	
-	/**
-	 * Position of this Stream within its content.
-	 * 
-	 * SubStreams can be used to read from the same Stream
-	 * at multiple locations without requiring multiple FDs.
-	 * 
-	 * @throws java.io.IOException
-	 * @see Stream.createSubSectorStream
-	 * @return
-	 */
-	public abstract long pos() throws IOException;
-
-	/**
-	 * Seeks this Stream to another position within its content.
-	 * 
-	 * @param pos
-	 * @throws IOException
-	 */
-	public abstract void seek(long pos) throws IOException;
 	
 	/**
 	 * Returns the Size of the content in this Stream.
@@ -503,8 +374,23 @@ public abstract class Stream implements Iterable<Stream> {
 	 */
 	public abstract long size() throws IOException;
 	
-	public abstract long lastModified();
-	public abstract boolean isHidden();
+	public long created() throws IOException {
+		return 0;
+	}
+	public long lastModified() throws IOException {
+		return 0;
+	}
+	
+	public Map<String,String> properties() throws IOException{
+		return new HashMap();
+	}
+	
+	public boolean isHidden() throws IOException{
+		return true;
+	}
+	public boolean exists() throws IOException{
+		return true;
+	}
 	
 	public String sizeStr() throws IOException{
 		if(!canRead())
@@ -545,223 +431,49 @@ public abstract class Stream implements Iterable<Stream> {
 		
 		return builder.toString();
 	}
-
-	/**
-	 * Returns the remaining number of bytes from the current
-	 * location to the end of this content.
-	 * 
-	 * Not all Streams know how much content they content
-	 * and so this value may change overtime.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public long remaining() throws IOException {
-		return size() - pos();
-	}
-
-	/**
-	 * Checks whether or not this Stream is at the end.
-	 * 
-	 * This method may not be accurate if the implementation
-	 * doesn't know the total size of its content.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public boolean atEnd() throws IOException {
-		return remaining() <= 0;
-	}
-
-	/**
-	 * Creates a new {@link SubStream} using the given Range
-	 * 
-	 * @param range
-	 * @return
-	 */
-	public SubStream createSubSectorStream(SubStream.Range range) {
-		return new SubStream(this, range);
-	}
-
-	/**
-	 * Creates a new {@link SubStream} using the given Range
-	 * 
-	 * @param start
-	 * @param end
-	 * @return
-	 */
-	public final SubStream createSubSectorStream(long start, long end) {
-		return createSubSectorStream(SubStream.createRange(start, end));
-	}
-
-	/**
-	 * Creates a new {@link SubStream} using the given Range
-	 * 
-	 * @return
-	 */
-	public final SubStream createSubSectorStream() {
-		return createSubSectorStream(SubStream.getFullRange());
-	}
-
-	/**
-	 * Creates a new {@link InputStream} for this Stream.
-	 * 
-	 * Each InputStream uses its own SubStream and so
-	 * you can have multiple InputStreams from the same
-	 * Stream independent of each other.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public final InputStream createInputStream() throws IOException {
-		final SubStream subStream = createSubSectorStream();
-		return new EfficientInputStream() {
-			
-			private long marked = -1;
-
-			@Override
-			public synchronized void mark(int readlimit) {
-				marked = subStream.pos();
-			}
-
-			@Override
-			public synchronized void reset() throws IOException {
-				if(marked > 0) {
-					subStream.seek(marked);
-					marked = -1;
-				} else
-					throw new IOException("");
-			}
-
-			@Override
-			public long skip(long n) throws IOException {
-				long lastRemaining = subStream.remaining();
-				subStream.seek(subStream.pos() + n);
-				return lastRemaining - subStream.remaining();
-			}
-
-			@Override
-			public boolean markSupported() {
-				return true;
-			}
-
-			@Override
-			public int available() throws IOException {
-				return (int)Math.min(subStream.remaining(), Integer.MAX_VALUE);
-			}
-
-			@Override
-			public int read(byte[] b, int off, int len) throws IOException {
-				return subStream.read(b, off, len);
-			}
-			
-			@Override
-			public String toString() {
-				StringBuilder builder = new StringBuilder();
-				builder.append(getClass().getName());
-				builder.append('(');
-				builder.append(toURL());
-				builder.append(')');
-
-				return builder.toString();
-			}
-			
-		};
+	
+	public final void read(StreamReader<InputStream> reader) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 	
-	public final InputStream cloneInputStream() throws IOException {
-		InputStream inStream = createInputStream();
-		inStream.skip(pos());
-		return inStream;
+	public final void readData(StreamReader<DataInputStream> reader) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 	
-	/**
-	 * Creates a new {@link DataInputStream} for this Stream.
-	 * 
-	 * Each DataInputStream uses its own SubStream and so
-	 * you can have multiple InputStreams from the same
-	 * Stream independent of each other.
-	 * @return
-	 * @throws IOException
-	 */
-	public final DataInputStream createDataInputStream() throws IOException {
-		return new DataInputStream(createInputStream());
+	public final void write(StreamWriter<OutputStream> writer) throws IOException {
+		OutputStream out = createOutputStream();
+		writer.write(out);
+		out.close();
 	}
 	
-	public final DataInputStream cloneDataInputStream() throws IOException {
-		return new DataInputStream(cloneInputStream());
+	public final void writeData(StreamWriter<DataOutputStream> writer) throws IOException {
+		DataOutputStream out = createDataOutputStream();
+		writer.write(out);
+		out.close();
 	}
 	
-	/**
-	 * Creates a new {@link OutputStream} for this Stream.
-	 * 
-	 * Each OutputStream uses its own SubStream and so
-	 * you can have multiple InputStreams from the same
-	 * Stream independent of each other.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public final OutputStream createOutputStream() throws IOException {
-		if(!canWrite())
-			throw new IOException(toURL() + ": Can not be written to...");
-		
-		final SubStream subStream = createSubSectorStream();
-		return new EfficientOutputStream() {
+	public final DataInputStream createDataInputStream(long pos) throws IOException{
+		return new DataInputStream(createInputStream(pos));
+	}
+	public final DataInputStream createDataInputStream() throws IOException{
+		return createDataInputStream(0);
+	}
+	public final DataOutputStream createDataOutputStream(long pos) throws IOException{
+		return new DataOutputStream(createOutputStream(pos));
+	}
+	public final DataOutputStream createDataOutputStream() throws IOException{
+		return createDataOutputStream(0);
+	}
 
-			@Override
-			public void flush() throws IOException {
-				subStream.flush();
-			}
-
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				subStream.write(b, off, len);
-			}
-			
-			@Override
-			public String toString() {
-				StringBuilder builder = new StringBuilder();
-				builder.append(getClass().getName());
-				builder.append('(');
-				builder.append(toURL());
-				builder.append(')');
-
-				return builder.toString();
-			}
-			
-		};
+	public final InputStream createInputStream() throws IOException{
+		return createInputStream(0);
 	}
+	public final OutputStream createOutputStream() throws IOException{
+		return createOutputStream(-1);
+	}
+	public abstract InputStream createInputStream(long pos) throws IOException;
+	public abstract OutputStream createOutputStream(long pos) throws IOException;
 	
-	/**
-	 * Creates a new {@link DataOutputStream} for this Stream.
-	 * 
-	 * Each DataOutputStream uses its own SubStream and so
-	 * you can have multiple InputStreams from the same
-	 * Stream independent of each other.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public final DataOutputStream createDataOutputStream() throws IOException {
-		return new DataOutputStream(createOutputStream());
-	}
-	
-	public void loadObject(Object target) throws IOException {
-		createDataInputStream().readObject(target);
-	}
-	
-	public Object loadMutableObject() throws IOException {
-		return createDataInputStream().readMutableObject();
-	}
-	
-	public void storeObject(Object target) throws IOException {
-		createDataOutputStream().writeObject(target);
-	}
-	
-	public void storeMutableObject(Object target) throws IOException {
-		createDataOutputStream().writeMutableObject(target);
-	}
 	
 	/**
 	 * Returns the Effective Stream.
@@ -820,12 +532,34 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @return
 	 */
 	protected static String stringForStream(Stream stream, String name) {
+		Map<String,String> properties;
+		try {
+			properties = stream.properties();
+		} catch (IOException ex) {
+			properties = new HashMap();
+		}
+		return stringForStream(stream, name, properties);
+	}
+	
+	/**
+	 * Provides the default toString implementation for Streams
+	 * 
+	 * @param stream
+	 * @param name
+	 * @return
+	 */
+	protected static String stringForStream(Stream stream, String name, Map<String,String> properties) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(name);
 		builder.append('(');
 		builder.append(stream.toURL());
+		for(Map.Entry<String,String> entry : properties.entrySet()) {
+			builder.append(',');
+			builder.append(entry.getKey());
+			builder.append('=');
+			builder.append(entry.getValue());
+		}
 		builder.append(')');
-		
 		return builder.toString();
 	}
 	
@@ -864,35 +598,20 @@ public abstract class Stream implements Iterable<Stream> {
 		return "application/octet-stream";
 	}
 	
-	@Override
-	public final Stream clone() throws CloneNotSupportedException {
-		return clone(true);
-	}
-	
-	public Stream clone(boolean autoSeek) throws CloneNotSupportedException {
+	public Stream clone() throws CloneNotSupportedException {
 		try {
 			Stream stream;
 			try {
 				stream = Stream.open(toString());
 			} catch(IOException t) {
 				stream = Stream.open(toURL());
-			} catch(URISyntaxException t) {
-				stream = Stream.open(toURL());
 			} catch(RuntimeException t) {
 				stream = Stream.open(toURL());
 			}
-			if(autoSeek)
-				stream.seek(pos());
 			return stream;
-		} catch (URISyntaxException ex) {
-			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
 		}catch (IOException ex) {
 			throw new CloneNotSupportedException("Cannot clone `" + toString() + "`.");
 		}
-	}
-	
-	public boolean exists() {
-		return true;
 	}
 
 	public Iterator<Stream> iterator() {
@@ -951,30 +670,5 @@ public abstract class Stream implements Iterable<Stream> {
 	public boolean hasChildren() {
 		return false;
 	}
-	
-//	/**
-//	 * Attempts to scan this stream for other possible streams.
-//	 * This would list the links of an index of http stream, or files in a directory.
-//	 * 
-//	 * @param matcher
-//	 * @param directDescendants Whether or not the streams listed should be direct descendants of this stream
-//	 * @return 
-//	 * @throws UnsupportedOperationException 
-//	 */
-//	public abstract String[] scanListing(boolean directDescendants) throws UnsupportedOperationException;
-//	
-//	public abstract boolean exists();
-//	public abstract void copy(String to);
-//	public abstract void delete() throws UnsupportedOperationException;
-//	
-//	/**
-//	 * Converts a relative path to an absolute one, using this stream as the base.
-//	 * 
-//	 * @param path
-//	 * @return 
-//	 */
-//	public String reltoAbs(String path) {
-//		return null;
-//	}
 	
 }

@@ -25,6 +25,6 @@ import net.nexustools.concurrent.Lockable;
  */
 public interface BaseWriter<A extends BaseAccessor> {
 	
-	public void write(A data, Lockable lock);
+	public void write(A data, Lockable lock) throws Throwable;
 	
 }

@@ -15,6 +15,7 @@
 
 package net.nexustools.runtime;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
@@ -53,11 +54,11 @@ public class DefaultRunQueue<R extends Runnable> extends ThreadedRunQueue<R> {
 		this(name, delegator, -1);
 	}
 
-	public void write(BaseAccessor data, BaseWriter actor) {
+	public void write(BaseAccessor data, BaseWriter actor) throws InvocationTargetException {
 		lock.write(data, actor);
 	}
 
-	public Object read(BaseAccessor data, BaseReader reader) {
+	public Object read(BaseAccessor data, BaseReader reader) throws InvocationTargetException {
 		return lock.read(data, reader);
 	}
 
