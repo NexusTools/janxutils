@@ -16,12 +16,11 @@
 package net.nexustools.concurrent;
 
 import java.lang.reflect.InvocationTargetException;
-import net.nexustools.data.accessor.ListAccessor;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.logging.Level;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.data.accessor.GenericListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.log.Logger;
@@ -88,7 +87,7 @@ public class SortedPropList<I> extends PropList<I> {
 							}
 						})) {
 							Logger.gears("List is dirty, sorting before read");
-							Collections.sort(list, comparator);
+							data.sort(comparator);
 							dirty = false;
 						}
 						

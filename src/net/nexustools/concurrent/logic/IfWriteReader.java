@@ -39,7 +39,7 @@ public abstract class IfWriteReader<R, A extends BaseAccessor> implements BaseRe
 	public abstract R def() throws Throwable;
 	public abstract R read(A data) throws Throwable;
 
-	public boolean test(A against) throws Throwable {
+	public boolean test(A against) {
 		return against.isTrue();
 	}
 	

@@ -13,12 +13,20 @@
  * 
  */
 
-package net.nexustools.data.buffer;
+package net.nexustools.data.adaptor;
 
 /**
  *
  * @author katelyn
  */
-public class ByteBuffer {
+public class AdaptorException extends Exception {
+
+	public AdaptorException(String string, java.lang.Exception ex) {
+		super(string, ex);
+	}
+
+	public AdaptorException(String string) {
+		super(string);
+	}
 	
 }

@@ -20,7 +20,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -138,7 +137,6 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 		do {
 			String chunk;
 			nextPos = arguments.indexOf("&", lastPos);
-			System.err.println(arguments.substring(lastPos) + " " + nextPos);
 			if(nextPos > -1)
 				chunk = arguments.substring(lastPos, (lastPos = nextPos+1)-1);
 			else
@@ -146,7 +144,6 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 
 			String key, val;
 			int equalPos = chunk.indexOf("=");
-			Logger.info(chunk, equalPos);
 			if(equalPos > -1) {
 				key = chunk.substring(0, equalPos);
 				val = chunk.substring(equalPos+1);
@@ -154,15 +151,12 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 				key = chunk.substring(0);
 				val = null;
 			}
-			Logger.info(key, val);
 			key = URLDecoder.decode(key, "UTF-8");
 			if(val != null)
 				add(key, URLDecoder.decode(val, "UTF-8"));
 			else
 				init(key);
 		} while(nextPos > 0);
-		
-		System.err.println(this);
 	}
 	
 }

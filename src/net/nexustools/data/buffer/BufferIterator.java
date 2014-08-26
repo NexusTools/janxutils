@@ -21,9 +21,24 @@ import java.util.ListIterator;
  *
  * @author katelyn
  */
-public interface BufferIterator<T> extends ListIterator<T> {
+public abstract class BufferIterator<T> implements ListIterator<T> {
 	
-	public void add(T... e);
-	public void remove(int count);
+	public abstract void add(T... e);
+	public abstract void replace(int from, T... elements);
+	public abstract void remove(int previous, int next);
+
+	public void set(T e) {
+		replace(0, e);
+	}
+	public void remove() {
+		remove(1);
+	}
+	public void remove(int count) {
+		assert(count > 0);
+		remove(1, count-1);
+	}
+	public void add(T e) {
+		add((T[])e);
+	}
 	
 }

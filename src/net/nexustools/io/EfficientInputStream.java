@@ -24,7 +24,7 @@ import java.util.Arrays;
  * @author katelyn
  */
 public abstract class EfficientInputStream extends InputStream {
-	
+
 	public static final EfficientInputStream Null = new EfficientInputStream() {
 		@Override
 		public int read(byte[] b, int off, int len) throws IOException {

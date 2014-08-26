@@ -17,7 +17,7 @@ package net.nexustools.data.analyze;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import net.nexustools.data.AdaptorException;
+import net.nexustools.data.adaptor.AdaptorException;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 
@@ -51,7 +51,7 @@ public class FieldDefinition {
 		ffield.setAccessible(true);
 		field = ffield;
 		
-		final net.nexustools.data.Adaptor dataAdaptor = net.nexustools.data.Adaptor.resolveAdaptor(ffield.getType());
+		final net.nexustools.data.adaptor.Adaptor dataAdaptor = net.nexustools.data.adaptor.Adaptor.resolveAdaptor(ffield.getType());
 		if(instruction.mutableType)
 			adaptor = new Adaptor() {
 				@Override

@@ -210,7 +210,7 @@ public class FileStream extends Stream {
 								return null;
 							}
 						});
-						Logger.exception(Logger.Level.Debug, t);
+						Logger.exception(Logger.Level.Gears, t);
 					}
 					
 					return data.get().create(internal);

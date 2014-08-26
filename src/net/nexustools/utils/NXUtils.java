@@ -41,16 +41,27 @@ public final class NXUtils {
 		throwable = unwrapTarget(throwable);
 		if(throwable instanceof IOException)
 			return (IOException)throwable;
-		if(throwable instanceof RuntimeException)
-			throw (RuntimeException)throwable;
-		return new IOException(throwable);
+		throw unwrapRuntime(throwable);
 	}
 
 	public static RuntimeTargetException wrapRuntime(Throwable throwable) {
 		throwable = unwrapTarget(throwable);
 		if(throwable instanceof RuntimeTargetException)
-			throw (RuntimeTargetException)throwable;
-		throw new RuntimeTargetException(throwable);
+			return (RuntimeTargetException)throwable;
+		return new RuntimeTargetException(throwable);
+	}
+
+	public static InvocationTargetException wrapInvocation(Throwable throwable) {
+		if(throwable instanceof InvocationTargetException)
+			return (InvocationTargetException)throwable;
+		return new InvocationTargetException(unwrapTarget(throwable));
+	}
+	
+	public final static int nearestPow(int size) {
+		if(size < 8)
+			return 8;
+		
+		return (int) Math.pow(2, Math.ceil(Math.log(size)/Math.log(2)));
 	}
 	
 }

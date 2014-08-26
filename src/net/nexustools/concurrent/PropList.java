@@ -16,21 +16,21 @@
 package net.nexustools.concurrent;
 
 import java.lang.reflect.InvocationTargetException;
-import net.nexustools.data.accessor.ListAccessor;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.nexustools.concurrent.logic.BaseWriter;
 import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.data.accessor.DataAccessor.Reference;
+import net.nexustools.data.accessor.GenericListAccessor;
+import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -39,144 +39,34 @@ import net.nexustools.utils.NXUtils;
  */
 public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> implements ListAccessor<I> {
 
-	protected List<I> list;
-	private final ListAccessor<I> directAccessor = new ListAccessor<I>() {
-		public void push(I object) {
-			list.add(object);
-		}
-		public void unshift(I object) {
-			insert(object, 0);
-		}
-		public void insert(I object, int at) {
-			list.add(at, object);
-		}
-		public void remove(I object) {
-			list.remove(object);
-		}
-		public I remove(int at) {
-			return list.remove(at);
-		}
-		public int indexOf(I object) {
-			return indexOf(object, 0);
-		}
-		public int indexOf(I object, int from) {
-			ListIterator<I> listIterator = list.listIterator(from);
-			try {
-				while(true) {
-					int index = listIterator.nextIndex();
-					if(listIterator.next().equals(object))
-						return index;
-				}
-			} catch(NoSuchElementException ex) {
-				return -1;
-			}
-		}
-		public int lastIndexOf(I object, int from) {
-			ListIterator<I> listIterator = list.listIterator(from);
-			try {
-				while(true) {
-					int index = listIterator.previousIndex();
-					if(index == -1 || listIterator.previous().equals(object))
-						return index;
-				}
-			} catch(NoSuchElementException ex) {
-				return -1;
-			}
-		}
-		public int lastIndexOf(I object) {
-			return lastIndexOf(object, list.size());
-		}
-		public int length() {
-			return list.size();
-		}
-		public I shift() {
-			try {
-				return list.remove(0);
-			} catch(IndexOutOfBoundsException ex) {
-				return null;
-			}
-		}
-		public I pop() {
-			try {
-				return list.remove(list.size()-1);
-			} catch(IndexOutOfBoundsException ex) {
-				return null;
-			}
-		}
-		public boolean isTrue() {
-			return list.size() > 0;
-		}
-		public boolean isset() {
-			return true;
-		}
-		public void clear() {
-			list.clear();
-		}
-		public Iterator<I> iterator() {
-			return list.iterator();
-		}
-		public List<I> copy() {
-			return new ArrayList(list);
-		}
-		public List<I> take() {
-			try {
-				return list;
-			} finally {
-				list = new ArrayList();
-			}
-		}
-		public boolean unique(I object) {
-			if(contains(object))
-				return false;
-			
-			list.add(object);
-			return true;
-		}
-		public boolean contains(I object) {
-			return list.contains(object);
-		}
-		public I first() {
-			return list.get(0);
-		}
-		public I get(int at) {
-			return list.get(at);
-		}
-		public I last() {
-			return list.get(list.size()-1);
-		}
-
-		public ListIterator<I> listIterator() {
-			return list.listIterator();
-		}
-
-		public void pushAll(Iterable<I> objects) {
-			if(objects instanceof List) {
-				list.addAll((List)objects);
+	private final ListAccessor<I> directAccessor;
+	public PropList(ListAccessor<I> accessor) {
+		directAccessor = accessor;
+	}
+	public PropList(Reference reference, I... items) {
+		switch(reference) {
+			case Strong:
+				directAccessor = new StrongTypeList<I>(items);
 				return;
-			}
-			for(I obj : objects)
-				push(obj);
+				
+			case Weak:
+				directAccessor = new StrongTypeList<I>(items);
+				return;
+				
+			case Soft:
+				directAccessor = new StrongTypeList<I>(items);
+				return;
 		}
-
-		public void unshiftAll(Iterable<I> objects) {
-			List<I> current = list;
-			list = new ArrayList<I>();
-			if(objects instanceof List)
-				list.addAll((List)objects);
-			else
-				for(I obj : objects)
-					unshift(obj);
-			list.addAll(current);
-		}
-	};
+		throw new UnsupportedOperationException();
+	}
 	public PropList(I... items) {
-		this(Arrays.asList(items));
+		this(new StrongTypeList<I>(items));
 	}
 	public PropList(Collection<I> items) {
-		list = new ArrayList(items);
+		this(new GenericListAccessor(items));
 	}
 	public PropList() {
-		list = new ArrayList();
+		this(new GenericListAccessor());
 	}
 	public boolean isTrue() {
 		try {
@@ -373,30 +263,6 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 			}
 		};
 	}
-	public List<I> copy() {
-		try {
-			return read(new Reader<List<I>, ListAccessor<I>>() {
-				@Override
-				public List<I> read(ListAccessor<I> data) {
-					return data.copy();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
-		}
-	}
-	public List<I> take() {
-		try {
-			return read(new WriteReader<List<I>, ListAccessor<I>>() {
-				@Override
-				public List<I> read(ListAccessor<I> data) {
-					return data.take();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
-		}
-	}
 
 	@Override
 	public ListAccessor<I> directAccessor() {
@@ -500,6 +366,87 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 		} catch (InvocationTargetException ex) {
 			throw NXUtils.unwrapRuntime(ex);
 		}
+	}
+
+	public ListIterator<I> listIterator(int where) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	public List<I> toList() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	public void sort(Comparator<I> sortMethod) {
+		try {
+			write(new Writer<ListAccessor<I>>() {
+				@Override
+				public void write(ListAccessor<I> data) throws Throwable {
+					throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
+	}
+
+	public ListAccessor<I> take(final Testable<I> shouldTake) {
+		try {
+			return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
+				@Override
+				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
+					return data.take(shouldTake);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
+	}
+
+	public ListAccessor<I> copy(final Testable<I> shouldCopy) {
+		try {
+			return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
+				@Override
+				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
+					return data.copy(shouldCopy);
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
+	}
+
+	public ListAccessor<I> copy() {
+		try {
+			return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
+				@Override
+				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
+					return data.copy();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
+	}
+
+	public ListAccessor<I> take() {
+		try {
+			return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
+				@Override
+				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
+					return data.take();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		}
+	}
+
+	public I[] toArray() throws UnsupportedOperationException {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	public Object[] toObjectArray() {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 	
 	public static interface PropIterator<I> {

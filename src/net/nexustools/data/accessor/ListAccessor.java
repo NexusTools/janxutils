@@ -15,8 +15,10 @@
 
 package net.nexustools.data.accessor;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -51,11 +53,20 @@ public interface ListAccessor<T> extends BaseAccessor, Iterable<T> {
 	public int lastIndexOf(T object);
 	public boolean contains(T object);
 	
+	public ListIterator<T> listIterator(int where);
 	public ListIterator<T> listIterator();
 	
+	public void sort(Comparator<T> sortMethod);
+	
+	public ListAccessor<T> take();
+	public ListAccessor<T> take(Testable<T> shouldTake);
+	public ListAccessor<T> copy(Testable<T> shouldCopy);
+	public ListAccessor<T> copy();
+	
+	public T[] toArray() throws UnsupportedOperationException;
+	public Object[] toObjectArray();
+	public List<T> toList();
 	public int length();
-	public List<T> copy();
-	public List<T> take();
 	
 	public T shift();
 	public T pop();

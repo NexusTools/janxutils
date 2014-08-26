@@ -36,7 +36,7 @@ public abstract class IfWriter<A extends BaseAccessor> implements BaseWriter<A>,
 	}
 	public abstract void write(A data) throws Throwable;
 
-	public boolean test(A against) throws Throwable {
+	public boolean test(A against) {
 		return against.isTrue();
 	}
 	

@@ -13,12 +13,14 @@
  * 
  */
 
-package net.nexustools.data;
+package net.nexustools.data.adaptor;
 
 /**
  *
  * @author katelyn
  */
-public class SubPartitionsNotSupported extends RuntimeException {
+public interface AdaptorProvider {
+	
+	public Adaptor[] getAdaptors();
 	
 }

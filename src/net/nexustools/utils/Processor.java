@@ -13,14 +13,14 @@
  * 
  */
 
-package net.nexustools.data;
+package net.nexustools.utils;
 
 /**
  *
  * @author katelyn
  */
-public interface AdaptorProvider {
+public interface Processor<T> {
 	
-	public Adaptor[] getAdaptors();
+	public void process(T type) throws Throwable;
 	
 }

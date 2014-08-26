@@ -13,25 +13,23 @@
  * 
  */
 
-package net.nexustools.data.accessor;
+package net.nexustools.data.buffer.basic;
 
-import java.util.Comparator;
-import java.util.ListIterator;
+import net.nexustools.data.accessor.DataAccessor;
+import net.nexustools.data.accessor.DataAccessor.Reference;
+import net.nexustools.data.buffer.TypeList;
 
 /**
  *
  * @author katelyn
  */
-public interface IterableAccessor<T, C, R> extends DataAccessor<T, C, R>, Iterable<T> {
-	
-	public static interface Iterator<T> {
-		public void iterate(ListIterator<T> it);
+public class SoftTypeList<T> extends TypeList<T, Class<T>, DataAccessor.Reference>  {
+
+	public SoftTypeList(T... elements) {
+		this((Class<T>)elements.getClass().getComponentType(), elements);
 	}
-	
-	public void iterate(Iterator<T> iterator);
-	public void iterate(Iterator<T> iterator, int at);
-	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException;
-	
-	public int size();
+	public SoftTypeList(Class<T> typeClass, T... elements) {
+		super(typeClass, Reference.Soft, elements);
+	}
 	
 }

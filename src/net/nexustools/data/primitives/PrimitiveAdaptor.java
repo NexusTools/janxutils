@@ -17,7 +17,7 @@ package net.nexustools.data.primitives;
 
 import java.io.IOException;
 import net.nexustools.io.DataInputStream;
-import net.nexustools.data.Adaptor;
+import net.nexustools.data.adaptor.Adaptor;
 
 /**
  *

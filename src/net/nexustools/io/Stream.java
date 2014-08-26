@@ -219,7 +219,6 @@ public abstract class Stream implements Iterable<Stream> {
 	 */
 	public static Stream open(String uri) throws IOException {
 		try {
-			Logger.debug("Opening Stream", uri);
 			return open(new URI(uri));
 		} catch(URISyntaxException ex) {
 			return FileStream.getStream(uri);

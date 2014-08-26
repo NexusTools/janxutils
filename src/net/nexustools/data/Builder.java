@@ -13,25 +13,12 @@
  * 
  */
 
-package net.nexustools.data.accessor;
-
-import java.util.Comparator;
-import java.util.ListIterator;
+package net.nexustools.data;
 
 /**
  *
  * @author katelyn
  */
-public interface IterableAccessor<T, C, R> extends DataAccessor<T, C, R>, Iterable<T> {
-	
-	public static interface Iterator<T> {
-		public void iterate(ListIterator<T> it);
-	}
-	
-	public void iterate(Iterator<T> iterator);
-	public void iterate(Iterator<T> iterator, int at);
-	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException;
-	
-	public int size();
+public class Builder {
 	
 }

@@ -13,25 +13,32 @@
  * 
  */
 
-package net.nexustools.data.accessor;
+package net.nexustools.utils;
 
-import java.util.Comparator;
-import java.util.ListIterator;
+import java.util.Iterator;
 
 /**
  *
  * @author katelyn
  */
-public interface IterableAccessor<T, C, R> extends DataAccessor<T, C, R>, Iterable<T> {
+public class ImmutableArrayIterator<T> implements Iterator<T> {
 	
-	public static interface Iterator<T> {
-		public void iterate(ListIterator<T> it);
+	private final int pos = 0;
+	private final T[] elements;
+	public ImmutableArrayIterator(T... elements) {
+		this.elements = elements;
 	}
-	
-	public void iterate(Iterator<T> iterator);
-	public void iterate(Iterator<T> iterator, int at);
-	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException;
-	
-	public int size();
+
+	public boolean hasNext() {
+		return pos < elements.length;
+	}
+
+	public T next() {
+		return elements[pos];
+	}
+
+	public void remove() {
+		throw new UnsupportedOperationException(getClass().getSimpleName() + ".remove is Immutable.");
+	}
 	
 }

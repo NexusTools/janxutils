@@ -44,21 +44,21 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 	}
 	
 	public void dispatch(final Processor<L, E> processor) {
-		final List<L> cListeners = listeners.copy();
-		if(cListeners.size() < 1)
+		final ListAccessor<L> cListeners = listeners.copy();
+		if(cListeners.length() < 1)
 			return;
 		
 		queue.push(new Runnable() {
 			public void run() {
 				final E event = processor.create();
 				Logger.debug(event);
-				if(cListeners.size() == 1) {
+				if(cListeners.length() == 1) {
 					Logger.debug("Dispatching Event");
 					processor.dispatch(cListeners.get(0), event);
 					return;
 				}
 				
-				Logger.debug("Dispatching Event to " + cListeners.size() + " listeners");
+				Logger.debug("Dispatching Event to " + cListeners.length() + " listeners");
 				for(final L listener : cListeners)
 					queue.push(new Runnable() {
 						public void run() {

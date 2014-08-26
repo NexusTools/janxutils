@@ -17,7 +17,7 @@ package net.nexustools.data.impl;
 
 import java.io.IOException;
 import java.util.Map;
-import net.nexustools.data.Adaptor;
+import net.nexustools.data.adaptor.Adaptor;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
 

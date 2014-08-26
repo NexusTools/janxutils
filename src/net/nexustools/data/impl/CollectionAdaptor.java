@@ -17,11 +17,11 @@ package net.nexustools.data.impl;
 
 import java.io.IOException;
 import java.util.Collection;
-import net.nexustools.data.Adaptor;
-import net.nexustools.data.AdaptorException;
+import net.nexustools.data.adaptor.Adaptor;
+import net.nexustools.data.adaptor.AdaptorException;
 import net.nexustools.io.DataInputStream;
 import net.nexustools.io.DataOutputStream;
-import static net.nexustools.data.Adaptor.resolveAndWriteMutable;
+import static net.nexustools.data.adaptor.Adaptor.resolveAndWriteMutable;
 
 /**
  *

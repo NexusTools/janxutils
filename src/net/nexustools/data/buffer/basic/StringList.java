@@ -13,20 +13,16 @@
  * 
  */
 
-package net.nexustools.data;
+package net.nexustools.data.buffer.basic;
 
 /**
  *
  * @author katelyn
  */
-public class AdaptorException extends Exception {
+public class StringList extends StrongTypeList<String> {
 
-	public AdaptorException(String string, java.lang.Exception ex) {
-		super(string, ex);
-	}
-
-	public AdaptorException(String string) {
-		super(string);
+	public StringList(String... elements) {
+		super(String.class, elements);
 	}
 	
 }

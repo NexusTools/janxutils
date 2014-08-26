@@ -24,7 +24,7 @@ import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import net.nexustools.io.MemoryStream;
 import net.nexustools.io.Stream;
-import static net.nexustools.io.StreamUtils.DefaultMemoryMax;
+import static net.nexustools.io.StreamUtils.DefaultBufferSize;
 
 /**
  *
@@ -59,7 +59,7 @@ public class StringUtils {
 	}
 	
 	public static String read(String url, Charset charset) throws IOException, URISyntaxException {
-		return read(url, charset, DefaultMemoryMax);
+		return read(url, charset, DefaultBufferSize);
 	}
 	
 	public static String readUTF8(String url) throws IOException, URISyntaxException {
@@ -87,7 +87,7 @@ public class StringUtils {
 	}
 	
 	public static String read(InputStream inStream, Charset charset) throws IOException {
-		return read(inStream, charset, DefaultMemoryMax);
+		return read(inStream, charset, DefaultBufferSize);
 	}
 	
 	public static String readUTF8(InputStream inStream) throws IOException {

@@ -22,11 +22,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import net.nexustools.Application;
-import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Testable;
 import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
@@ -264,87 +266,83 @@ public class Logger extends Thread {
 		start();
 	}
 
+	long sleepTime;
 	@Override
 	public void run() {
 		final WeakHashMap<String, String> classNames = new WeakHashMap();
-		final ArrayList<Message> messages = new ArrayList();
 		final Fitter threadName = new Fitter();
 		final Fitter className = new Fitter();
 		
+		sleepTime = 5 * 60 * 60;
 		while(true) {
-			messages.addAll(messageQueue.take());
-			if(messages.size() > 0) {
-				ArrayList<Message> readyMessages = new ArrayList();
-				Iterator<Message> it = messages.iterator();
-				long before = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
-				while(it.hasNext()) {
-					Message next = it.next();
-					if(next.timestamp < before) {
-						readyMessages.add(next);
-						it.remove();
-					}
+			final long after = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
+			ListAccessor<Message> readyMessages = messageQueue.take(new Testable<Message>() {
+				public boolean test(Message against) {
+					long until = after - against.timestamp;
+					if(until > 0)
+						sleepTime = Math.min(sleepTime, until);
+					else
+						return true;
+					return false;
 				}
-				Collections.sort(readyMessages, new DescLongTypeComparator<Message>() {
-					@Override
-					public long value(Message o) {
-						return o.timestamp;
+			});
+			readyMessages.sort(new DescLongTypeComparator<Message>() {
+				@Override
+				public long value(Message o) {
+					return o.timestamp;
+				}
+			});
+
+			if(readyMessages.length() > 0) {
+				for(Message message : readyMessages) {
+					PrintStream stream;
+					switch(message.level) {
+						case Error:
+						case Fatal:
+							stream = SystemErr;
+							break;
+
+						default:
+							stream = SystemOut;
+							break;
 					}
-				});
-			
-				if(readyMessages.size() > 0) {
-					for(Message message : readyMessages) {
-						PrintStream stream;
-						switch(message.level) {
-							case Error:
-							case Fatal:
-								stream = SystemErr;
-								break;
+					stream.print(Application.uptime(message.timestamp));
+					stream.print(" [");
+					stream.print(message.level.title);
+					stream.print("] [");
+					stream.print(threadName.expand(message.thread));
+					stream.print("] [");
 
-							default:
-								stream = SystemOut;
-								break;
-						}
-						stream.print(Application.uptime(message.timestamp));
-						stream.print(" [");
-						stream.print(message.level.title);
-						stream.print("] [");
-						stream.print(threadName.expand(message.thread));
-						stream.print("] [");
-
-						String goodClassName = classNames.get(message.className);
-						if(goodClassName == null) {
-							int lastPeriod = message.className.lastIndexOf(".");
-							goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
-							classNames.put(message.className, goodClassName);
-						}
-						stream.print(className.expand(goodClassName));
-
-						stream.print("] ");
-						boolean addTab = false;
-						for(Object msg : message.content) {
-							if(addTab)
-								stream.print(' ');
-							else
-								addTab = true;
-							
-							if(msg instanceof Throwable)
-								((Throwable)msg).printStackTrace(stream);
-							else if(msg == null)
-								stream.print("$NULL$");
-							else
-								stream.print(msg.toString());
-						}
-
-						stream.println();
-						stream.flush();
+					String goodClassName = classNames.get(message.className);
+					if(goodClassName == null) {
+						int lastPeriod = message.className.lastIndexOf(".");
+						goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
+						classNames.put(message.className, goodClassName);
 					}
-				} else
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException ex) {}
+					stream.print(className.expand(goodClassName));
+
+					stream.print("] ");
+					boolean addTab = false;
+					for(Object msg : message.content) {
+						if(addTab)
+							stream.print(' ');
+						else
+							addTab = true;
+
+						if(msg instanceof Throwable)
+							((Throwable)msg).printStackTrace(stream);
+						else if(msg == null)
+							stream.print("$NULL$");
+						else
+							stream.print(msg.toString());
+					}
+
+					stream.println();
+					stream.flush();
+				}
 			} else
 				try {
-					Thread.sleep(5 * 60 * 60);
+					Thread.sleep(sleepTime);
 				} catch (InterruptedException ex) {}
 		}
 	}

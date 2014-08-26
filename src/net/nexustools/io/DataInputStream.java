@@ -19,11 +19,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import net.nexustools.data.Adaptor;
+import net.nexustools.data.adaptor.Adaptor;
 import static net.nexustools.utils.StringUtils.UTF8;
 import static net.nexustools.utils.StringUtils.UTF16;
 import static net.nexustools.utils.StringUtils.ASCII;
-import net.nexustools.data.AdaptorException;
+import net.nexustools.data.adaptor.AdaptorException;
 
 /**
  *

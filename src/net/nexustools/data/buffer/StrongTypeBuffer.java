@@ -13,25 +13,34 @@
  * 
  */
 
-package net.nexustools.data.accessor;
+package net.nexustools.data.buffer;
 
-import java.util.Comparator;
-import java.util.ListIterator;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import net.nexustools.data.accessor.DataAccessor.Reference;
 
 /**
  *
  * @author katelyn
  */
-public interface IterableAccessor<T, C, R> extends DataAccessor<T, C, R>, Iterable<T> {
-	
-	public static interface Iterator<T> {
-		public void iterate(ListIterator<T> it);
+public class StrongTypeBuffer<T> extends GenericTypeBuffer<T, Class<T>, Reference> {
+
+	public StrongTypeBuffer(Class<T> typeClass, T... elements) {
+		super(typeClass, elements);
 	}
-	
-	public void iterate(Iterator<T> iterator);
-	public void iterate(Iterator<T> iterator, int at);
-	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException;
-	
-	public int size();
+
+	@Override
+	protected T[] create(int size) {
+		return (T[])Array.newInstance(typeClass, size);
+	}
+
+	public Reference refType() {
+		return Reference.Strong;
+	}
+
+	@Override
+	protected void setBuffer(T[] buffer) {
+		this.buffer = buffer;
+	}
 	
 }

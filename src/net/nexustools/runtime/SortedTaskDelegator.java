@@ -36,8 +36,8 @@ public abstract class SortedTaskDelegator<F extends Task> implements FutureDeleg
 	public abstract Comparator<F> comparator();
 
 	public F nextTask(ListAccessor<F> queue) {
-		List<F> queueCopy = queue.take();
-		if(queueCopy.size() > 0)
+		ListAccessor<F> queueCopy = queue.take();
+		if(queueCopy.length() > 0)
 			this.queue.pushAll(queue.take());
 		return this.queue.shift();
 	}

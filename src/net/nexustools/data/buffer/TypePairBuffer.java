@@ -15,10 +15,17 @@
 
 package net.nexustools.data.buffer;
 
+import net.nexustools.data.accessor.DataAccessor.Reference;
+import net.nexustools.utils.Pair;
+
 /**
  *
  * @author katelyn
  */
-public class MapTypeBuffer {
+public abstract class TypePairBuffer<I, V> extends GenericTypeBuffer<Pair<I, V>, Pair<Class<I>, Class<V>>, Pair<Reference, Reference>> {
+
+	public TypePairBuffer(Pair<Class<I>, Class<V>> typeClass) {
+		super(typeClass);
+	}
 	
 }

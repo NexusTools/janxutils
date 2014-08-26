@@ -28,8 +28,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
+
 import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
@@ -41,11 +44,16 @@ import net.nexustools.utils.log.Logger;
  * @author katelyn
  */
 public class URLStream extends Stream {
-	
+
 	private static final WeakHashMap<String, URLStream> instanceCache = new WeakHashMap();
+	private static final PropMap<String, URLConnection> connectionCache = new PropMap();
 	private final URL internal;
-	
+	private final String uri;
+
 	protected URLConnection open() throws IOException {
+		return open(false);
+	}
+	private URLConnection open0() throws IOException {
 		URLConnection connection = internal.openConnection();
 		connection.setUseCaches(true);
 		connection.setDoOutput(false);
@@ -54,9 +62,36 @@ public class URLStream extends Stream {
 		connection.connect();
 		return connection;
 	}
+	protected URLConnection open(final boolean take) throws IOException {
+		try {
+			if(take) {
+				URLConnection connection = connectionCache.take(uri);
+				if(connection == null)
+					connection = open0();
+				return connection;
+			} else
+				return connectionCache.read(new SoftWriteReader<URLConnection, MapAccessor<String,URLConnection>>() {
+					public boolean test(MapAccessor<String,URLConnection> against) {
+						return !against.has(uri);
+					};
+					public URLConnection read(MapAccessor<String,URLConnection> data) throws Throwable {
+						URLConnection connection = open0();
+						data.put(uri, connection);
+						return connection;
+					};
+					public URLConnection soft(MapAccessor<String,URLConnection> data) throws Throwable {
+						return data.get(uri);
+					};
+				});
+		} catch (InvocationTargetException e) {
+			throw NXUtils.unwrapRuntime(e);
+		}
+					
+	}
 	
-	protected URLStream(String path) throws MalformedURLException {
-		this.internal = new URL(path);
+	protected URLStream(String uri) throws MalformedURLException {
+		this.internal = new URL(uri);
+		this.uri = uri;
 	}
 	
 	@Override
@@ -183,7 +218,7 @@ public class URLStream extends Stream {
 
 	@Override
 	public InputStream createInputStream(long p) throws IOException {
-		InputStream inStream = open().getInputStream();
+		InputStream inStream = open(true).getInputStream();
 		inStream.skip(p);
 		return inStream;
 	}

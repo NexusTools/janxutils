@@ -13,7 +13,7 @@
  * 
  */
 
-package net.nexustools.data;
+package net.nexustools.data.adaptor;
 
 import net.nexustools.data.impl.CollectionAdaptor;
 import net.nexustools.data.impl.GenericAdaptor;

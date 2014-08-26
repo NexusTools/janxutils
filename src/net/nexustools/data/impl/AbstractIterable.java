@@ -23,7 +23,7 @@ import net.nexustools.data.buffer.BufferIterator;
  *
  * @author katelyn
  */
-public abstract class AbstractIterable<T, C, R, S extends IterableAccessor<T, C, R, S>> implements IterableAccessor<T, C, R, S> {
+public abstract class AbstractIterable<T, C, R> implements IterableAccessor<T, C, R> {
 	
 	protected final C typeClass;
 	public AbstractIterable() {
@@ -44,10 +44,6 @@ public abstract class AbstractIterable<T, C, R, S extends IterableAccessor<T, C,
 
 	public void iterate(Iterator<T> iterator, int at) {
 		iterator.iterate(listIterator(at));
-	}
-
-	public S sorted(Comparable<T> sortMethod) {
-		throw new UnsupportedOperationException("Not supported yet.");
 	}
 
 	public java.util.Iterator<T> iterator() {
