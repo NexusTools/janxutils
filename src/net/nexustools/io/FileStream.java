@@ -24,6 +24,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -71,7 +72,11 @@ public class FileStream extends Stream {
 					}
 					RandomAccessFile randomFile;
 					randomAccessFile.set(randomFile = new RandomAccessFile(internal, writable ? "rw" : "r"));
-					randomAccessFile.get().getChannel().lock(0L, Long.MAX_VALUE, !writable);
+					while(true)
+						try {
+							randomAccessFile.get().getChannel().lock(0L, Long.MAX_VALUE, !writable);
+							break;
+						} catch(OverlappingFileLockException ex) {}
 					return randomFile;
 				}
 			});
