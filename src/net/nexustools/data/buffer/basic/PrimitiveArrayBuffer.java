@@ -74,6 +74,11 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 		arraycopy(buffer, pos, to, off, len);
 		return read;
 	}
+
+	@Override
+	protected void deleteRange(int pos, int count, int gap) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
 	
 	protected abstract void convert(T[] from, B to);
 

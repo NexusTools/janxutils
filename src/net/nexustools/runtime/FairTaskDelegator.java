@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.logging.Level;
-import net.nexustools.data.accessor.ListAccessor;
-import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.accessor.MapAccessor;
+import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.NXUtils;
@@ -138,7 +139,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 	private final int maxSampleCount;
 	private final Prop<Boolean> scheduled = new Prop<Boolean>(false);
 	private final PropMap<Integer, Long> lifetimeMap = new PropMap();
-	private final HashMap<Integer, ArrayList<Long>> lifetimeSamplesMap = new HashMap();
+	private final HashMap<Integer, StrongTypeList<Long>> lifetimeSamplesMap = new HashMap();
 	private final PropMap<Integer, Long> totalLifetimeMap = new PropMap();
 	private final Comparator<F> comparator = new DescLongTypeComparator<F>() {
 		@Override
@@ -176,34 +177,34 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 						@Override
 						public void write(MapAccessor<Integer, Long> data) {
 							Logger.gears("Updating Fairness Lifetimes", FairTaskDelegator.this);
-							ArrayList<Integer> processedKeys = new ArrayList();
+							StrongTypeList<Integer> processedKeys = new StrongTypeList();
 							for(Pair<Integer, Long> entry : data) {
 								Logger.gears(entry);
-								processedKeys.add(entry.i);
-								ArrayList<Long> samples = lifetimeSamplesMap.get(entry.i);
+								processedKeys.push(entry.i);
+								StrongTypeList<Long> samples = lifetimeSamplesMap.get(entry.i);
 								if(samples == null) {
 									if(entry.v < 1) // Skip creating entry
 										continue;
 									
-									samples = new ArrayList();
+									samples = new StrongTypeList();
 									lifetimeSamplesMap.put(entry.i, samples);
 								}
-								samples.add(entry.v);
+								samples.push(entry.v);
 							}
 							data.clear();
 							
 							for(int key : lifetimeSamplesMap.keySet()) {
-								ArrayList<Long> samples = lifetimeSamplesMap.get(key);
+								StrongTypeList<Long> samples = lifetimeSamplesMap.get(key);
 								if(!processedKeys.contains(key))
-									samples.add(0L);
-								if(samples.size() >= maxSampleCount) {
+									samples.push(0L);
+								if(samples.length() >= maxSampleCount) {
 									Logger.gears("Shifting sample", key);
 									samples.remove(0);
 								}
 								
 								int sampleCount = 0;
 								long lifetime = (long)Integer.MIN_VALUE;
-								Logger.gears("Reading samples", key, samples.size());
+								Logger.gears("Reading samples", key, samples.length());
 								for(Long sample : samples) {
 									lifetime += sample;
 									sampleCount++;

@@ -83,15 +83,20 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	public void remove(T object) {
 		ListIterator<T> it = listIterator();
 		while(it.hasNext()) {
-			if(object.equals(it.next()))
+			if(object.equals(it.next())) {
 				it.remove();
+				break;
+			}
 		}
 	}
 
 	public T remove(int at) {
 		BufferIterator<T> it = buffer.bufferIterator(at);
 		try {
-			return it.next();
+			if(at >= 0)
+				return it.next();
+			else
+				return it.previous();
 		} finally {
 			it.remove();
 		}
@@ -123,11 +128,30 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	}
 
 	public ListAccessor<T> take(Testable<T> shouldTake) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		TypeList<T, C, R> takeList = new TypeList(typeClass, reference);
+		BufferIterator<T> buff = buffer.bufferIterator(-1);
+		int taken = 0;
+		while(buff.hasPrevious()) {
+			T value = buff.previous();
+			if(shouldTake.test(value)) {
+				takeList.push(value);
+				taken ++;
+			} else if(taken > 0) {
+				buff.remove(1, taken);
+				taken = 0;
+			}
+		}
+		if(taken > 0)
+			buff.remove(0, taken);
+		return takeList;
 	}
 
 	public ListAccessor<T> copy(Testable<T> shouldCopy) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		TypeList<T, C, R> copyList = new TypeList(typeClass, reference);
+		for(T value : this)
+			if(shouldCopy.test(value))
+				copyList.push(value);
+		return copyList;
 	}
 
 	public ListAccessor<T> copy() {
@@ -135,7 +159,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	}
 
 	public T[] toArray() throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return (T[])buffer.storage();
 	}
 
 	public Object[] toObjectArray() {

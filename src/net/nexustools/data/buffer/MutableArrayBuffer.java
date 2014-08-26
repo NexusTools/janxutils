@@ -15,6 +15,8 @@
 
 package net.nexustools.data.buffer;
 
+import java.util.NoSuchElementException;
+
 /**
  *
  * @author katelyn
@@ -22,12 +24,12 @@ package net.nexustools.data.buffer;
 public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, TA, B, C, R> {
 	
 	protected class MutableIterator extends ArrayIterator {
+		int moveOffset;
 		public MutableIterator(int at) {
 			super(at);
 		}
 		@Override
 		public void add(T... elements) {
-			int after = length() - pos;
 			throw new RuntimeException();
 		}
 		@Override
@@ -35,19 +37,25 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 			throw new RuntimeException();
 		}
 		@Override
-		public void remove(int previous, int next) {
-			throw new RuntimeException();
+		public void remove(int offset, int count) {
+			try {
+				delete(pos+offset+moveOffset, count);
+			} catch(java.lang.IllegalArgumentException ex) {
+				throw new NoSuchElementException();
+			}
 		}
 		public boolean hasNext() {
 			return buffer != null && pos < size();
 		}
+		public boolean hasPrevious() {
+			return buffer != null && pos > 0;
+		}
 		public T next() {
+			moveOffset=-1;
 			return get(pos++);
 		}
-		public boolean hasPrevious() {
-			return buffer != null && pos < size();
-		}
 		public T previous() {
+			moveOffset=0;
 			return get(--pos);
 		}
 	}
@@ -78,6 +86,11 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 	}
 	
 	protected abstract int length();
+
+	@Override
+	protected final void deleteRight(int to) {
+		size = to;
+	}
 
 	public final int size() {
 		return size;

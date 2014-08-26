@@ -47,6 +47,7 @@ public abstract class TypeBuffer<T, TA, C, R> extends MutableArrayBuffer<T, T[],
 	
 	public TypeBuffer(C typeClass, TA... elements) {
 		super(typeClass, elements);
+		size = elements == null ? 0 : elements.length;
 	}
 
 	@Override

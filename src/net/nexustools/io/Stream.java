@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.IOUtils;
 import net.nexustools.utils.StringUtils;
 import net.nexustools.utils.log.Logger;
@@ -170,9 +171,9 @@ public abstract class Stream implements Iterable<Stream> {
 			});
 		}
 	};
-	private final static ArrayList<StreamProvider> fallbackProviders = new ArrayList<StreamProvider>() {
+	private final static StrongTypeList<StreamProvider> fallbackProviders = new StrongTypeList<StreamProvider>() {
 		{
-			add(new StreamProvider() {
+			push(new StreamProvider() {
 				@Override
 				public String scheme() {
 					return null;
@@ -200,7 +201,7 @@ public abstract class Stream implements Iterable<Stream> {
 	public static void registerProvider(StreamProvider provider) {
 		String protocol = provider.scheme();
 		if(protocol == null)
-			fallbackProviders.add(provider);
+			fallbackProviders.push(provider);
 		else
 			providers.put(protocol, provider);
 	}

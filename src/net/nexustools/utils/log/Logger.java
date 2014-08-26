@@ -17,16 +17,13 @@ package net.nexustools.utils.log;
 
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.WeakHashMap;
 import net.nexustools.Application;
+import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropList;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.accessor.ListAccessor;
-import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.sort.DescLongTypeComparator;
@@ -38,13 +35,14 @@ import net.nexustools.utils.sort.DescLongTypeComparator;
 public class Logger extends Thread {
 	
 	private static Logger logger = new Logger();
+	private static final Prop<Boolean> shutdown = new Prop(false);
 	private static final PropList<String> classesToSkip = new PropList();
 	private static final PrintStream SystemOut = System.out;
 	private static final PrintStream SystemErr = System.err;
 	private static final Level minLevel;
 	
 	static {
-		Level mLevel = Level.Debug;
+		Level mLevel = Level.Performance;
 		String strLevel = System.getProperty("logger");
 		if(strLevel != null)
 			for(Level level : Level.values())
@@ -55,6 +53,19 @@ public class Logger extends Thread {
 		minLevel = mLevel;
 		if(mLevel.code <= Level.Gears.code)
 			logger.messageQueue.push(new Message(Logger.Level.Gears, Thread.currentThread().getName(), "ReadWriteLock", "Using", defaultPermitCount, "permits by Default"));
+		
+		Runtime.getRuntime().addShutdownHook(new Thread("Logger-Cleanup") {
+			@Override
+			public void run() {
+				shutdown.set(true);
+				logger.interrupt();
+				while(true)
+					try {
+						logger.join();
+						break;
+					} catch (InterruptedException ex) {}
+			}
+		});
 	}
 	
 	private static class Quote {
@@ -96,7 +107,7 @@ public class Logger extends Thread {
 	}
 	
 	public static void log(final Message message) {
-		if(message.level.code >= minLevel.code) {
+		if(message.level.code >= minLevel.code && !shutdown.get()) {
 			try {
 				logger.messageQueue.write(new Writer<ListAccessor<Message>>() {
 					@Override
@@ -117,6 +128,10 @@ public class Logger extends Thread {
 
 	public static void gears(Object... message) {
 		log(Level.Gears, message);
+	}
+
+	public static void performance(Object... message) {
+		log(Level.Performance, message);
 	}
 
 	public static void debug(Object... message) {
@@ -156,7 +171,12 @@ public class Logger extends Thread {
 		 * Internal messages about changes to the underlying implementations.
 		 * Produces an immense amount of output, disabled by default.
 		 */
-		Gears("GEARS", (byte)-1),
+		Gears("GEARS", (byte)-2),
+		
+		/**
+		 * Messages about performance.
+		 */
+		Performance("PEFRM", (byte)-1),
 		
 		/**
 		 * Messages about actions and state changes that may be helpful for debugging.
@@ -206,7 +226,7 @@ public class Logger extends Thread {
 		} catch(NullPointerException t) {
 			return "$Unknown";
 		} catch(Throwable t) {
-			return "$Error$" + t.getClass();
+			return "$Error" + t.getClass();
 		}
 	}
 	
@@ -266,26 +286,31 @@ public class Logger extends Thread {
 		start();
 	}
 
+	boolean running;
 	long sleepTime;
 	@Override
 	public void run() {
 		final WeakHashMap<String, String> classNames = new WeakHashMap();
 		final Fitter threadName = new Fitter();
 		final Fitter className = new Fitter();
+		ListAccessor<Message> readyMessages;;
 		
 		sleepTime = 5 * 60 * 60;
-		while(true) {
+		while(running = !shutdown.get() || messageQueue.isTrue()) {
 			final long after = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
-			ListAccessor<Message> readyMessages = messageQueue.take(new Testable<Message>() {
-				public boolean test(Message against) {
-					long until = after - against.timestamp;
-					if(until > 0)
-						sleepTime = Math.min(sleepTime, until);
-					else
-						return true;
-					return false;
-				}
-			});
+			if(running)
+				readyMessages = messageQueue.take(new Testable<Message>() {
+					public boolean test(Message against) {
+						long until = after - against.timestamp;
+						if(until > 0)
+							sleepTime = Math.min(sleepTime, until);
+						else
+							return true;
+						return false;
+					}
+				});
+			else
+				readyMessages = messageQueue.take();
 			readyMessages.sort(new DescLongTypeComparator<Message>() {
 				@Override
 				public long value(Message o) {
@@ -345,6 +370,7 @@ public class Logger extends Thread {
 					Thread.sleep(sleepTime);
 				} catch (InterruptedException ex) {}
 		}
+		SystemOut.println("Logger exited");
 	}
 	
 }

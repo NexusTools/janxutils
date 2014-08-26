@@ -15,16 +15,13 @@
 
 package net.nexustools.concurrent;
 
-import java.lang.reflect.InvocationTargetException;
-import net.nexustools.data.accessor.MapAccessor;
-import net.nexustools.data.accessor.BaseAccessor;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.logging.Level;
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.BaseAccessor;
+import net.nexustools.data.accessor.MapAccessor;
+import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.NXUtils;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -279,10 +276,10 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	
 	private final Semaphore semaphore;
 	private final Semaphore exclusive;
-	private final ThreadLocal<ArrayList<Lockable>> frames = new ThreadLocal() {
+	private final ThreadLocal<StrongTypeList<Lockable>> frames = new ThreadLocal() {
 		@Override
 		protected Object initialValue() {
-			return new ArrayList<Lockable>();
+			return new StrongTypeList<Lockable>();
 		}
 	};
 	
@@ -307,15 +304,15 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 	}
 	
 	protected Lockable current() {
-		List<Lockable> list = frames.get();
-		int pos = list.size() - 1;
+		StrongTypeList<Lockable> list = frames.get();
+		int pos = list.length() - 1;
 		if(pos < 0)
 			return fullyUnlocked;
 		return list.get(pos);
 	}
 	
 	protected void pushFrame(Lockable lock) {
-		frames.get().add(lock);
+		frames.get().push(lock);
 	}
 
 	@Override
@@ -349,8 +346,8 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 
 	@Override
 	public void unlock() {
-		List<Lockable> list = frames.get();
-		int pos = list.size() - 1;
+		StrongTypeList<Lockable> list = frames.get();
+		int pos = list.length() - 1;
 		if(pos < 0)
 			fullyUnlocked.unlock();
 		else

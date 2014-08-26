@@ -44,10 +44,8 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 		return new EfficientOutputStream() {
 			int pos = at;
 			{
-				if(pos < 0) {
-					//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
+				if(pos < 0)
 					pos = size + (pos + 1);
-				}
 			}
 			@Override
 			public void write(byte[] b, int off, int len) throws IOException {
@@ -61,10 +59,8 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 		return new EfficientInputStream() {
 			int pos = at;
 			{
-				if(pos < 0) {
-					//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
+				if(pos < 0)
 					pos = size + (pos + 1);
-				}
 			}
 			@Override
 			public int read(byte[] b, int off, int len) throws IOException {

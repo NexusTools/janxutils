@@ -59,7 +59,6 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 
 	@Override
 	public void writeImpl(int pos, T[] from, int off, int len) {
-		System.out.println("Writing " + len + "bytes");
 		int newSize = pos+len;
 		int newLength = NXUtils.nearestPow(newSize);
 		if(newLength < 8)
@@ -67,19 +66,34 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 		else if(newLength < length())
 			newLength = Math.min(length(), newLength*newLength);
 		if(newLength != length()) {
-			System.out.println((newLength > length() ? "Expand" : "Shrink") + "ing from " + length() + ":" + size + " to " + newLength + ":" + newSize);
-			
 			T[] newBuffer = create(newLength);
 			int copy = Math.min(pos, size);
-			if(copy > 0) {
-				System.out.println("Copying " + copy+"bytes of old data");
+			if(copy > 0)
 				arraycopy(buffer, 0, newBuffer, 0, copy);
-			}
 			setBuffer(newBuffer);
 		}
-		if(len > 0) {
-			System.out.println("Writing " + len+"bytes of new data");
+		if(len > 0)
 			arraycopy(from, off, buffer, pos, len);
+		size = newSize;
+	}
+
+	@Override
+	protected void deleteRange(final int keepLeft, final int keepRight, final int gap) {
+		int newSize = keepLeft + keepRight;
+		if(keepRight <= gap)
+			arraycopy(buffer, keepLeft+gap, buffer, keepLeft, gap);
+		else {
+			int end = length() - keepRight;
+			if(end > size) {
+				arraycopy(buffer, keepLeft+gap, buffer, end, gap);
+				arraycopy(buffer, end, buffer, keepLeft, keepRight);
+			} else {
+				T[] newBuffer = create(newSize);
+				if(keepLeft > 0)
+					arraycopy(buffer, 0, newBuffer, 0, keepLeft);
+				arraycopy(buffer, keepLeft+gap, newBuffer, keepLeft, keepRight);
+				setBuffer(newBuffer);
+			}
 		}
 		size = newSize;
 	}
@@ -90,7 +104,8 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 	}
 
 	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException {
-		Arrays.sort(buffer, sortMethod);
+		if(buffer != null)
+			Arrays.sort(buffer, sortMethod);
 	}
 
 	@Override

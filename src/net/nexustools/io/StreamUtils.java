@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import net.nexustools.utils.Processor;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Processor;
+import net.nexustools.utils.StringUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  * A convenience class 
@@ -34,6 +36,7 @@ public class StreamUtils {
 	public static final short DefaultMaxCopySize = Short.valueOf(System.getProperty("stream.copysize", String.valueOf(Short.MAX_VALUE)));
 	
 	public static byte[] nextBuffer(int size) {
+		Logger.performance("Allocating", StringUtils.stringForSize(size), "byte[]");
 		return new byte[size];
 	}
 	public static void releaseBuffer(byte[] buffer) {}

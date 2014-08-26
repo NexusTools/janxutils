@@ -26,7 +26,12 @@ public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T,
 	protected abstract class ArrayIterator extends BufferIterator<T> {
 		protected int pos;
 		public ArrayIterator(int at) {
+			if(at < 0)
+				at = size() + (at+1);
 			pos = at;
+			
+			if(pos < 0 || pos > size())
+				throw new IllegalArgumentException("Requested position out of range");
 		}
 		public int nextIndex() {
 			return pos;
@@ -57,18 +62,27 @@ public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T,
 	protected abstract int readImpl(int pos, TA to, int off, int len);
 	protected abstract void writeImpl(int pos, TA from, int off, int len);
 	
+	public void delete(int pos, int count) {
+		if(pos < 0)
+			pos = size() + (pos+1);
+		if(pos < 0 || pos+count > size())
+			throw new IllegalArgumentException(pos + ", " + count);
+		
+		int right = size() - (pos+count);
+		if(right < 1)
+			deleteRight(pos);
+		else
+			deleteRange(pos, right, count);
+	}
+	
 	public int read(int pos, TA from, int off, int len) {
-		if(pos < 0) {
-			//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
+		if(pos < 0)
 			pos = size() + (pos + 1);
-		}
 		return readImpl(pos, from, 0, len);
 	}
 	public void write(int pos, TA from, int off, int len) {
-		if(pos < 0) {
-			//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
+		if(pos < 0)
 			pos = size() + (pos + 1);
-		}
 		writeImpl(pos, from, 0, len);
 	}
 	
@@ -87,6 +101,8 @@ public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T,
 	}
 	
 	protected abstract void arraycopy(TA from, int fromOff, TA to, int toOff, int len);
+	protected abstract void deleteRange(int keepLeft, int keepRight, int gap);
+	protected abstract void deleteRight(int keepLeft);
 	
 	public abstract BufferIterator<T> bufferIterator(int at);
 	

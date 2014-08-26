@@ -87,5 +87,10 @@ public abstract class WrappedTypeBuffer<T, W, C, R> extends TypeBuffer<T, W, C, 
 	public void writeImpl(int pos, T[] from, int off, int len) {
 		
 	}
+
+	@Override
+	protected void deleteRange(int pos, int count, int gap) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
 	
 }
