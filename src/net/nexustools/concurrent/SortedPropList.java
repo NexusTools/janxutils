@@ -19,7 +19,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
-import net.nexustools.data.accessor.GenericListAccessor;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;

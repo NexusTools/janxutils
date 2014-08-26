@@ -59,14 +59,14 @@ public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T,
 	
 	public int read(int pos, TA from, int off, int len) {
 		if(pos < 0) {
-			System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
+			//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
 			pos = size() + (pos + 1);
 		}
 		return readImpl(pos, from, 0, len);
 	}
 	public void write(int pos, TA from, int off, int len) {
 		if(pos < 0) {
-			System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
+			//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size());
 			pos = size() + (pos + 1);
 		}
 		writeImpl(pos, from, 0, len);

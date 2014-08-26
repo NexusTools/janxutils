@@ -45,7 +45,7 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 			int pos = at;
 			{
 				if(pos < 0) {
-					System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
+					//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
 					pos = size + (pos + 1);
 				}
 			}
@@ -62,7 +62,7 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 			int pos = at;
 			{
 				if(pos < 0) {
-					System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
+					//System.out.println("Inverted Access: " + pos + ": " + (pos + 1) + ", " + size);
 					pos = size + (pos + 1);
 				}
 			}

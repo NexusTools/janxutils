@@ -51,16 +51,16 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 		else if(newLength < length())
 			newLength = Math.min(length(), newLength*newLength);
 		if(newLength != length()) {
-			System.out.println((newLength > length() ? "Expand" : "Shrink") + "ing from " + length() + ":" + size + " to " + newLength + ":" + newSize);
+			//System.out.println((newLength > length() ? "Expand" : "Shrink") + "ing from " + length() + ":" + size + " to " + newLength + ":" + newSize);
 			
 			B newBuffer = create(newLength);
 			int copy = Math.min(pos, size);
-			System.out.println("Copying " + copy + "bytes of old data");
+			//System.out.println("Copying " + copy + "bytes of old data");
 			if(copy > 0)
 				arraycopy(buffer, 0, newBuffer, 0, copy);
 			setBuffer(newBuffer);
 		}
-		System.out.println("Writing " + len+"bytes of new data");
+		//System.out.println("Writing " + len+"bytes of new data");
 		if(len > 0)
 			arraycopy(from, off, buffer, pos, len);
 		size = newSize;
