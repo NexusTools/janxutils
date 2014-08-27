@@ -18,6 +18,7 @@ package net.nexustools.data.buffer;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.NoSuchElementException;
+import net.nexustools.utils.Pair;
 
 /**
  *
@@ -44,6 +45,20 @@ public abstract class TypeBuffer<T, TA, C, R> extends MutableArrayBuffer<T, T[],
 		}
 		
 		throw new UnsupportedOperationException("Cannot created TypeBuffer for " + forType);
+	}
+	
+	
+	public static <K, V> TypeBuffer createPair(Pair<K, V>... elements) {
+		return create(new Pair(), elements);
+	}
+	public static <K, V> TypeBuffer createPair(Pair<Class<K>, Class<V>> forType, Pair<K, V>... elements) {
+		return create(forType, new Pair(Reference.Strong, Reference.Strong), elements);
+	}
+	public static <K, V> TypeBuffer createPair(Pair<Class<K>, Class<V>> forType, Pair<Reference, Reference> reference, Pair<K, V>... elements) {
+		if(reference.i == Reference.Strong && reference.v == Reference.Strong)
+			return new StrongPairBuffer<K, V>(forType, elements);
+		
+		throw new UnsupportedOperationException("Cannot created PairBuffer for " + forType);
 	}
 	
 	public TypeBuffer(C typeClass, TA... elements) {

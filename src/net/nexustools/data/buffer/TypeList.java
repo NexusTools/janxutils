@@ -43,7 +43,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	public boolean unique(T object) {
 		ListIterator<T> it = listIterator();
 		while(it.hasNext()) {
-			if(object.equals(it.next()))
+			if(object.hashCode() == it.next().hashCode())
 				return false;
 		}
 		it.add(object);
@@ -83,7 +83,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	public void remove(T object) {
 		ListIterator<T> it = listIterator();
 		while(it.hasNext()) {
-			if(object.equals(it.next())) {
+			if(object.hashCode() == it.next().hashCode()) {
 				it.remove();
 				break;
 			}

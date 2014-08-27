@@ -41,7 +41,7 @@ public class WeakArrayList<T> extends AbstractCollection<T> {
 	public boolean remove(Object o) {
 		Iterator it = iterator();
 		while(it.hasNext())
-			if(it.next().equals(o)) {
+			if(it.next().hashCode() == o.hashCode()) {
 				it.remove();
 				return true;
 			}

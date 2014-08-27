@@ -84,6 +84,8 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 
 	@Override
 	protected final void setBuffer(B buffer) {
+		if(this.buffer != null)
+			release(buffer);
 		this.buffer = buffer;
 	}
 	
@@ -104,6 +106,13 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 
 	public final Reference refType() {
 		return Reference.Strong;
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		super.finalize();
+		if(buffer != null)
+			release(buffer);
 	}
 	
 }

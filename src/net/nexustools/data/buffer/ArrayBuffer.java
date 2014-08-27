@@ -61,19 +61,7 @@ public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T,
 	protected abstract int length(TA of);
 	protected abstract int readImpl(int pos, TA to, int off, int len);
 	protected abstract void writeImpl(int pos, TA from, int off, int len);
-	
-	public void delete(int pos, int count) {
-		if(pos < 0)
-			pos = size() + (pos+1);
-		if(pos < 0 || pos+count > size())
-			throw new IllegalArgumentException(pos + ", " + count);
-		
-		int right = size() - (pos+count);
-		if(right < 1)
-			deleteRight(pos);
-		else
-			deleteRange(pos, right, count);
-	}
+	public abstract void delete(int offset, int count);
 	
 	public int read(int pos, TA from, int off, int len) {
 		if(pos < 0)

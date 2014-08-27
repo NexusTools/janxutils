@@ -160,7 +160,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 				@Override
 				public boolean needUpdate(PropAccessor<T> against) {
-					return !newValue.equals(against);
+					return against.get().hashCode() != newValue.hashCode();
 				}
 			});
 		} catch (InvocationTargetException ex) {

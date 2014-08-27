@@ -65,7 +65,7 @@ public class GenericListAccessor<I> implements ListAccessor<I> {
 		try {
 			while(true) {
 				int index = listIterator.nextIndex();
-				if(listIterator.next().equals(object))
+				if(listIterator.next().hashCode() == object.hashCode())
 					return index;
 			}
 		} catch(NoSuchElementException ex) {
@@ -77,7 +77,7 @@ public class GenericListAccessor<I> implements ListAccessor<I> {
 		try {
 			while(true) {
 				int index = listIterator.previousIndex();
-				if(index == -1 || listIterator.previous().equals(object))
+				if(index == -1 || listIterator.previous().hashCode() == object.hashCode())
 					return index;
 			}
 		} catch(NoSuchElementException ex) {

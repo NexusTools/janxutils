@@ -81,11 +81,11 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 	protected void deleteRange(final int keepLeft, final int keepRight, final int gap) {
 		int newSize = keepLeft + keepRight;
 		if(keepRight <= gap)
-			arraycopy(buffer, keepLeft+gap, buffer, keepLeft, gap);
+			arraycopy(buffer, keepLeft+gap, buffer, keepLeft, keepRight);
 		else {
 			int end = length() - keepRight;
 			if(end > size) {
-				arraycopy(buffer, keepLeft+gap, buffer, end, gap);
+				arraycopy(buffer, keepLeft+gap, buffer, end, keepRight);
 				arraycopy(buffer, end, buffer, keepLeft, keepRight);
 			} else {
 				T[] newBuffer = create(newSize);

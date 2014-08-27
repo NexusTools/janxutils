@@ -16,6 +16,7 @@
 package net.nexustools.data.buffer;
 
 import java.util.NoSuchElementException;
+import net.nexustools.io.StreamUtils;
 
 /**
  *
@@ -97,8 +98,20 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 	}
 
 	public final void clear() {
-		buffer = null;
 		size = 0;
+	}
+	
+	public void delete(int pos, int count) {
+		if(pos < 0)
+			pos = size + (pos+1);
+		if(pos < 0 || pos+count > size)
+			throw new IllegalArgumentException(pos + ", " + count);
+		
+		int right = size - (pos+count);
+		if(right < 1)
+			deleteRight(pos);
+		else
+			deleteRange(pos, right, count);
 	}
 	
 }

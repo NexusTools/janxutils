@@ -126,6 +126,10 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		public void putAll(Map<K, V> iterable) {
 			map.putAll(iterable);
 		}
+		@Override
+		public String toString() {
+			return map.toString();
+		}
 	};
 	public PropMap(Type type) {
 		map = create(this.type = type);
@@ -323,6 +327,11 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 		} catch (InvocationTargetException ex) {
 			throw NXUtils.unwrapRuntime(ex);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "(" + map.toString() + ")";
 	}
 	
 }

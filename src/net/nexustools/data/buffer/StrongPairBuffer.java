@@ -15,6 +15,7 @@
 
 package net.nexustools.data.buffer;
 
+import java.lang.reflect.Array;
 import net.nexustools.data.accessor.DataAccessor.Reference;
 import net.nexustools.utils.Pair;
 
@@ -22,10 +23,26 @@ import net.nexustools.utils.Pair;
  *
  * @author katelyn
  */
-public abstract class TypePairBuffer<I, V> extends GenericTypeBuffer<Pair<I, V>, Pair<Class<I>, Class<V>>, Pair<Reference, Reference>> {
+public class StrongPairBuffer<K, V> extends GenericTypeBuffer<Pair<K, V>, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>> {
 
-	public TypePairBuffer(Pair<Class<I>, Class<V>> typeClass) {
-		super(typeClass);
+	public static final Pair<Reference, Reference> Ref = new Pair(Reference.Strong, Reference.Strong);
+	
+	public StrongPairBuffer(Pair<Class<K>, Class<V>> typeClass, Pair<K, V>... elements) {
+		super(typeClass, elements);
+	}
+
+	@Override
+	protected void setBuffer(Pair<K, V>[] buffer) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	public Pair<Reference, Reference> refType() {
+		return Ref;
+	}
+
+	@Override
+	protected Pair<K, V>[] create(int size) {
+		return new Pair[size];
 	}
 	
 }

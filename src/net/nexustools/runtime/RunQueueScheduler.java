@@ -189,7 +189,7 @@ public final class RunQueueScheduler {
 					Logger.gears("Searchng for task to stop", task);
 					while(iterator.hasNext()) {
 						FutureTask entry = iterator.next();
-						if(entry.future.equals(task) && entry.queue.equals(runQueue)) {
+						if(entry.future.hashCode() == task.hashCode() && entry.queue == runQueue) {
 							Logger.gears("Removing", task);
 							iterator.remove();
 							break;

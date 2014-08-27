@@ -51,7 +51,7 @@ public abstract class BufferList<T, C, R, B extends ArrayBuffer<T, T[], ?, C, R>
 	public int indexOf(T object, int from) {
 		Iterator<T> it = listIterator(from);
 		while(it.hasNext()) {
-			if(object.equals(it.next()))
+			if(object.hashCode() == it.next().hashCode())
 				return from;
 			from ++;
 		}
@@ -61,7 +61,7 @@ public abstract class BufferList<T, C, R, B extends ArrayBuffer<T, T[], ?, C, R>
 	public int lastIndexOf(T object, int from) {
 		ListIterator<T> it = listIterator(from);
 		while(it.hasPrevious()) {
-			if(object.equals(it.previous()))
+			if(object.hashCode() == it.previous().hashCode())
 				return from;
 			from ++;
 		}

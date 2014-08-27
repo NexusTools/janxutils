@@ -16,7 +16,9 @@
 package net.nexustools.data.buffer;
 
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.Map;
+import net.nexustools.data.accessor.DataAccessor.Reference;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.utils.Pair;
 
@@ -24,22 +26,48 @@ import net.nexustools.utils.Pair;
  *
  * @author katelyn
  */
-public class TypeMap<K, V> implements MapAccessor<K, V> {
+public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>>> implements MapAccessor<K, V> {
+	
+	protected final TypeBuffer<Pair<K,V>, ?, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>> buffer;
+	protected TypeMap(TypeBuffer<Pair<K,V>, ?, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>> buffer) {
+		this.buffer = buffer;
+	}
+	protected TypeMap(Pair<Class<K>, Class<V>> typeClass, Pair<Reference, Reference> reference, Pair<K, V>... elements) {
+		buffer = TypeBuffer.createPair(typeClass, reference, elements);
+	}
+	protected TypeMap(Pair<Reference, Reference> reference, Pair<K, V>... elements) {
+		this(new Pair(), reference, elements);
+	}
 
 	public V get(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return get(key, null);
 	}
 
 	public V get(K key, V def) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		for(Pair<K, V> entry : this)
+			if(entry.i.hashCode() == key.hashCode())
+				return entry.v;
+		
+		return def;
 	}
 
 	public void remove(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		Iterator<Pair<K, V>> it = iterator();
+		while(it.hasNext())
+			if(it.next().i.hashCode() == key.hashCode()) {
+				it.remove();
+				break;
+			}
 	}
 
 	public void put(K key, V value) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ListIterator<Pair<K, V>> it = (ListIterator<Pair<K, V>>)iterator();
+		while(it.hasNext())
+			if(it.next().i.hashCode() == key.hashCode()) {
+				it.set(new Pair(key, value));
+				return;
+			}
+		it.add(new Pair(key, value));
 	}
 
 	public void putAll(Iterable<Pair<K, V>> iterable) {
@@ -51,11 +79,28 @@ public class TypeMap<K, V> implements MapAccessor<K, V> {
 	}
 
 	public V replace(K key, V value) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ListIterator<Pair<K, V>> it = (ListIterator<Pair<K, V>>)iterator();
+		while(it.hasNext()) {
+			Pair<K, V> entry = it.next();
+			if(entry.i.equals(key)) {
+				if(entry.v.hashCode() == value.hashCode())
+					return value;
+				else {
+					it.set(new Pair(key, value));
+					return entry.v;
+				}
+			}
+		}
+		it.add(new Pair(key, value));
+		return value;
 	}
 
 	public boolean has(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ListIterator<Pair<K, V>> it = (ListIterator<Pair<K, V>>)iterator();
+		while(it.hasNext())
+			if(it.next().i.hashCode() == key.hashCode())
+				return true;
+		return false;
 	}
 
 	public Map<K, V> copy() {
@@ -63,23 +108,30 @@ public class TypeMap<K, V> implements MapAccessor<K, V> {
 	}
 
 	public V take(K key) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		ListIterator<Pair<K, V>> it = (ListIterator<Pair<K, V>>)iterator();
+		while(it.hasNext()) {
+			Pair<K, V> entry = it.next();
+			if(entry.i.hashCode() == key.hashCode())
+				try {
+					return entry.v;
+				} finally {
+					it.remove();
+				}
+		}
+		return null;
 	}
 
 	public Map<K, V> take() {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
-	public boolean isTrue() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	public void clear() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-	}
-
 	public Iterator<Pair<K, V>> iterator() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return buffer.bufferIterator();
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "(" + buffer + ")";
 	}
 	
 }
