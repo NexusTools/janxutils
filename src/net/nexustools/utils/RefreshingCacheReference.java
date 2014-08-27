@@ -15,42 +15,45 @@
 
 package net.nexustools.utils;
 
-import java.lang.ref.WeakReference;
 import java.util.concurrent.Semaphore;
-import net.nexustools.concurrent.Prop;
-import net.nexustools.runtime.ThreadedRunQueue;
 import net.nexustools.runtime.logic.Task;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
  * @author katelyn
  */
-public class CacheReference<T> extends WeakReference<T> {
+public class RefreshingCacheReference<T> extends CacheReference<T> {
 	
-	protected static final ThreadedRunQueue runQueue = new ThreadedRunQueue("CacheQueue");
-
-	protected final int lifetime;
-	protected final Runnable cacheClear = new Runnable() {
-		public void run() {
-			Logger.debug("Clearing cache", cache);
-			cache.clear();
-		}
-	};
-	protected final Prop<T> cache;
-	public CacheReference(int lifetime, T value) {
-		super(value);
-		this.lifetime = lifetime;
-		cache = new Prop(value);
-		runQueue.push(new Runnable() {
-			public void run() {
-				schedule();
-			}
-		});
+	private Task cacheTask;
+	private final Semaphore getLock = new Semaphore(1);
+	public RefreshingCacheReference(int lifetime, T value) {
+		super(lifetime, value);
 	}
-	
+
+	@Override
 	protected Task schedule() {
-		return runQueue.schedule(cacheClear, lifetime);
+		return cacheTask = super.schedule();
+	}
+
+	@Override
+	public T get() {
+		getLock.acquireUninterruptibly();
+		try {
+			cacheTask.sync(new Runnable() {
+				public void run() {
+					cacheTask.cancel();
+
+					if(!cache.isset())
+						cache.set(RefreshingCacheReference.super.get());
+					if(cache.isset())
+						schedule();
+				}
+			});
+			return cache.get();
+		} finally {
+			getLock.release();
+		}
+		
 	}
 	
 }
