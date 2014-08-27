@@ -25,18 +25,31 @@ import net.nexustools.runtime.logic.Task;
 public class RefreshingCacheReference<T> extends CacheReference<T> {
 	
 	private Task cacheTask;
+	protected final Runnable cacheClear = new Runnable() {
+		public void run() {
+			if(!markedToClear) {
+				markedToClear = true;
+				schedule();
+			} else
+				cache.clear();
+		}
+	};
+	private boolean markedToClear = false;
 	private final Semaphore getLock = new Semaphore(1);
 	public RefreshingCacheReference(int lifetime, T value) {
 		super(lifetime, value);
 	}
-
+	
 	@Override
-	protected Task schedule() {
-		return cacheTask = super.schedule();
+	protected void schedule() {
+		cacheTask = runQueue.schedule(cacheClear, lifetime/2);
 	}
 
 	@Override
 	public T get() {
+		if(!markedToClear)
+			return super.get();
+		
 		getLock.acquireUninterruptibly();
 		try {
 			cacheTask.sync(new Runnable() {
@@ -45,8 +58,10 @@ public class RefreshingCacheReference<T> extends CacheReference<T> {
 
 					if(!cache.isset())
 						cache.set(RefreshingCacheReference.super.get());
-					if(cache.isset())
+					if(cache.isset()) {
+						markedToClear = false;
 						schedule();
+					}
 				}
 			});
 			return cache.get();

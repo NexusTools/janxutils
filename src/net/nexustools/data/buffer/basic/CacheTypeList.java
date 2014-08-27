@@ -17,7 +17,6 @@ package net.nexustools.data.buffer.basic;
 
 import net.nexustools.data.accessor.DataAccessor;
 import net.nexustools.data.accessor.DataAccessor.CacheLifetime;
-import net.nexustools.data.accessor.DataAccessor.Reference;
 import net.nexustools.data.buffer.TypeList;
 
 /**

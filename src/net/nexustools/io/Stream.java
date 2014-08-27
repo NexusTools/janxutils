@@ -23,17 +23,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.IOUtils;
 import net.nexustools.utils.StringUtils;
-import net.nexustools.utils.log.Logger;
 
 /**
  *

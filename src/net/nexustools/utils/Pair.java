@@ -32,14 +32,6 @@ public class Pair<I, V> {
 	public Pair() {}
 
 	@Override
-	public int hashCode() {
-		int hash = 3;
-		hash = 13 * hash + this.i.hashCode();
-		hash = 13 * hash + this.v.hashCode();
-		return hash;
-	}
-
-	@Override
 	public boolean equals(Object obj) {
 		if (obj == null) {
 			return false;
@@ -55,6 +47,14 @@ public class Pair<I, V> {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 3;
+		hash = 59 * hash + (this.i != null ? this.i.hashCode() : 0);
+		hash = 59 * hash + (this.v != null ? this.v.hashCode() : 0);
+		return hash;
 	}
 	
 	@Override

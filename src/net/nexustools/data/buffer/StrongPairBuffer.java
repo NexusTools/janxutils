@@ -33,7 +33,7 @@ public class StrongPairBuffer<K, V> extends GenericTypeBuffer<Pair<K, V>, Pair<C
 
 	@Override
 	protected void setBuffer(Pair<K, V>[] buffer) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		this.buffer = buffer;
 	}
 
 	public Pair<Reference, Reference> refType() {

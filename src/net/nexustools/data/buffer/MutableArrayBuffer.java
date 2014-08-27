@@ -30,8 +30,11 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 			super(at);
 		}
 		@Override
-		public void add(T... elements) {
-			throw new RuntimeException();
+		public void insert(T... elements) {
+			if(pos >= size)
+				write(pos, convert(elements));
+			else
+				throw new RuntimeException();
 		}
 		@Override
 		public void replace(int from, T... elements) {

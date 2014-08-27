@@ -73,7 +73,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	}
 
 	public void unshiftAll(T...objects) {
-		buffer.bufferIterator().add(objects);
+		buffer.bufferIterator().insert(objects);
 	}
 
 	public void insert(T object, int at) {

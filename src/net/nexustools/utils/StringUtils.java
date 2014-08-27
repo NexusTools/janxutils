@@ -25,6 +25,7 @@ import java.security.SecureRandom;
 import net.nexustools.io.MemoryStream;
 import net.nexustools.io.Stream;
 import static net.nexustools.io.StreamUtils.DefaultBufferSize;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -54,36 +55,29 @@ public class StringUtils {
 		ASCII = ascii;
 	}
 	
-	public static String read(String url, Charset charset, short max) throws IOException, URISyntaxException {
-		return read(Stream.openInputStream(url), charset, max);
-	}
-	
+	private static final RefreshingCacheMap<Pair<String, Charset>, String> stringCache = new RefreshingCacheMap<Pair<String, Charset>, String>(new Creator<String, Pair<String, Charset>>() {
+		public String create(Pair<String, Charset> using) {
+			try {
+				Logger.performance("Fetching", using);
+				return read(Stream.openInputStream(using.i), using.v, DefaultBufferSize);
+			} catch (IOException ex) {
+				throw NXUtils.wrapRuntime(ex);
+			} catch (URISyntaxException ex) {
+				throw NXUtils.wrapRuntime(ex);
+			}
+		}
+	});
 	public static String read(String url, Charset charset) throws IOException, URISyntaxException {
-		return read(url, charset, DefaultBufferSize);
+		return stringCache.get(new Pair(url, charset));
 	}
-	
 	public static String readUTF8(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF8);
 	}
-	
-	public static String readUTF8(String url, short max) throws IOException, URISyntaxException {
-		return read(url, StringUtils.UTF8, max);
-	}
-	
 	public static String readUTF16(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.UTF16);
 	}
-	
-	public static String readUTF16(String url, short max) throws IOException, URISyntaxException {
-		return read(url, StringUtils.UTF16, max);
-	}
-	
 	public static String readASCII(String url) throws IOException, URISyntaxException {
 		return read(url, StringUtils.ASCII);
-	}
-	
-	public static String readASCII(String url, short max) throws IOException, URISyntaxException {
-		return read(url, StringUtils.ASCII, max);
 	}
 	
 	public static String read(InputStream inStream, Charset charset) throws IOException {

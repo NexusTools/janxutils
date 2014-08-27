@@ -24,15 +24,23 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.PropAccessor;
+import static net.nexustools.io.StreamUtils.DefaultBufferSize;
+import net.nexustools.utils.CacheMap;
+import net.nexustools.utils.CacheReference;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Pair;
+import net.nexustools.utils.RefreshingCacheMap;
+import static net.nexustools.utils.StringUtils.read;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -42,11 +50,17 @@ import net.nexustools.utils.log.Logger;
  */
 public class FileStream extends Stream {
 	
+	private static final RefreshingCacheMap<String, FileStream> cache = new RefreshingCacheMap<String, FileStream>(new Creator<FileStream, String>() {
+		public FileStream create(String filePath) {
+			Logger.performance("Opening FileStream", filePath);
+			return new FileStream(filePath);
+		}
+	});
 	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
 	private final Prop<RandomAccessFile> randomAccessFile = new Prop();
 	private final File internal;
 	
-	protected FileStream(String path) throws FileNotFoundException, IOException {
+	protected FileStream(String path) {
 		this.internal = new File(path);
 	}
 	
@@ -95,16 +109,8 @@ public class FileStream extends Stream {
 		return internal.getAbsolutePath();
 	}
 	
-	public static synchronized Stream getStream(String filePath) throws FileNotFoundException, IOException {
-		FileStream fileStream;
-		fileStream = instanceCache.get(filePath);
-		if(fileStream == null) {
-			Logger.gears("Creating FileStream: " + filePath);
-			fileStream = new FileStream(filePath);
-			instanceCache.put(filePath, fileStream);
-		}
-		
-		return fileStream;
+	public static synchronized Stream getStream(String filePath) {
+		return cache.get(filePath);
 	}
 
 	@Override
@@ -176,58 +182,60 @@ public class FileStream extends Stream {
 	@Override
 	public String mimeType() {
 		String type = null;
-		try {
-			type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
-				@Override
-				public String soft(PropAccessor<Creator<String, File>> data) {
-					return data.get().create(internal);
-				}
-				@Override
-				public String read(PropAccessor<Creator<String, File>> data) {
-					ClassLoader cl = ClassLoader.getSystemClassLoader();
-					try {
-						final Class<?> pathClass = cl.loadClass("java.nio.file.Path");
-						final Class<?> pathsClass = cl.loadClass("java.nio.file.Paths");
-						final Class<?> filesClass = cl.loadClass("java.nio.file.Files");
-						
-						data.set(new Creator<String, File>() {
-							final Method pathsGet = pathsClass.getMethod("get", URI.class);
-							final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
-							{
-								create(internal); // Test it once
-								Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
-							}
-							public synchronized String create(File using) {
-								try {
-									return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
-								} catch (IllegalAccessException ex) {
-									return null;
-								} catch (IllegalArgumentException ex) {
-									return null;
-								} catch (InvocationTargetException ex) {
+		if(type == null) {
+			try {
+				type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
+					@Override
+					public String soft(PropAccessor<Creator<String, File>> data) {
+						return data.get().create(internal);
+					}
+					@Override
+					public String read(PropAccessor<Creator<String, File>> data) {
+						ClassLoader cl = ClassLoader.getSystemClassLoader();
+						try {
+							final Class<?> pathClass = cl.loadClass("java.nio.file.Path");
+							final Class<?> pathsClass = cl.loadClass("java.nio.file.Paths");
+							final Class<?> filesClass = cl.loadClass("java.nio.file.Files");
+
+							data.set(new Creator<String, File>() {
+								final Method pathsGet = pathsClass.getMethod("get", URI.class);
+								final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
+								{
+									create(internal); // Test it once
+									Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
+								}
+								public synchronized String create(File using) {
+									try {
+										return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
+									} catch (IllegalAccessException ex) {
+										return null;
+									} catch (IllegalArgumentException ex) {
+										return null;
+									} catch (InvocationTargetException ex) {
+										return null;
+									}
+								}
+							});
+						} catch(Throwable t) {
+							data.set(new Creator<String, File>() {
+								public String create(File using) {
 									return null;
 								}
-							}
-						});
-					} catch(Throwable t) {
-						data.set(new Creator<String, File>() {
-							public String create(File using) {
-								return null;
-							}
-						});
-						Logger.exception(Logger.Level.Gears, t);
+							});
+							Logger.exception(Logger.Level.Gears, t);
+						}
+
+						return data.get().create(internal);
 					}
-					
-					return data.get().create(internal);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			Logger.exception(Logger.Level.Gears, ex);
+				});
+			} catch (InvocationTargetException ex) {
+				Logger.exception(Logger.Level.Gears, ex);
+			}
+			if(type == null)
+				type = super.mimeType();
 		}
-		if(type != null)
-			return type;
 		
-		return super.mimeType();
+		return type;
 	}
 
 	@Override

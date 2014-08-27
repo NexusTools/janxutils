@@ -13,32 +13,25 @@
  * 
  */
 
-package net.nexustools.data.buffer;
+package net.nexustools.utils;
 
-import java.util.ListIterator;
+import net.nexustools.data.accessor.DataAccessor.CacheLifetime;
 
 /**
  *
  * @author katelyn
  */
-public abstract class BufferIterator<T> implements ListIterator<T> {
+public class RefreshingCacheMap<K,V> extends CacheMap<K, V, RefreshingCacheReference<V>> {
 	
-	public abstract void insert(T... e);
-	public abstract void replace(int from, T... elements);
-	public abstract void remove(int offset, int count);
-
-	public void set(T e) {
-		replace(0, e);
+	public RefreshingCacheMap(Creator<V,K> creator) {
+		this(creator, CacheLifetime.Medium);
 	}
-	public void remove() {
-		remove(1);
+	public RefreshingCacheMap(Creator<V,K> creator, CacheLifetime lifetime) {
+		super(creator, lifetime);
 	}
-	public void remove(int count) {
-		assert(count > 0);
-		remove(0, count);
-	}
-	public void add(T e) {
-		insert(e);
+	
+	protected RefreshingCacheReference<V> ref(V value) {
+		return new RefreshingCacheReference(lifetime.life, value);
 	}
 	
 }
