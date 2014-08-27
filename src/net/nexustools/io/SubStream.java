@@ -189,8 +189,8 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public boolean hasChildren() {
-		return stream.hasChildren();
+	public boolean isDirectory() {
+		return stream.isDirectory();
 	}
 
 	@Override

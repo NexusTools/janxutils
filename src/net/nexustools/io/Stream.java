@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -26,9 +28,15 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.data.buffer.basic.StrongTypeList;
+import static net.nexustools.io.FileStream.detectedProbeContentType;
+import net.nexustools.utils.Creator;
 import net.nexustools.utils.IOUtils;
+import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.StringUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -387,44 +395,49 @@ public abstract class Stream implements Iterable<Stream> {
 		return true;
 	}
 	
+	private final RefreshingCache<String> sizeStrCache = new RefreshingCache<String>(new Creator<String, Void>() {
+		public String create(java.lang.Void using) {
+			StringBuilder builder = new StringBuilder();
+			try {
+				builder.append(StringUtils.stringForSize(size()));
+			} catch(IOException ex) {}
+			if(isDirectory()) {
+				int folderCount = 0;
+				int fileCount = 0;
+
+				for(Stream child : Stream.this) {
+					if(child.isDirectory())
+						folderCount ++;
+					else
+						fileCount ++;
+				}
+				if(fileCount > 0) {
+					if(builder.length() > 0)
+						builder.append(", ");
+					builder.append(fileCount);
+					builder.append(" files");
+				}
+				if(folderCount > 0) {
+					if(builder.length() > 0)
+						builder.append(", ");
+					builder.append(folderCount);
+					builder.append(" folders");
+				}
+				if(builder.length() < 1)
+					builder.append("Empty");
+			}
+
+			if(builder.length() < 1)
+				builder.append("Cannot determine size");
+
+			return builder.toString();
+		}
+	});
 	public String sizeStr() throws IOException{
 		if(!canRead())
 			throw new IOException("Permission Denied");
 		
-		StringBuilder builder = new StringBuilder();
-		try {
-			builder.append(StringUtils.stringForSize(size()));
-		} catch(IOException ex) {}
-		if(hasChildren()) {
-			int folderCount = 0;
-			int fileCount = 0;
-			
-			for(Stream child : this) {
-				if(child.hasChildren())
-					folderCount ++;
-				else
-					fileCount ++;
-			}
-			if(fileCount > 0) {
-				if(builder.length() > 0)
-					builder.append(", ");
-				builder.append(fileCount);
-				builder.append(" files");
-			}
-			if(folderCount > 0) {
-				if(builder.length() > 0)
-					builder.append(", ");
-				builder.append(folderCount);
-				builder.append(" folders");
-			}
-			if(builder.length() < 1)
-				builder.append("Empty");
-		}
-		
-		if(builder.length() < 1)
-			throw new IOException("Cannot determine size");
-		
-		return builder.toString();
+		return sizeStrCache.get();
 	}
 	
 	public final void read(StreamReader<InputStream> reader) throws IOException {
@@ -662,7 +675,11 @@ public abstract class Stream implements Iterable<Stream> {
 		throw new IOException(toURL() + " has no children");
 	}
 	
-	public boolean hasChildren() {
+	public void clearCache() {
+		sizeStrCache.clear();
+	}
+	
+	public boolean isDirectory() {
 		return false;
 	}
 	

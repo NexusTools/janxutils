@@ -188,7 +188,7 @@ public class URLStream extends Stream {
 	}
 	
 	@Override
-	public boolean hasChildren() {
+	public boolean isDirectory() {
 		return false;
 	}
 

@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.Iterator;
-import java.util.WeakHashMap;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.PropAccessor;
@@ -49,12 +48,17 @@ public class FileStream extends Stream {
 			return new FileStream(filePath);
 		}
 	});
-	private static final WeakHashMap<String, FileStream> instanceCache = new WeakHashMap();
+	private final String internalPath;
+	private final RefreshingCache<File> internal = new RefreshingCache<File>(new Creator<File, Void>() {
+		public File create(java.lang.Void using) {
+			Logger.performance("Reading file information", internalPath);
+			return new File(internalPath);
+		}
+	});
 	private final Prop<RandomAccessFile> randomAccessFile = new Prop();
-	private final File internal;
 	
 	protected FileStream(String path) {
-		this.internal = new File(path);
+		internalPath = path;
 	}
 	
 	protected final RandomAccessFile ensureOpen() throws FileNotFoundException, IOException {
@@ -70,15 +74,14 @@ public class FileStream extends Stream {
 				@Override
 				public RandomAccessFile read(PropAccessor<RandomAccessFile> data) throws IOException {
 					if(writable) {
-						String path = internal.getAbsolutePath();
-						String parentPath = path.substring(0, path.lastIndexOf("/"));
+						String parentPath = internalPath.substring(0, internalPath.lastIndexOf("/"));
 						Logger.debug(parentPath);
 						File parentFile = new File(parentPath);
 						if(!parentFile.exists() && !parentFile.mkdirs())
 							throw new IOException(toURL() + ": Unable to create directory structure");
 					}
 					RandomAccessFile randomFile;
-					randomAccessFile.set(randomFile = new RandomAccessFile(internal, writable ? "rw" : "r"));
+					randomAccessFile.set(randomFile = new RandomAccessFile(internalPath, writable ? "rw" : "r"));
 					while(true)
 						try {
 							randomAccessFile.get().getChannel().lock(0L, Long.MAX_VALUE, !writable);
@@ -99,7 +102,7 @@ public class FileStream extends Stream {
 	
 	@Override
 	public String path() {
-		return internal.getAbsolutePath();
+		return internalPath;
 	}
 	
 	public static synchronized Stream getStream(String filePath) {
@@ -113,11 +116,11 @@ public class FileStream extends Stream {
 
 	@Override
 	public boolean canWrite() {
-		return internal.canWrite();
+		return internal.get().canWrite();
 	}
 
 	public void markDeleteOnExit() {
-		internal.deleteOnExit();
+		internal.get().deleteOnExit();
 	}
 	
 	public final boolean isOpen() {
@@ -128,47 +131,56 @@ public class FileStream extends Stream {
 	
 	@Override
 	public boolean exists() {
-		return internal.exists();
+		return internal.get().exists();
 	}
 	
+	private final RefreshingCache<Iterable<String>> childCache = new RefreshingCache<Iterable<String>>(new Creator<Iterable<String>, Void>() {
+		public Iterable<String> create(java.lang.Void using) {
+			final String[] children = internal.get().list();
+			
+			if(children != null && children.length > 0)
+				return new Iterable<String>() {
+					public Iterator<String> iterator() {
+						return new Iterator<String>() {
+							int pos = -1;
+							public boolean hasNext() {
+								return pos + 1 < children.length;
+							}
+							public String next() {
+								return children[++pos];
+							}
+							public void remove() {
+								throw new UnsupportedOperationException("Not supported.");
+							}
+						};
+					}
+				};
+			else
+				return new Iterable<String>() {
+					public Iterator<String> iterator() {
+						return new Iterator<String>() {
+							public boolean hasNext() {
+								return false;
+							}
+							public String next() {
+								throw new UnsupportedOperationException("Not supported.");
+							}
+							public void remove() {
+								throw new UnsupportedOperationException("Not supported.");
+							}
+						};
+					}
+				};
+		}
+	});
 	@Override
 	public Iterable<String> children() {
-		return new Iterable<String>() {
-			public Iterator<String> iterator() {
-				final String[] children = internal.list();
-				
-				if(children != null && children.length > 0)
-					return new Iterator<String>() {
-						int pos = -1;
-						public boolean hasNext() {
-							return pos + 1 < children.length;
-						}
-						public String next() {
-							return children[++pos];
-						}
-						public void remove() {
-							throw new UnsupportedOperationException("Not supported.");
-						}
-					};
-				else
-					return new Iterator<String>() {
-						public boolean hasNext() {
-							return false;
-						}
-						public String next() {
-							throw new UnsupportedOperationException("Not supported.");
-						}
-						public void remove() {
-							throw new UnsupportedOperationException("Not supported.");
-						}
-					};
-			}
-		};
+		return childCache.get();
 	}
 	
 	@Override
-	public boolean hasChildren() {
-		return internal.isDirectory();
+	public boolean isDirectory() {
+		return internal.get().isDirectory();
 	}
 
 	
@@ -180,7 +192,7 @@ public class FileStream extends Stream {
 				type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
 					@Override
 					public String soft(PropAccessor<Creator<String, File>> data) {
-						return data.get().create(internal);
+						return data.get().create(internal.get());
 					}
 					@Override
 					public String read(PropAccessor<Creator<String, File>> data) {
@@ -194,7 +206,7 @@ public class FileStream extends Stream {
 								final Method pathsGet = pathsClass.getMethod("get", URI.class);
 								final Method probeContentType = filesClass.getMethod("probeContentType", pathClass);
 								{
-									create(internal); // Test it once
+									create(internal.get()); // Test it once
 									Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
 								}
 								public synchronized String create(File using) {
@@ -218,7 +230,7 @@ public class FileStream extends Stream {
 							Logger.exception(Logger.Level.Gears, t);
 						}
 
-						return data.get().create(internal);
+						return data.get().create(internal.get());
 					}
 				});
 			} catch (InvocationTargetException ex) {
@@ -237,17 +249,17 @@ public class FileStream extends Stream {
 
 	@Override
 	public boolean isHidden() {
-		return internal.isHidden();
+		return internal.get().isHidden();
 	}
 
 	@Override
 	public long lastModified() {
-		return internal.lastModified();
+		return internal.get().lastModified();
 	}
 
 	@Override
 	public boolean canRead() {
-		return internal.canRead();
+		return internal.get().canRead();
 	}
 
 	@Override
@@ -279,6 +291,14 @@ public class FileStream extends Stream {
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
 		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public void clearCache() {
+		super.clearCache();
+		childCache.clear();
+		mimeCache.clear();
+		internal.clear();
 	}
 	
 }

@@ -66,6 +66,10 @@ public class Cache<V, C extends CacheReference<V>> {
 		}
 	}
 	
+	public void clear() {
+		cache.clear();
+	}
+	
 	protected C ref(V value) {
 		return (C)new CacheReference(lifetime.life, value);
 	}
