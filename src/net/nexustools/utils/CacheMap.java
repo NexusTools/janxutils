@@ -15,7 +15,12 @@
 
 package net.nexustools.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.nexustools.concurrent.ReadWriteLock;
+import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.DataAccessor.CacheLifetime;
 import net.nexustools.data.buffer.basic.StrongTypeMap;
 
@@ -27,7 +32,7 @@ public class CacheMap<K,V, C extends CacheReference<V>> {
 	
 	private final Creator<V,K> creator;
 	protected final CacheLifetime lifetime;
-	private final Semaphore getLock = new Semaphore(1);
+	private final ReadWriteLock<StrongTypeMap<K, C>> lock = new ReadWriteLock();
 	private final StrongTypeMap<K, C> map = new StrongTypeMap();
 	public CacheMap(Creator<V,K> creator) {
 		this(creator, CacheLifetime.Medium);
@@ -37,17 +42,30 @@ public class CacheMap<K,V, C extends CacheReference<V>> {
 		this.lifetime = lifetime;
 	}
 	
-	public V get(K key) {
-		getLock.acquireUninterruptibly();
+	public V get(final K key) {
 		try {
-			C ref = map.get(key);
-			
-			V value;
-			if(ref == null || (value = ref.get()) == null)
-				map.put(key, ref(value = creator.create(key)));
-			return value;
-		} finally {
-			getLock.release();
+			return lock.read(map, new SoftWriteReader<V, StrongTypeMap<K, C>>() {
+				V value;
+				@Override
+				public boolean test(StrongTypeMap<K, C> against) {
+					try {
+						return (value = against.get(key).get()) == null;
+					} catch(NullPointerException ex) {
+						return true;
+					}
+				}
+				@Override
+				public V soft(StrongTypeMap<K, C> data) throws Throwable {
+					return value;
+				}
+				@Override
+				public V read(StrongTypeMap<K, C> data) throws Throwable {
+					map.put(key, ref(value = creator.create(key)));
+					return value;
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
