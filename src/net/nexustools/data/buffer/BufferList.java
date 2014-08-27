@@ -20,11 +20,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.annote.ThreadUnsafe;
 
 /**
  *
  * @author katelyn
  */
+@ThreadUnsafe
 public abstract class BufferList<T, C, R, B extends ArrayBuffer<T, T[], ?, C, R>> implements ListAccessor<T> {
 	
 	protected final B buffer;

@@ -16,11 +16,13 @@
 package net.nexustools.data.buffer;
 
 import net.nexustools.data.accessor.IterableAccessor;
+import net.nexustools.data.annote.ThreadUnsafe;
 
 /**
  *
  * @author katelyn
  */
+@ThreadUnsafe
 public abstract class ArrayBuffer<T, TA, B, C, R> implements IterableAccessor<T, C, R> {
 	
 	protected abstract class ArrayIterator extends BufferIterator<T> {

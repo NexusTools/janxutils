@@ -35,7 +35,7 @@ public class GenericListAccessor<I> implements ListAccessor<I> {
 	protected GenericListAccessor(ArrayList<I> items) {
 		list = items;
 	}
-	public GenericListAccessor(Collection<I> items) {
+	public GenericListAccessor(Collection<? extends I> items) {
 		list = new ArrayList(items);
 	}
 	public GenericListAccessor() {

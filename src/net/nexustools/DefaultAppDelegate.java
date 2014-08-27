@@ -18,8 +18,11 @@ package net.nexustools;
 import java.io.File;
 import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
+import net.nexustools.concurrent.Condition;
+import net.nexustools.concurrent.Prop;
 import net.nexustools.io.Stream;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -30,6 +33,8 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 	public final String name;
 	protected final R runQueue;
 	private final String organization;
+	private final Prop<Runnable> mainLoop = new Prop();
+	private final Condition hasMainLoop = new Condition();
 	public DefaultAppDelegate(String[] args) {
 		this(args, defaultName(), defaultOrganization());
 	}
@@ -47,14 +52,41 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		queue.push(new Runnable() {
 			public void run() {
 				Application.setDelegateIfNone(DefaultAppDelegate.this);
-				launch(args);
-				Logger.info("Launched", DefaultAppDelegate.this);
+				Runnable main = null;
+				try {
+					main = launch(args);
+					if(main == null) {
+						Logger.warn("Launched but Missing MainLoop", DefaultAppDelegate.this);
+						main = new Runnable() {
+							public void run() {
+								throw new UnsupportedOperationException("No main loop returned by " + getClass().getSimpleName() + ".launch");
+							}
+						};
+					} else
+						Logger.info("Launched", DefaultAppDelegate.this);
+				} catch (final Throwable t) {
+					main = new Runnable() {
+						public void run() {}
+					};
+					throw NXUtils.wrapRuntime(t);
+				} finally {
+					assert(main != null);
+					mainLoop.set(main);
+					hasMainLoop.finish();
+				}
 			}
 		});
 	}
 
-	public void mainLoop() {
+	public final void mainLoop() {
 		Application.setDelegate(this);
+		if(!mainLoop.isset()) {
+			Logger.debug("Waiting on MainLoop", DefaultAppDelegate.this);
+			hasMainLoop.waitFor();
+		}
+		
+		Logger.info("Entering MainLoop", DefaultAppDelegate.this);
+		mainLoop.get().run();
 	}
 	
 	public final R queue() {
@@ -115,7 +147,7 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		return organization;
 	}
 	
-	protected abstract void launch(String[] args);
+	protected abstract Runnable launch(String[] args) throws Throwable;
 	
 	@Override
 	public String toString() {

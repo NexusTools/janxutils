@@ -16,17 +16,33 @@
 package net.nexustools.utils.log;
 
 import java.io.PrintStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.nexustools.Application;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.PropList;
+import net.nexustools.concurrent.PropMap;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
+import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.data.annote.ThreadUnsafe;
+import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
+import net.nexustools.utils.WeakArrayList;
 import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
@@ -35,7 +51,59 @@ import net.nexustools.utils.sort.DescLongTypeComparator;
  */
 public class Logger extends Thread {
 	
+	private static Creator<Object, Object> Identity = new Creator<Object, Object>() {
+		public Object create(Object using) {
+			return using;
+		}
+	};
+	private static Creator<Object, Object> ThreadUnsafeCreator = new Creator<Object, Object>() {
+		public Object create(Object using) {
+			return new ThreadUnsafeWrapper(using);
+		}
+	};
+	private static class Numeric implements Creator<Object, Object> {
+		private final String name;
+		public Numeric(String name) {
+			this.name = name;
+		}
+		
+		public Object create(final Object using) {
+			return new Object() {
+				@Override
+				public String toString() {
+					return name + '(' + using + ')';
+				}
+			};
+		}
+	}
+	
 	private static final Prop<Boolean> shutdown = new Prop(false);
+	private static final PropMap<Class<?>, Creator<Object, Object>> threadUnsafe = new PropMap() {
+		{
+			put(Float.class, new Numeric("Float"));
+			put(Double.class, new Numeric("Double"));
+			
+			put(Long.class, new Numeric("Long"));
+			put(Short.class, new Numeric("Short"));
+			put(Byte.class, new Numeric("Byte"));
+			
+			put(ArrayList.class, ThreadUnsafeCreator);
+			put(WeakArrayList.class, ThreadUnsafeCreator);
+			put(LinkedList.class, ThreadUnsafeCreator);
+			
+			put(EnumMap.class, ThreadUnsafeCreator);
+			put(Hashtable.class, ThreadUnsafeCreator);
+			put(WeakHashMap.class, ThreadUnsafeCreator);
+			put(LinkedHashMap.class, ThreadUnsafeCreator);
+			put(HashMap.class, ThreadUnsafeCreator);
+			put(TreeMap.class, ThreadUnsafeCreator);
+			
+			put(Quote.class, Identity);
+			put(Integer.class, Identity);
+			put(String.class, Identity);
+			put(Class.class, Identity);
+		}
+	};
 	private static final PropList<String> classesToSkip = new PropList() {
 		{
 			push(Thread.class);
@@ -75,9 +143,11 @@ public class Logger extends Thread {
 					throw NXUtils.wrapRuntime(ex);
 				}
 				
-				while(true)
+				System.out.println("Waiting for Logger to Exit");
+				while(logger.isAlive())
 					try {
-						logger.join();
+						logger.join(50);
+						logger.interrupt();
 						break;
 					} catch (InterruptedException ex) {}
 			}
@@ -86,13 +156,73 @@ public class Logger extends Thread {
 
 	public static void init() {}
 	
+	private static Object wrap(Object obj) {
+		if(obj == null)
+			return obj;
+		
+		if(obj instanceof Throwable)
+			obj = NXUtils.unwrapTarget((Throwable)obj);
+		
+		final Class<?> clazz = obj.getClass();
+		try {
+			return threadUnsafe.read(new SoftWriteReader<Creator<Object, Object>, MapAccessor<Class<?>, Creator<Object, Object>>>() {
+						@Override
+						public boolean test(MapAccessor<Class<?>, Creator<Object, Object>> against) {
+							return !against.has(clazz);
+						}
+						@Override
+						public Creator<Object, Object> soft(MapAccessor<Class<?>, Creator<Object, Object>> data) throws Throwable {
+							return data.get(clazz);
+						}
+						@Override
+						public Creator<Object, Object> read(MapAccessor<Class<?>, Creator<Object, Object>> data) throws Throwable {
+							Boolean isThreadUnsafe = false;
+							Class<?> testClass = clazz;
+							
+							do {
+								for(Annotation annote : testClass.getDeclaredAnnotations()) {
+									if(annote instanceof ThreadUnsafe) {
+										isThreadUnsafe = true;
+										break;
+									}
+								}
+							} while(!isThreadUnsafe && (testClass = testClass.getSuperclass()) != Object.class);
+							
+							Creator<Object, Object> creator;
+							if(isThreadUnsafe) {
+								Logger.performance(clazz, "is thread unsafe\nWill be processed on calling thread instead of Logger thread");
+								creator = ThreadUnsafeCreator;
+							} else
+								creator = Identity;
+							data.put(clazz, creator);
+							return creator;
+							
+						}
+					}).create(obj);
+		} catch (InvocationTargetException ex) {
+			warn(ex);
+		}
+		
+		return obj;
+	}
 	private static class Quote {
 		public final Object obj;
 		public Quote(Object obj) {
-			this.obj = obj;
+			this.obj = wrap(obj);
 		}
 		public String toString() {
 			return "`" + obj + '`';
+		}
+	}
+	private static class ThreadUnsafeWrapper {
+		public final Object obj;
+		public final String toStringSnapshot;
+		public ThreadUnsafeWrapper(Object obj) {
+			toStringSnapshot = obj.toString();
+			this.obj = obj;
+		}
+		public String toString() {
+			return toStringSnapshot;
 		}
 	}
 	
@@ -120,6 +250,7 @@ public class Logger extends Thread {
 	public static void log(final Message message) {
 		if(message.level.code >= minLevel.code && !shutdown.get()) {
 			try {
+				message.finish();
 				logger.messageQueue.write(new Writer<ListAccessor<Message>>() {
 					@Override
 					public void write(ListAccessor<Message> data) {
@@ -175,7 +306,7 @@ public class Logger extends Thread {
 	}
 
 	public static void exception(Level level, Throwable t) {
-		log(level, NXUtils.unwrapTarget(t));
+		log(level, t);
 	}
 	
 	public static enum Level {
@@ -265,6 +396,11 @@ public class Logger extends Thread {
 			this(level, getCalleeName(0), content);
 		}
 		
+		public void finish() {
+			for(int i=0; i<content.length; i++) 
+				this.content[i] = wrap(this.content[i]);
+		}
+		
 	}
 	
 	protected static class Fitter {
@@ -337,56 +473,58 @@ public class Logger extends Thread {
 				});
 				for(Message message : readyMessages) {
 					PrintStream stream;
-					switch(message.level) {
-						case Error:
-						case Fatal:
-							stream = SystemErr;
-							break;
+					try {
+						switch(message.level) {
+							case Error:
+							case Fatal:
+								stream = SystemErr;
+								break;
 
-						default:
-							stream = SystemOut;
-							break;
+							default:
+								stream = SystemOut;
+								break;
+						}
+						stream.print(Application.uptime(message.timestamp));
+						stream.print(" [");
+						stream.print(message.level.title);
+						stream.print("] [");
+						stream.print(threadName.expand(message.thread));
+						stream.print("] [");
+
+						String goodClassName = classNames.get(message.className);
+						if(goodClassName == null) {
+							int lastPeriod = message.className.lastIndexOf(".");
+							goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
+							classNames.put(message.className, goodClassName);
+						}
+						stream.print(className.expand(goodClassName));
+
+						stream.print("] ");
+						boolean addTab = false;
+						for(Object msg : message.content) {
+							if(addTab)
+								stream.print(' ');
+							else
+								addTab = true;
+
+							if(msg instanceof Throwable)
+								((Throwable)msg).printStackTrace(stream);
+							else if(msg == null)
+								stream.print("$NULL$");
+							else
+								stream.print(msg.toString());
+						}
+
+						stream.println();
+						stream.flush();
+					} catch(Throwable t) {
+						t.printStackTrace();
 					}
-					stream.print(Application.uptime(message.timestamp));
-					stream.print(" [");
-					stream.print(message.level.title);
-					stream.print("] [");
-					stream.print(threadName.expand(message.thread));
-					stream.print("] [");
-
-					String goodClassName = classNames.get(message.className);
-					if(goodClassName == null) {
-						int lastPeriod = message.className.lastIndexOf(".");
-						goodClassName = lastPeriod > -1 ? message.className.substring(lastPeriod+1) : message.className;
-						classNames.put(message.className, goodClassName);
-					}
-					stream.print(className.expand(goodClassName));
-
-					stream.print("] ");
-					boolean addTab = false;
-					for(Object msg : message.content) {
-						if(addTab)
-							stream.print(' ');
-						else
-							addTab = true;
-
-						if(msg instanceof Throwable)
-							((Throwable)msg).printStackTrace(stream);
-						else if(msg == null)
-							stream.print("$NULL$");
-						else
-							stream.print(msg.toString());
-					}
-
-					stream.println();
-					stream.flush();
 				}
-			} else {
+			} else
 				try {
 					Thread.sleep(sleepTime);
 				} catch (InterruptedException ex) {}
-			
-			}
 		}
 		SystemOut.println("Logger exited");
 	}

@@ -20,12 +20,14 @@ import java.util.ListIterator;
 import java.util.Map;
 import net.nexustools.data.accessor.DataAccessor.Reference;
 import net.nexustools.data.accessor.MapAccessor;
+import net.nexustools.data.annote.ThreadUnsafe;
 import net.nexustools.utils.Pair;
 
 /**
  *
  * @author katelyn
  */
+@ThreadUnsafe
 public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>>> implements MapAccessor<K, V> {
 	
 	protected final TypeBuffer<Pair<K,V>, ?, Pair<Class<K>, Class<V>>, Pair<Reference, Reference>> buffer;
