@@ -60,7 +60,7 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

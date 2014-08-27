@@ -33,6 +33,7 @@ import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Pair;
+import net.nexustools.utils.Testable;
 import net.nexustools.utils.log.Logger;
 import net.nexustools.utils.sort.AscLongTypeComparator;
 import net.nexustools.utils.sort.DescLongTypeComparator;
@@ -112,6 +113,9 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 		public String toString() {
 			return "Tracked" + internal;
 		}
+		public void sync(Runnable block) {
+			internal.sync(block);
+		}
 	}
 	
 	public static int hashFor(Task task) {
@@ -165,7 +169,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -231,7 +235,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 						}
 					});
 				} catch (InvocationTargetException ex) {
-					throw NXUtils.unwrapRuntime(ex);
+					throw NXUtils.wrapRuntime(ex);
 				}
 			}
 		});
@@ -269,7 +273,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 		return wrap(nextTask);
 	}

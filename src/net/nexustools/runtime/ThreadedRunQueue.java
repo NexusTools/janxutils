@@ -131,7 +131,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -158,7 +158,7 @@ public class ThreadedRunQueue<R extends Runnable> extends RunQueue<R, RunThread>
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 		return future;
 	}

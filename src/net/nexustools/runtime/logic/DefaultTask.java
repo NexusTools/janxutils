@@ -16,10 +16,12 @@
 package net.nexustools.runtime.logic;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.IfReader;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.concurrent.logic.TestReader;
+import net.nexustools.concurrent.logic.VoidReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
@@ -36,6 +38,33 @@ public abstract class DefaultTask implements Task {
 	private final Prop<Thread> runThread = new Prop();
 	public DefaultTask(State state) {
 		this.state = new Prop(state);
+	}
+
+	public void sync(final Runnable block) {
+		try {
+			state.read(new VoidReader<PropAccessor<State>>() {
+				@Override
+				public void readV(PropAccessor<State> data) throws Throwable {
+					block.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.wrapRuntime(ex);
+		}
+	}
+
+	protected void syncExecute(final Runnable block) {
+		try {
+			state.read(new VoidReader<PropAccessor<State>>() {
+				@Override
+				public void readV(PropAccessor<State> data) throws Throwable {
+					if(data.get() == State.Executing)
+						block.run();
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.wrapRuntime(ex);
+		}
 	}
 	
 	public State state() {
@@ -89,7 +118,7 @@ public abstract class DefaultTask implements Task {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -114,7 +143,6 @@ public abstract class DefaultTask implements Task {
 				}
 			})) {
 				try {
-					
 					runThread.set(Thread.currentThread());
 					try {
 						executeImpl(isRunning);
@@ -139,7 +167,7 @@ public abstract class DefaultTask implements Task {
 				}
 			}
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 		if(stopRepeating)
 			throw new StopRepeating();
@@ -158,7 +186,7 @@ public abstract class DefaultTask implements Task {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

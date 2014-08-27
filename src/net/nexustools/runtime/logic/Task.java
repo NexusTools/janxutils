@@ -16,6 +16,7 @@
 package net.nexustools.runtime.logic;
 
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.Testable;
 
 /**
  *
@@ -46,6 +47,7 @@ public interface Task {
 	public void cancel();
 	public void execute();
 	public boolean onSchedule();
+	public void sync(Runnable block);
 	public Task copy(State state);
 	
 }

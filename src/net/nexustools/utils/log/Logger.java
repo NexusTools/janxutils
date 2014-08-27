@@ -24,6 +24,7 @@ import net.nexustools.concurrent.PropList;
 import static net.nexustools.concurrent.ReadWriteLock.defaultPermitCount;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.accessor.ListAccessor;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.sort.DescLongTypeComparator;
@@ -34,7 +35,7 @@ import net.nexustools.utils.sort.DescLongTypeComparator;
  */
 public class Logger extends Thread {
 	
-	private static Logger logger = new Logger();
+	private static final Logger logger = new Logger();
 	private static final Prop<Boolean> shutdown = new Prop(false);
 	private static final PropList<String> classesToSkip = new PropList();
 	private static final PrintStream SystemOut = System.out;
@@ -57,8 +58,18 @@ public class Logger extends Thread {
 		Runtime.getRuntime().addShutdownHook(new Thread("Logger-Cleanup") {
 			@Override
 			public void run() {
-				shutdown.set(true);
-				logger.interrupt();
+				try {
+					shutdown.write(new Writer<PropAccessor<Boolean>>() {
+						@Override
+						public void write(PropAccessor<Boolean> data) throws Throwable {
+							info("Exit requested, shutting down");
+							data.set(true);
+						}
+					});
+				} catch (InvocationTargetException ex) {
+					throw NXUtils.wrapRuntime(ex);
+				}
+				
 				while(true)
 					try {
 						logger.join();
@@ -113,10 +124,11 @@ public class Logger extends Thread {
 					@Override
 					public void write(ListAccessor<Message> data) {
 						data.push(message);
+						logger.interrupt();
 					}
 				});
 			} catch (InvocationTargetException ex) {
-				throw NXUtils.unwrapRuntime(ex);
+				throw NXUtils.wrapRuntime(ex);
 			}
 			logger.interrupt();
 		}
@@ -295,7 +307,7 @@ public class Logger extends Thread {
 		final Fitter className = new Fitter();
 		ListAccessor<Message> readyMessages;;
 		
-		sleepTime = 5 * 60 * 60;
+		sleepTime = 200 ;
 		while(running = !shutdown.get() || messageQueue.isTrue()) {
 			final long after = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
 			if(running)
@@ -365,10 +377,12 @@ public class Logger extends Thread {
 					stream.println();
 					stream.flush();
 				}
-			} else
+			} else {
 				try {
 					Thread.sleep(sleepTime);
 				} catch (InterruptedException ex) {}
+			
+			}
 		}
 		SystemOut.println("Logger exited");
 	}

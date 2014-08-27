@@ -50,7 +50,7 @@ public class SortedPropList<I> extends PropList<I> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -69,7 +69,7 @@ public class SortedPropList<I> extends PropList<I> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class SortedPropList<I> extends PropList<I> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

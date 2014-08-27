@@ -16,8 +16,6 @@
 package net.nexustools.runtime.logic;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.nexustools.concurrent.Lockable;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.BaseReader;
@@ -91,7 +89,7 @@ public class TrackedTask<R extends Runnable> extends RunTask {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -102,7 +100,7 @@ public class TrackedTask<R extends Runnable> extends RunTask {
 				try {
 					TrackedTask.super.executeImpl(isRunning);
 				} catch (Throwable ex) {
-					throw NXUtils.unwrapRuntime(ex);
+					throw NXUtils.wrapRuntime(ex);
 				}
 			}
 		});

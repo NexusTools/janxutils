@@ -37,7 +37,7 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 			convert(from, buffer);
 		} catch(Throwable t) {
 			release(buffer);
-			throw NXUtils.unwrapRuntime(t);
+			throw NXUtils.wrapRuntime(t);
 		}
 		return buffer;
 	}

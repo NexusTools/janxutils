@@ -84,7 +84,7 @@ public class URLStream extends Stream {
 					};
 				});
 		} catch (InvocationTargetException e) {
-			throw NXUtils.unwrapRuntime(e);
+			throw NXUtils.wrapRuntime(e);
 		}
 					
 	}

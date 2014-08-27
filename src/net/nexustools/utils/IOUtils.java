@@ -58,7 +58,7 @@ public class IOUtils {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		} finally {
 			out.flush();
 		}

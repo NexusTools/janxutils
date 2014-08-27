@@ -31,26 +31,21 @@ public final class NXUtils {
 			return unwrapTarget(((RuntimeTargetException)throwable).target());
 		return throwable;
 	}
-	public static RuntimeException unwrapRuntime(Throwable throwable) {
-		throwable = unwrapTarget(throwable);
-		if(throwable instanceof RuntimeException)
-			return (RuntimeException)throwable;
-		return new RuntimeException(throwable);
-	}
 	public static IOException unwrapIOException(Throwable throwable) {
 		throwable = unwrapTarget(throwable);
 		if(throwable instanceof IOException)
 			return (IOException)throwable;
-		throw unwrapRuntime(throwable);
+		throw wrapRuntime(throwable);
 	}
 
 	public static RuntimeTargetException wrapRuntime(Throwable throwable) {
 		throwable = unwrapTarget(throwable);
+		if(throwable instanceof RuntimeException)
+			throw (RuntimeException)throwable;
 		if(throwable instanceof RuntimeTargetException)
 			return (RuntimeTargetException)throwable;
 		return new RuntimeTargetException(throwable);
 	}
-
 	public static InvocationTargetException wrapInvocation(Throwable throwable) {
 		if(throwable instanceof InvocationTargetException)
 			return (InvocationTargetException)throwable;

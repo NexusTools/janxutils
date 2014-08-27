@@ -27,6 +27,26 @@ public interface DataAccessor<T, C, R> extends BaseAccessor {
 		Weak
 	}
 	
+	// Become Weak after an amount of time
+	public static enum CacheLifetime {
+		Blur(500), // .5 seconds
+		Tiny(5000), // 5 seconds
+		Short(30000), // 30 seconds
+		Medium(60000 * 5), // 5 minutes
+		Hour(60000 * 60), // 1 hour
+		Day(60000 * 60 * 24), // 1 day
+		Week(60000 * 60 * 24 * 7), // 7 days
+		Month(60000 * 60 * 24 * 30), // 30 days
+		
+		 // Attempts to determine how long cache objects should live for
+		Smart(-1);
+		
+		public final int life;
+		CacheLifetime(int life) {
+			this.life = life;
+		}
+	}
+	
 	public C type();
 	public R refType();
 	public boolean isTrue();

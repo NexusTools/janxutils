@@ -83,7 +83,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					}
 				});
 			} catch (InvocationTargetException ex) {
-				throw NXUtils.unwrapRuntime(ex);
+				throw NXUtils.wrapRuntime(ex);
 			}
 			killNext = false;
 			do {
@@ -111,7 +111,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 					}))
 						return;
 				} catch (InvocationTargetException ex) {
-					throw NXUtils.unwrapRuntime(ex);
+					throw NXUtils.wrapRuntime(ex);
 				}
 				try {
 					Logger.gears(future);
@@ -168,7 +168,7 @@ public class RunThread<R extends Runnable, Q extends RunQueue<R, RunThread>> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

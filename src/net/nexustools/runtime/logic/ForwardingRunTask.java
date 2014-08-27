@@ -49,7 +49,7 @@ public class ForwardingRunTask<R extends Runnable> extends TrackedTask<R> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

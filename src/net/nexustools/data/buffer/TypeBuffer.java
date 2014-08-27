@@ -27,24 +27,45 @@ import net.nexustools.utils.Pair;
 public abstract class TypeBuffer<T, TA, C, R> extends MutableArrayBuffer<T, T[], TA[], C, R> {
 	
 	public static <T> TypeBuffer create(T... elements) {
-		return create((Class<T>)elements.getClass(), Reference.Strong, elements);
+		return create((Class<T>)elements.getClass().getComponentType(), Reference.Strong, elements);
 	}
 	public static <T> TypeBuffer create(Class<T> forType, T... elements) {
 		return create(forType, Reference.Strong, elements);
 	}
-	public static <T> TypeBuffer create(Class<T> forType, Reference reference, T... elements) {
-		switch(reference) {
-			case Strong:
-				return new StrongTypeBuffer<T>(forType, elements);
-				
-			case Weak:
-				return new ReferenceTypeBuffer<T, WeakReference<T>>(forType, Reference.Weak, elements);
-				
-			case Soft:
-				return new ReferenceTypeBuffer<T, SoftReference<T>>(forType, Reference.Soft, elements);
-		}
+	public static <T, R> TypeBuffer create(Class<T> forType, R reference, T... elements) {
+		if(reference instanceof Reference)
+			switch((Reference)reference) {
+				case Strong:
+					return new StrongTypeBuffer<T>(forType, elements);
+
+				case Weak:
+					return new ReferenceTypeBuffer<T, WeakReference<T>, Reference>(forType, Reference.Weak, elements);
+
+				case Soft:
+					return new ReferenceTypeBuffer<T, SoftReference<T>, Reference>(forType, Reference.Soft, elements);
+			}
+		else if(reference instanceof CacheLifetime)
+			return createCache(forType, (CacheLifetime)reference, elements);
 		
 		throw new UnsupportedOperationException("Cannot created TypeBuffer for " + forType);
+	}
+	
+	
+	public static <T> TypeBuffer createCache(T... elements) {
+		return create((Class<T>)elements.getClass().getComponentType(), Reference.Strong, elements);
+	}
+	public static <T> TypeBuffer createCache(Class<T> forType, T... elements) {
+		return create(forType, CacheLifetime.Medium, elements);
+	}
+	public static <T> TypeBuffer createCache(Class<T> forType, CacheLifetime reference, T... elements) {
+		switch(reference) {
+			case Smart:
+				throw new UnsupportedOperationException("Cannot created TypeBuffer for " + forType);
+				
+			default:
+				return new ReferenceTypeBuffer<T, SoftReference<T>, CacheLifetime>(forType, reference, elements);
+		}
+		
 	}
 	
 	

@@ -20,17 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
 import net.nexustools.concurrent.PropMap;
-import net.nexustools.concurrent.logic.Reader;
-import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.concurrent.logic.Writer;
 import net.nexustools.data.accessor.MapAccessor;
-import net.nexustools.data.buffer.TypeMap;
-import net.nexustools.data.buffer.basic.SoftTypeList;
-import net.nexustools.data.buffer.basic.StrongTypeList;
-import net.nexustools.data.buffer.basic.StrongTypeMap;
+import net.nexustools.data.buffer.basic.CacheTypeList;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Processor;
 import net.nexustools.utils.StringUtils;
@@ -45,7 +39,7 @@ public class StreamUtils {
 	
 	public static final short DefaultBufferSize = Short.valueOf(System.getProperty("stream.buffersize", "8192"));
 	public static final short DefaultMaxCopySize = Short.valueOf(System.getProperty("stream.copysize", String.valueOf(Short.MAX_VALUE)));
-	private static final PropMap<Integer, SoftTypeList<byte[]>> cache = new PropMap();
+	private static final PropMap<Integer, CacheTypeList<byte[]>> cache = new PropMap();
 	
 	public static byte[] nextCopyBuffer() {
 		return nextBuffer(0);
@@ -56,26 +50,23 @@ public class StreamUtils {
 		
 		final Integer desiredSize = size;
 		try {
-			return cache.read(new WriteReader<byte[], MapAccessor<Integer, SoftTypeList<byte[]>>>() {
+			return cache.read(new WriteReader<byte[], MapAccessor<Integer, CacheTypeList<byte[]>>>() {
 				@Override
-				public byte[] read(MapAccessor<Integer, SoftTypeList<byte[]>> data) throws Throwable {
-					Logger.debug(data);
+				public byte[] read(MapAccessor<Integer, CacheTypeList<byte[]>> data) throws Throwable {
 					byte[] next;
 					try {
 						next = data.get(desiredSize).shift();
 						if(next == null)
 							throw new NullPointerException();
-						Logger.performance("Fetching cache", desiredSize, next);
 					} catch(NullPointerException ex) {
 						Logger.performance("Allocating", StringUtils.stringForSize(desiredSize), "byte[]");
 						next = new byte[desiredSize];
 					}
-					Logger.performance("Using", desiredSize, next.length);
 					return next;
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public static void releaseBuffer(final byte[] buffer) {
@@ -84,19 +75,17 @@ public class StreamUtils {
 		
 		final Integer desiredSize = buffer.length;
 		try {
-			cache.write(new Writer<MapAccessor<Integer, SoftTypeList<byte[]>>>() {
+			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<byte[]>>>() {
 				@Override
-				public void write(MapAccessor<Integer, SoftTypeList<byte[]>> data) throws Throwable {
-					Logger.performance("Pushing cache", desiredSize, buffer);
-					SoftTypeList<byte[]> cache = data.get(desiredSize);
+				public void write(MapAccessor<Integer, CacheTypeList<byte[]>> data) throws Throwable {
+					CacheTypeList<byte[]> cache = data.get(desiredSize);
 					if(cache == null)
-						data.put(desiredSize, cache = new SoftTypeList<byte[]>());
+						data.put(desiredSize, cache = new CacheTypeList<byte[]>());
 					cache.push(buffer);
-					Logger.debug(data);
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public static void useCopyBuffer(Processor<byte[]> processor) throws IOException, InvocationTargetException {
@@ -131,7 +120,7 @@ public class StreamUtils {
 				}
 			}, bufferSize);
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

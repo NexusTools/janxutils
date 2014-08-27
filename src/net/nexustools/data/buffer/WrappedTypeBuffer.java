@@ -168,26 +168,20 @@ public abstract class WrappedTypeBuffer<T, W, C, R> extends TypeBuffer<T, W, C, 
 	protected void deleteRange(int keepLeft, int gap, int keepRight) {
 		int newSize = keepLeft + keepRight;
 		
-		try {
-			if(keepRight <= gap)
-				System.arraycopy(buffer, keepLeft+gap, buffer, keepLeft, keepRight);
-			else {
-				int end = length() - keepRight;
-				if(end > size) {
-					System.arraycopy(buffer, keepLeft+gap, buffer, end, keepRight);
-					System.arraycopy(buffer, end, buffer, keepLeft, keepRight);
-				} else {
-					T[] newBuffer = create(newSize);
-					if(keepLeft > 0)
-						System.arraycopy(buffer, 0, newBuffer, 0, keepLeft);
-					System.arraycopy(buffer, keepLeft+gap, newBuffer, keepLeft, keepRight);
-					setBuffer(newBuffer);
-				}
+		if(keepRight <= gap)
+			System.arraycopy(buffer, keepLeft+gap, buffer, keepLeft, keepRight);
+		else {
+			int end = length() - keepRight;
+			if(end > size) {
+				System.arraycopy(buffer, keepLeft+gap, buffer, end, keepRight);
+				System.arraycopy(buffer, end, buffer, keepLeft, keepRight);
+			} else {
+				T[] newBuffer = create(newSize);
+				if(keepLeft > 0)
+					System.arraycopy(buffer, 0, newBuffer, 0, keepLeft);
+				System.arraycopy(buffer, keepLeft+gap, newBuffer, keepLeft, keepRight);
+				setBuffer(newBuffer);
 			}
-		} catch(ArrayIndexOutOfBoundsException indexOutOfBounds) {
-			System.err.println(size + ", " + keepLeft + ", " + gap + ", " + keepRight);
-			indexOutOfBounds.printStackTrace();
-			System.exit(0);
 		}
 		size = newSize;
 	}

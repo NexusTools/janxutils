@@ -77,7 +77,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void clear() {
@@ -89,7 +89,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	// TODO: Make more effecient by checking if it exists before obtaining a write lock
@@ -102,7 +102,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void push(final I object) {
@@ -114,7 +114,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void unshift(final I object) {
@@ -126,7 +126,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void insert(final I object, final int at) {
@@ -138,7 +138,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void remove(final I object) {
@@ -150,7 +150,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public I remove(final int at) {
@@ -162,7 +162,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public int indexOf(final I object) {
@@ -174,7 +174,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public int indexOf(final I object, final int from) {
@@ -186,7 +186,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public int lastIndexOf(final I object, final int from) {
@@ -198,7 +198,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public int lastIndexOf(final I object) {
@@ -210,7 +210,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public int length() {
@@ -222,7 +222,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public I shift() {
@@ -234,7 +234,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public I pop() {
@@ -246,7 +246,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public Iterator<I> iterator() {
@@ -278,7 +278,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -291,7 +291,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -304,7 +304,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -317,7 +317,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -334,7 +334,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -351,7 +351,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -364,7 +364,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -385,7 +385,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -398,7 +398,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -411,7 +411,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -424,7 +424,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -437,7 +437,7 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

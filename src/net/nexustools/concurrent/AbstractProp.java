@@ -79,7 +79,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -92,7 +92,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -105,7 +105,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -118,7 +118,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -131,7 +131,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -147,7 +147,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -164,7 +164,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -182,7 +182,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

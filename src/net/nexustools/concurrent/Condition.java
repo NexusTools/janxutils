@@ -60,7 +60,7 @@ public class Condition {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void ifTrue(final Runnable block) {
@@ -73,7 +73,7 @@ public class Condition {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void ifRun(final Runnable trueBlock, final Runnable falseBlock) {
@@ -88,7 +88,7 @@ public class Condition {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	public void finish() {
@@ -106,7 +106,7 @@ public class Condition {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 		for(Thread thread : waitingThreads)
 			thread.interrupt();

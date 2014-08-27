@@ -28,15 +28,15 @@ import net.nexustools.utils.Testable;
  */
 public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R>> {
 	
+	protected final R reference;
 	protected final Class<T> typeClass;
-	protected final Reference reference;
-	public TypeList(Class<T> typeClass, Reference reference, T... elements) {
+	public TypeList(Class<T> typeClass, R reference, T... elements) {
 		super(TypeBuffer.create(typeClass, reference, elements));
 		this.typeClass = typeClass;
 		this.reference = reference;
 	}
 	
-	public Reference referenceType() {
+	public R referenceType() {
 		return reference;
 	}
 

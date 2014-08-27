@@ -41,7 +41,7 @@ public class BackpeddlingRunTask<R extends Runnable> extends TrackedTask<R> {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

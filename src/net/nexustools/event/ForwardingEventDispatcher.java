@@ -49,7 +49,7 @@ public class ForwardingEventDispatcher<R extends RunQueue, L extends EventListen
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -64,7 +64,7 @@ public class ForwardingEventDispatcher<R extends RunQueue, L extends EventListen
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 		
 	}

@@ -152,7 +152,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -165,7 +165,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -194,7 +194,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -207,7 +207,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -220,7 +220,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -233,7 +233,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -246,7 +246,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -259,7 +259,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -272,7 +272,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 
@@ -285,7 +285,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -298,7 +298,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -312,7 +312,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -325,7 +325,7 @@ public class PropMap<K,V> extends DefaultReadWriteConcurrency<MapAccessor<K,V>> 
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 

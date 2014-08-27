@@ -82,7 +82,7 @@ public final class RunQueueScheduler {
 						fTask.queue.push(fTask.future);
 					}
 				} catch(Throwable t) {
-					Logger.exception(Logger.Level.Gears, t);
+					Logger.exception(Logger.Level.Debug, t);
 				}
 			}
 		}
@@ -162,7 +162,7 @@ public final class RunQueueScheduler {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 				
 	}
@@ -198,7 +198,7 @@ public final class RunQueueScheduler {
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

@@ -86,7 +86,7 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	
@@ -106,7 +106,7 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 				}
 			});
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapRuntime(ex);
+			throw NXUtils.wrapRuntime(ex);
 		}
 	}
 	

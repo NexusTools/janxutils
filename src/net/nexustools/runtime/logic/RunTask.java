@@ -23,17 +23,6 @@ import net.nexustools.utils.Testable;
  */
 public class RunTask<R extends Runnable> extends DefaultTask {
 	
-	private static final ThreadLocal<RunTask> currentQueueFuture = new ThreadLocal();
-	private static final ThreadLocal<Testable<Void>> currentTestable = new ThreadLocal();
-	
-	public static RunTask current() {
-		return currentQueueFuture.get();
-	}
-	
-	public static boolean isCurrentCancelled() throws Throwable {
-		return !currentTestable.get().test(null);
-	}
-
 	public final R runnable;
 	public RunTask(R runnable, State state) {
 		super(state);
@@ -42,19 +31,7 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 
 	@Override
 	protected void executeImpl(Testable<Void> isRunning) throws Throwable {
-		currentQueueFuture.set(this);
-		try {
-			if(isRunning.test(null)) {
-				currentTestable.set(isRunning);
-				try {
-					runnable.run();
-				} finally {
-					currentTestable.remove();
-				}
-			}
-		} finally {
-			currentQueueFuture.remove();
-		}
+		syncExecute(runnable);
 	}
 
 	@Override

@@ -57,7 +57,7 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 						}
 					});
 				} catch (InvocationTargetException ex) {
-					throw NXUtils.unwrapRuntime(ex);
+					throw NXUtils.wrapRuntime(ex);
 				}
 			return val;
 		}

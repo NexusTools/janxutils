@@ -23,7 +23,6 @@ import net.nexustools.data.accessor.DataAccessor.Reference;
  */
 public class BasicProp<T> extends AbstractProp<T> {
 	
-	
 	protected T storage;
 	public BasicProp(Class<T> typeClass, T object) {
 		super(typeClass);
@@ -32,6 +31,7 @@ public class BasicProp<T> extends AbstractProp<T> {
 	public BasicProp(T object) {
 		storage = object;
 	}
+	public BasicProp() {}
 
 	public final T get() {
 		return storage;

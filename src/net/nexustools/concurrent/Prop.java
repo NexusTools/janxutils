@@ -56,7 +56,7 @@ public class Prop<T> extends AbstractProp<T> {
 				if(test.test(val))
 					value = val;
 			} catch (Throwable ex) {
-				throw NXUtils.unwrapRuntime(ex);
+				throw NXUtils.wrapRuntime(ex);
 			}
 		}
 		public boolean update(final T val) {
