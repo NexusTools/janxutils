@@ -15,8 +15,10 @@
 
 package net.nexustools.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
 import net.nexustools.runtime.logic.Task;
+import net.nexustools.runtime.logic.Task.State;
 
 /**
  *
@@ -26,34 +28,47 @@ public class RefreshingCacheReference<T> extends CacheReference<T> {
 	
 	private Task cacheTask;
 	private boolean markedToClear = false;
-	private final Semaphore getLock = new Semaphore(1);
+	private boolean silentRefresh = false;
+	private final Semaphore taskLock = new Semaphore(1);
 	public RefreshingCacheReference(int lifetime, T value) {
 		super(lifetime, value);
 	}
 	
 	@Override
 	protected void schedule() {
-		cacheTask = runQueue.schedule(new Runnable() {
-			public void run() {
-				if(!markedToClear) {
-					markedToClear = true;
-					schedule();
-				} else
-					cache.clear();
-			}
-		}, lifetime/2);
+		taskLock.acquireUninterruptibly();
+		try {
+			cacheTask = runQueue.schedule(new Runnable() {
+				public void run() {
+					if(!markedToClear) {
+						if(silentRefresh)
+							silentRefresh = false;
+						else
+							markedToClear = true;
+						scheduleLater();
+					} else
+						cache.clear();
+				}
+			}, lifetime/2);
+		} finally {
+			taskLock.release();
+		}
 	}
 
 	@Override
 	public T get() {
-		if(!markedToClear)
+		if(!markedToClear) {
+			silentRefresh = true;
 			return super.get();
+		}
 		
-		getLock.acquireUninterruptibly();
+		taskLock.acquireUninterruptibly();
 		try {
-			cacheTask.sync(new Runnable() {
-				public void run() {
-					cacheTask.cancel();
+			cacheTask.sync(new Processor<State>() {
+				public void process(State state) {
+					if(state == State.WaitingInQueue ||
+							state == State.Scheduled)
+						cacheTask.cancel();
 
 					if(!cache.isset())
 						cache.set(RefreshingCacheReference.super.get());
@@ -64,8 +79,10 @@ public class RefreshingCacheReference<T> extends CacheReference<T> {
 				}
 			});
 			return cache.get();
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.wrapRuntime(ex);
 		} finally {
-			getLock.release();
+			taskLock.release();
 		}
 		
 	}

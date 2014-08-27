@@ -175,7 +175,7 @@ public class Logger extends Thread {
 	}
 
 	public static void exception(Level level, Throwable t) {
-		log(level, t);
+		log(level, NXUtils.unwrapTarget(t));
 	}
 	
 	public static enum Level {

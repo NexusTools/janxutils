@@ -16,6 +16,7 @@
 package net.nexustools.utils;
 
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.runtime.ThreadedRunQueue;
 import net.nexustools.utils.log.Logger;
@@ -24,9 +25,9 @@ import net.nexustools.utils.log.Logger;
  *
  * @author katelyn
  */
-public class CacheReference<T> extends SoftReference<T> {
+public class CacheReference<T> extends WeakReference<T> {
 	
-	protected static final ThreadedRunQueue runQueue = new ThreadedRunQueue("CacheQueue");
+	protected static final ThreadedRunQueue runQueue = new ThreadedRunQueue("CacheReference");
 
 	protected final int lifetime;
 	protected final Prop<T> cache;
@@ -34,11 +35,15 @@ public class CacheReference<T> extends SoftReference<T> {
 		super(value);
 		this.lifetime = lifetime;
 		cache = new Prop(value);
-		runQueue.push(new Runnable() {
+		scheduleLater();
+	}
+	
+	protected final void scheduleLater() {
+		runQueue.schedule(new Runnable() {
 			public void run() {
 				schedule();
 			}
-		});
+		}, 50);
 	}
 	
 	protected void schedule() {

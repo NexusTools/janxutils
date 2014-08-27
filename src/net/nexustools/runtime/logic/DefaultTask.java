@@ -26,6 +26,7 @@ import net.nexustools.concurrent.logic.WriteReader;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.runtime.RunQueueScheduler.StopRepeating;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Processor;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.log.Logger;
 /**
@@ -40,12 +41,12 @@ public abstract class DefaultTask implements Task {
 		this.state = new Prop(state);
 	}
 
-	public void sync(final Runnable block) {
+	public void sync(final Processor<State> block) {
 		try {
 			state.read(new VoidReader<PropAccessor<State>>() {
 				@Override
 				public void readV(PropAccessor<State> data) throws Throwable {
-					block.run();
+					block.process(data.get());
 				}
 			});
 		} catch (InvocationTargetException ex) {

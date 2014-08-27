@@ -15,7 +15,9 @@
 
 package net.nexustools.runtime.logic;
 
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.Processor;
 import net.nexustools.utils.Testable;
 
 /**
@@ -47,7 +49,7 @@ public interface Task {
 	public void cancel();
 	public void execute();
 	public boolean onSchedule();
-	public void sync(Runnable block);
+	public void sync(Processor<State> block) throws InvocationTargetException;
 	public Task copy(State state);
 	
 }

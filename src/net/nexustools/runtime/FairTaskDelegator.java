@@ -33,6 +33,7 @@ import net.nexustools.runtime.logic.RunTask;
 import net.nexustools.runtime.logic.Task;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Pair;
+import net.nexustools.utils.Processor;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.log.Logger;
 import net.nexustools.utils.sort.AscLongTypeComparator;
@@ -113,7 +114,7 @@ public class FairTaskDelegator<F extends Task> extends SortedTaskDelegator<F> {
 		public String toString() {
 			return "Tracked" + internal;
 		}
-		public void sync(Runnable block) {
+		public void sync(Processor<State> block) throws InvocationTargetException {
 			internal.sync(block);
 		}
 	}

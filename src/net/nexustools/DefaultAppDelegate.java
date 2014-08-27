@@ -20,12 +20,13 @@ import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
 import net.nexustools.io.Stream;
 import net.nexustools.runtime.RunQueue;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
  * @author kate
  */
-public abstract class DefaultAppDelegate<R extends RunQueue> extends AppDelegate {
+public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDelegate {
 	public final String name;
 	protected final R runQueue;
 	private final String organization;
@@ -47,6 +48,7 @@ public abstract class DefaultAppDelegate<R extends RunQueue> extends AppDelegate
 			public void run() {
 				Application.setDelegateIfNone(DefaultAppDelegate.this);
 				launch(args);
+				Logger.info("Launched", DefaultAppDelegate.this);
 			}
 		});
 	}

@@ -16,7 +16,6 @@
 package net.nexustools.io;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,13 +23,11 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.nio.channels.OverlappingFileLockException;
 import java.util.Iterator;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.Creator;
-import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.RefreshingCacheMap;
 import net.nexustools.utils.log.Logger;
@@ -48,6 +45,11 @@ public class FileStream extends Stream {
 			return new FileStream(filePath);
 		}
 	});
+	
+	public static synchronized Stream getStream(String filePath) {
+		return cache.get(filePath);
+	}
+	
 	private final String internalPath;
 	private final RefreshingCache<File> internal = new RefreshingCache<File>(new Creator<File, Void>() {
 		public File create(java.lang.Void using) {
@@ -55,44 +57,9 @@ public class FileStream extends Stream {
 			return new File(internalPath);
 		}
 	});
-	private final Prop<RandomAccessFile> randomAccessFile = new Prop();
 	
 	protected FileStream(String path) {
 		internalPath = path;
-	}
-	
-	protected final RandomAccessFile ensureOpen() throws FileNotFoundException, IOException {
-		return ensureOpen(false);
-	}
-	protected final RandomAccessFile ensureOpen(final boolean writable) throws IOException {
-		try {
-			return randomAccessFile.read(new SoftWriteReader<RandomAccessFile, PropAccessor<RandomAccessFile>>() {
-				@Override
-				public RandomAccessFile soft(PropAccessor<RandomAccessFile> data) {
-					return data.get();
-				}
-				@Override
-				public RandomAccessFile read(PropAccessor<RandomAccessFile> data) throws IOException {
-					if(writable) {
-						String parentPath = internalPath.substring(0, internalPath.lastIndexOf("/"));
-						Logger.debug(parentPath);
-						File parentFile = new File(parentPath);
-						if(!parentFile.exists() && !parentFile.mkdirs())
-							throw new IOException(toURL() + ": Unable to create directory structure");
-					}
-					RandomAccessFile randomFile;
-					randomAccessFile.set(randomFile = new RandomAccessFile(internalPath, writable ? "rw" : "r"));
-					while(true)
-						try {
-							randomAccessFile.get().getChannel().lock(0L, Long.MAX_VALUE, !writable);
-							break;
-						} catch(OverlappingFileLockException ex) {}
-					return randomFile;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapIOException(ex);
-		}
 	}
 	
 	@Override
@@ -104,14 +71,10 @@ public class FileStream extends Stream {
 	public String path() {
 		return internalPath;
 	}
-	
-	public static synchronized Stream getStream(String filePath) {
-		return cache.get(filePath);
-	}
 
 	@Override
 	public long size() throws IOException {
-		return ensureOpen().length();
+		return internal.get().length();
 	}
 
 	@Override
@@ -122,12 +85,6 @@ public class FileStream extends Stream {
 	public void markDeleteOnExit() {
 		internal.get().deleteOnExit();
 	}
-	
-	public final boolean isOpen() {
-		return randomAccessFile.isset();
-	}
-	
-	public final void close() throws IOException {}
 	
 	@Override
 	public boolean exists() {
@@ -182,7 +139,6 @@ public class FileStream extends Stream {
 	public boolean isDirectory() {
 		return internal.get().isDirectory();
 	}
-
 	
 	private final RefreshingCache<String> mimeCache = new RefreshingCache<String>(new Creator<String, Void>() {
 		public String create(java.lang.Void using) {
@@ -264,28 +220,7 @@ public class FileStream extends Stream {
 
 	@Override
 	public InputStream createInputStream(long p) throws IOException {
-		return new FileInputStream(ensureOpen()) {
-			boolean open = true;
-			@Override
-			public void close() throws IOException {
-				if(open)
-					open = false;
-			}
-			@Override
-			public synchronized int available() throws IOException {
-				if(!open)
-					throw new IOException("Closed");
-				
-				return super.available();
-			}
-			@Override
-			public synchronized int read(byte[] b, int off, int len) throws IOException {
-				if(!open)
-					throw new IOException("Closed");
-				
-				return super.read(b, off, len);
-			}
-		};
+		return new FileInputStream(internalPath);
 	}
 
 	@Override

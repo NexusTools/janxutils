@@ -15,17 +15,11 @@
 
 package net.nexustools;
 
-import net.nexustools.utils.log.Logger;
-
 /**
  *
  * @author katelyn
  */
-public abstract class AppDelegate {
-	static {
-		Logger.init();
-	}
-	
+public interface AppDelegate {
 	public static final long created = System.currentTimeMillis();
 	
 	public static enum Path {
