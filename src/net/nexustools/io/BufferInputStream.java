@@ -33,9 +33,11 @@ public abstract class BufferInputStream extends EfficientInputStream {
 
 	@Override
 	public void close() throws IOException {
-		for(byte[] buffer : buffers)
-			StreamUtils.releaseBuffer(buffer);
-		buffers = null;
+		if(buffers != null) {
+			for(byte[] buffer : buffers)
+				StreamUtils.releaseBuffer(buffer);
+			buffers = null;
+		}
 	}
 
 	@Override

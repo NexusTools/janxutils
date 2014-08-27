@@ -53,7 +53,8 @@ public class Logger extends Thread {
 		String strLevel = System.getProperty("logger");
 		if(strLevel != null)
 			for(Level level : Level.values())
-				if(level.name().equalsIgnoreCase(strLevel)) {
+				if(level.name().equalsIgnoreCase(strLevel) ||
+						level.title.equalsIgnoreCase(strLevel)) {
 					mLevel = level;
 					break;
 				}
@@ -313,7 +314,7 @@ public class Logger extends Thread {
 		sleepTime = 200 ;
 		while(running = !shutdown.get() || messageQueue.isTrue()) {
 			final long after = System.currentTimeMillis() - Short.valueOf(System.getProperty("loggerdelay", "120"));
-			if(running)
+			if(running) {
 				readyMessages = messageQueue.take(new Testable<Message>() {
 					public boolean test(Message against) {
 						long until = after - against.timestamp;
@@ -324,16 +325,16 @@ public class Logger extends Thread {
 						return false;
 					}
 				});
-			else
+			} else
 				readyMessages = messageQueue.take();
-			readyMessages.sort(new DescLongTypeComparator<Message>() {
-				@Override
-				public long value(Message o) {
-					return o.timestamp;
-				}
-			});
-
+				
 			if(readyMessages.length() > 0) {
+				readyMessages.sort(new DescLongTypeComparator<Message>() {
+					@Override
+					public long value(Message o) {
+						return o.timestamp;
+					}
+				});
 				for(Message message : readyMessages) {
 					PrintStream stream;
 					switch(message.level) {

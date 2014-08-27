@@ -80,7 +80,7 @@ public class SortedPropList<I> extends PropList<I> {
 				public R read(ListAccessor<I> data, Lockable<ListAccessor<I>> lock) throws Throwable {
 					lock.lock();
 					try {
-						if(lock.tryFastUpgradeTest(new Testable() {
+						if(lock.fastUpgradeTest(new Testable() {
 							public boolean test(Object against) {
 								return dirty;
 							}
@@ -88,6 +88,7 @@ public class SortedPropList<I> extends PropList<I> {
 							Logger.gears("List is dirty, sorting before read");
 							data.sort(comparator);
 							dirty = false;
+							lock.downgrade();
 						}
 						
 						return reader.read(data, lock);

@@ -174,7 +174,7 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 				public void write(PropAccessor<T> data, Lockable lock) throws Throwable {
 					lock.lock();
 					try {
-						if(lock.tryFastUpgradeTest(test))
+						if(lock.fastUpgradeTest(test))
 							data.set(value);
 					} finally {
 						lock.unlock();

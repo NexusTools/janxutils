@@ -29,12 +29,8 @@ public abstract class SoftWriter<A extends BaseAccessor> implements BaseWriter<A
 	public final void write(A data, Lockable lock) throws Throwable {
 		lock.lock();
 		try {
-			if(lock.upgradeTest(data, this))
-				try {
-					write(data);
-				} finally {
-					lock.unlock();
-				}
+			if(lock.fastUpgradeTest(data, this))
+				write(data);
 			else
 				soft(data);
 		} finally {

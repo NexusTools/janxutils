@@ -27,7 +27,7 @@ public abstract class IfWriteReader<R, A extends BaseAccessor> implements BaseRe
 
 	@Override
 	public final R read(A data, Lockable<A> lock) throws Throwable {
-		if(lock.upgradeTest(data, this))
+		if(lock.writeLockTest(data, this))
 			try {
 				return read(data);
 			} finally {

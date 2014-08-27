@@ -38,7 +38,6 @@ import net.nexustools.utils.log.Logger;
 public class StreamUtils {
 	
 	public static final short DefaultBufferSize = Short.valueOf(System.getProperty("stream.buffersize", "8192"));
-	public static final short DefaultMaxCopySize = Short.valueOf(System.getProperty("stream.copysize", String.valueOf(Short.MAX_VALUE)));
 	private static final PropMap<Integer, CacheTypeList<byte[]>> cache = new PropMap();
 	
 	public static byte[] nextCopyBuffer() {
@@ -109,7 +108,7 @@ public class StreamUtils {
 	}
 	
 	public static void copy(InputStream inStream, OutputStream outStream, int amount) throws IOException {
-		copy(inStream, outStream, DefaultMaxCopySize, amount);
+		copy(inStream, outStream, DefaultBufferSize, amount);
 	}
 
 	public static void copy(final InputStream inStream, final OutputStream outStream, short bufferSize,final int amount) throws IOException {

@@ -65,9 +65,6 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 	public PropList(Collection<I> items) {
 		this(new GenericListAccessor(items));
 	}
-	public PropList() {
-		this(new GenericListAccessor());
-	}
 	public boolean isTrue() {
 		try {
 			return read(new Reader<Boolean, ListAccessor<I>>() {

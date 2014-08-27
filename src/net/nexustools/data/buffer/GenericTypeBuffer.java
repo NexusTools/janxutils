@@ -28,6 +28,9 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 
 	public GenericTypeBuffer(C typeClass, T... elements) {
 		super(typeClass, elements);
+		for(T element : elements)
+			if(element == null)
+				throw new NullPointerException();
 	}
 
 	public T[] copy() {
@@ -105,7 +108,7 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 
 	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException {
 		if(buffer != null)
-			Arrays.sort(buffer, sortMethod);
+			Arrays.sort(buffer, 0, size, sortMethod);
 	}
 
 	@Override

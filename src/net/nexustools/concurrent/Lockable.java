@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
+import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 
 /**
@@ -54,17 +55,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 */
 	public abstract void downgrade();
 	
-	/**
-	 * Attempts to upgrade as fast as possible,
-	 * while also checking if a test is valid.
-	 * 
-	 * The test is run once with a read lock,
-	 * and another time with a write lock.
-	 * 
-	 * @param testable The test to run
-	 * @return Returns true if the test remained true after a full upgrade was completed.
-	 */
-	public <I> boolean upgradeTest(I against, Testable<I> testable) throws Throwable {
+	public <I> boolean writeLockTest(I against, Testable<I> testable) throws Throwable {
 		boolean worked = false;
 		lock();
 		try {
@@ -83,8 +74,30 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 		return worked;
 	}
 	
-	public boolean tryFastUpgradeTest(Testable<Void> testable) throws Throwable {
-		return upgradeTest(null, testable);
+	public <I> boolean fastUpgradeTest(I against, Testable<I> testable) throws Throwable {
+		boolean worked = false;
+		try {
+			if(testable.test(against)) {
+				if(!tryFastUpgrade()) {
+					upgrade();
+					worked = true;
+					if(!testable.test(against)) {
+						downgrade();
+						return false;
+					}
+				} else
+					worked = true;
+			}
+		} catch(Throwable t) {
+			if(worked)
+				downgrade();
+			throw NXUtils.wrapRuntime(t);
+		}
+		return worked;
+	}
+	
+	public boolean fastUpgradeTest(Testable<Void> testable) throws Throwable {
+		return fastUpgradeTest(null, testable);
 	}
 	
 	/**

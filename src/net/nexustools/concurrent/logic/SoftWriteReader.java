@@ -29,12 +29,8 @@ public abstract class SoftWriteReader<R, A extends BaseAccessor> implements Base
 	public final R read(A data, Lockable<A> lock) throws Throwable {
 		lock.lock();
 		try {
-			if(lock.upgradeTest(data, this))
-				try {
-					return read(data);
-				} finally {
-					lock.unlock();
-				}
+			if(lock.fastUpgradeTest(data, this))
+				return read(data);
 			else
 				return soft(data);
 		} finally {

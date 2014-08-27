@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import net.nexustools.data.buffer.basic.ByteArrayBuffer;
+import static net.nexustools.io.StreamUtils.DefaultBufferSize;
 import net.nexustools.utils.StringUtils;
 
 /**
@@ -46,7 +47,7 @@ public class MemoryStream extends Stream {
 	}
 	
 	public MemoryStream(InputStream inStream) throws IOException {
-		this(inStream, StreamUtils.DefaultMaxCopySize);
+		this(inStream, DefaultBufferSize);
 	}
 	
 	public MemoryStream(String source, Charset charset) throws IOException {
