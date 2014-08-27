@@ -35,9 +35,15 @@ import net.nexustools.utils.sort.DescLongTypeComparator;
  */
 public class Logger extends Thread {
 	
-	private static final Logger logger = new Logger();
 	private static final Prop<Boolean> shutdown = new Prop(false);
-	private static final PropList<String> classesToSkip = new PropList();
+	private static final PropList<String> classesToSkip = new PropList() {
+		{
+			push(Thread.class);
+			push(Message.class);
+			push(Logger.class);
+			push(Level.class);
+		}
+	};
 	private static final PrintStream SystemOut = System.out;
 	private static final PrintStream SystemErr = System.err;
 	private static final Level minLevel;
@@ -52,8 +58,6 @@ public class Logger extends Thread {
 					break;
 				}
 		minLevel = mLevel;
-		if(mLevel.code <= Level.Gears.code)
-			logger.messageQueue.push(new Message(Logger.Level.Gears, Thread.currentThread().getName(), "ReadWriteLock", "Using", defaultPermitCount, "permits by Default"));
 		
 		Runtime.getRuntime().addShutdownHook(new Thread("Logger-Cleanup") {
 			@Override
@@ -78,6 +82,8 @@ public class Logger extends Thread {
 			}
 		});
 	}
+
+	public static void init() {}
 	
 	private static class Quote {
 		public final Object obj;
@@ -108,13 +114,6 @@ public class Logger extends Thread {
 	
 	public static void addSkippableClass(Class<?> clazz) {
 		classesToSkip.push(clazz.getName());
-	}
-	
-	static {
-		addSkippableClass(Thread.class);
-		addSkippableClass(Message.class);
-		addSkippableClass(Logger.class);
-		addSkippableClass(Level.class);
 	}
 	
 	public static void log(final Message message) {
@@ -290,6 +289,7 @@ public class Logger extends Thread {
 		}
 	}
 	
+	private static final Logger logger = new Logger();
 	private PropList<Message> messageQueue = new PropList<Message>();
 	protected Logger() {
 		super("Logger");
@@ -302,6 +302,9 @@ public class Logger extends Thread {
 	long sleepTime;
 	@Override
 	public void run() {
+		if(minLevel.code <= Level.Gears.code)
+			messageQueue.push(new Message(Logger.Level.Gears, Thread.currentThread().getName(), "ReadWriteLock", "Using", defaultPermitCount, "permits by Default"));
+		
 		final WeakHashMap<String, String> classNames = new WeakHashMap();
 		final Fitter threadName = new Fitter();
 		final Fitter className = new Fitter();

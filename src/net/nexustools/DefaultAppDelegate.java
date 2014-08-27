@@ -16,17 +16,16 @@
 package net.nexustools;
 
 import java.io.File;
-
-import net.nexustools.io.Stream;
-import net.nexustools.runtime.RunQueue;
 import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
+import net.nexustools.io.Stream;
+import net.nexustools.runtime.RunQueue;
 
 /**
  *
  * @author kate
  */
-public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDelegate {
+public abstract class DefaultAppDelegate<R extends RunQueue> extends AppDelegate {
 	public final String name;
 	protected final R runQueue;
 	private final String organization;

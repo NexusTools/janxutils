@@ -15,11 +15,17 @@
 
 package net.nexustools;
 
+import net.nexustools.utils.log.Logger;
+
 /**
  *
  * @author katelyn
  */
-public interface AppDelegate {
+public abstract class AppDelegate {
+	static {
+		Logger.init();
+	}
+	
 	public static final long created = System.currentTimeMillis();
 	
 	public static enum Path {
@@ -80,12 +86,10 @@ public interface AppDelegate {
 		}
 	}
 	
-	public String name();
-	public String organization();
-	public String pathUri(Path path);
-	public boolean needsMainLoop();
-	public void mainLoop();
-	
-	
+	public abstract String name();
+	public abstract String organization();
+	public abstract String pathUri(Path path);
+	public abstract boolean needsMainLoop();
+	public abstract void mainLoop();
 	
 }

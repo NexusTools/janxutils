@@ -26,6 +26,8 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 	public final R runnable;
 	public RunTask(R runnable, State state) {
 		super(state);
+		if(runnable == null)
+			throw new NullPointerException();
 		this.runnable = runnable;
 	}
 

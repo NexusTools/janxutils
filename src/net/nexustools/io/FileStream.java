@@ -24,23 +24,16 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.OverlappingFileLockException;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.PropAccessor;
-import static net.nexustools.io.StreamUtils.DefaultBufferSize;
-import net.nexustools.utils.CacheMap;
-import net.nexustools.utils.CacheReference;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
-import net.nexustools.utils.Pair;
+import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.RefreshingCacheMap;
-import static net.nexustools.utils.StringUtils.read;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -178,11 +171,11 @@ public class FileStream extends Stream {
 		return internal.isDirectory();
 	}
 
-	static final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
-	@Override
-	public String mimeType() {
-		String type = null;
-		if(type == null) {
+	
+	private final RefreshingCache<String> mimeCache = new RefreshingCache<String>(new Creator<String, Void>() {
+		public String create(java.lang.Void using) {
+			Logger.performance("Detecting MimeType", FileStream.this);
+			String type = null;
 			try {
 				type = detectedProbeContentType.read(new SoftWriteReader<String, PropAccessor<Creator<String, File>>>() {
 					@Override
@@ -232,10 +225,14 @@ public class FileStream extends Stream {
 				Logger.exception(Logger.Level.Gears, ex);
 			}
 			if(type == null)
-				type = super.mimeType();
+				type = FileStream.super.mimeType();
+			return type;
 		}
-		
-		return type;
+	});
+	static final Prop<Creator<String, File>> detectedProbeContentType = new Prop<Creator<String, File>>();
+	@Override
+	public String mimeType() {
+		return mimeCache.get();
 	}
 
 	@Override
