@@ -17,15 +17,15 @@ package net.nexustools.utils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import net.nexustools.data.buffer.basic.StringList;
+import net.nexustools.data.buffer.basic.StrongTypeMap;
 
 /**
  *
  * @author katelyn
  */
-public class ArgumentMap extends HashMap<String, ArrayList<String>> {
+public class ArgumentMap extends StrongTypeMap<String, StringList> {
 	
 	private final String mainKey;
 	
@@ -51,18 +51,16 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 		process(args.toArray(new String[args.size()]));
 	}
 	
-	protected ArrayList<String> init(String key) {
-		ArrayList<String> values = get(key);
-		if(values == null) {
-			values = new ArrayList();
-			put(key, values);
-		}
+	protected StringList init(String key) {
+		StringList values = get(key);
+		if(values == null)
+			put(key, values = new StringList());
 		
 		return values;
 	}
 	
 	protected void add(String key, String val) {
-		init(key).add(val);
+		init(key).push(val);
 	}
 	
 	public boolean hasArgumentValue(String key) {
@@ -83,8 +81,8 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 	}
 	
 	public String getArgumentValue(String key, String def) {
-		ArrayList<String> values = get(key);
-		if(values == null || values.size() < 1)
+		StringList values = get(key);
+		if(values == null || values.length() < 1)
 			return def;
 		
 		return values.get(0);
@@ -104,9 +102,7 @@ public class ArgumentMap extends HashMap<String, ArrayList<String>> {
 	}
 	
 	public void putArgumentValue(String key, String value) {
-		ArrayList<String> values = new ArrayList();
-		values.add(value);
-		put(key, values);
+		put(key, new StringList(value));
 	}
 	
 	protected final void process(String[] args) {

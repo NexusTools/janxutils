@@ -71,11 +71,13 @@ public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Clas
 	}
 
 	public void putAll(Iterable<Pair<K, V>> iterable) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		for(Pair<K, V> entry : iterable)
+			put(entry.i, entry.v);
 	}
 
-	public void putAll(Map<K, V> iterable) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public void putAll(Map<K, V> map) {
+		for(Map.Entry<K, V> entry : map.entrySet())
+			put(entry.getKey(), entry.getValue());
 	}
 
 	public V replace(K key, V value) {
