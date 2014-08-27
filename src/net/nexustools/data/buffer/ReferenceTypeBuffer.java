@@ -92,9 +92,7 @@ public class ReferenceTypeBuffer<T, W extends java.lang.ref.Reference<T>> extend
 	}
 
 	public void sort(Comparator<T> sortMethod) throws UnsupportedOperationException {
-		T[] buffer = unwrap(this.buffer);
-		Arrays.sort(buffer, sortMethod);
-		this.buffer = wrap(buffer);
+		throw new RuntimeException();
 	}
 
 	@Override
@@ -108,5 +106,5 @@ public class ReferenceTypeBuffer<T, W extends java.lang.ref.Reference<T>> extend
 	protected int length() {
 		return buffer.length;
 	}
-	
+
 }

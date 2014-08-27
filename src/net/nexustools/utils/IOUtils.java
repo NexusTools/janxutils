@@ -16,6 +16,10 @@
 package net.nexustools.utils;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import net.nexustools.io.StreamUtils;
 
 /**
  *
@@ -43,13 +47,21 @@ public class IOUtils {
 	 * @param out OutputStream to write
 	 * @throws IOException
 	 */
-	public static void copyStream(InputStream in, OutputStream out) throws IOException {
-		int r;
-		byte[] b = new byte[8129];
-		while((r = in.read(b))>-1){
-			out.write(b,0,r);
+	public static void copyStream(final InputStream in, final OutputStream out) throws IOException {
+		try {
+			StreamUtils.useCopyBuffer(new Processor<byte[]>() {
+				public void process(byte[] b) throws Throwable {
+					int r;
+					while((r = in.read(b))>-1){
+						out.write(b,0,r);
+					}
+				}
+			});
+		} catch (InvocationTargetException ex) {
+			throw NXUtils.unwrapRuntime(ex);
+		} finally {
+			out.flush();
 		}
-		out.flush();
 	}
 	
 	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();

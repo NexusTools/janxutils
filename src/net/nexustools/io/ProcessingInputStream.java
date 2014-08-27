@@ -15,10 +15,32 @@
 
 package net.nexustools.io;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 /**
  *
  * @author katelyn
  */
-public class BufferedStringReader {
+public abstract class ProcessingInputStream extends BufferInputStream {
+	
+	public final InputStream underlying;
+	public ProcessingInputStream(InputStream underlying, int... bufferLengths) {
+		super(bufferLengths);
+		this.underlying = underlying;
+	}
+
+	@Override
+	public void close() throws IOException {
+		super.close();
+		underlying.close();
+	}
+
+	@Override
+	public final int read(byte[] b, int off, int len, byte[]... buffers) throws IOException {
+		return read(b, off, len, underlying, buffers);
+	}
+
+	public abstract int read(byte[] b, int off, int len, InputStream underlying, byte[]... buffers) throws IOException;
 	
 }

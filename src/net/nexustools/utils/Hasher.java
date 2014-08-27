@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import net.nexustools.io.StreamUtils;
 
 /**
  *
@@ -93,9 +94,13 @@ public class Hasher {
 		MessageDigest md = MessageDigest.getInstance(algorithm);
 		DigestInputStream in = new DigestInputStream(inStream, md);
 		
-		byte[] b = new byte[8129];
-		while (in.read(b) > -1);
-		return md.digest();
+		byte[] b = StreamUtils.nextCopyBuffer();
+		try {
+			while (in.read(b) > -1);
+			return md.digest();
+		} finally {
+			StreamUtils.releaseBuffer(b);
+		}
 	}
 
 }

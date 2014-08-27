@@ -35,11 +35,19 @@ public class StreamUtils {
 	public static final short DefaultBufferSize = Short.valueOf(System.getProperty("stream.buffersize", "8192"));
 	public static final short DefaultMaxCopySize = Short.valueOf(System.getProperty("stream.copysize", String.valueOf(Short.MAX_VALUE)));
 	
+	public static byte[] nextCopyBuffer() {
+		return nextBuffer(0);
+	}
 	public static byte[] nextBuffer(int size) {
+		if(size < 1)
+			size = DefaultBufferSize;
 		Logger.performance("Allocating", StringUtils.stringForSize(size), "byte[]");
 		return new byte[size];
 	}
 	public static void releaseBuffer(byte[] buffer) {}
+	public static void useCopyBuffer(Processor<byte[]> processor) throws IOException, InvocationTargetException {
+		useBuffer(processor, 0);
+	}
 	public static void useBuffer(Processor<byte[]> processor, int size) throws IOException, InvocationTargetException {
 		final byte[] buffer = nextBuffer(size);
 		try {

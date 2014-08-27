@@ -17,6 +17,7 @@ package net.nexustools.data.buffer;
 
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.NoSuchElementException;
 
 /**
  *
@@ -36,7 +37,7 @@ public abstract class TypeBuffer<T, TA, C, R> extends MutableArrayBuffer<T, T[],
 				return new StrongTypeBuffer<T>(forType, elements);
 				
 			case Weak:
-				return new ReferenceTypeBuffer<T, WeakReference<T>>(forType, Reference.Soft, elements);
+				return new ReferenceTypeBuffer<T, WeakReference<T>>(forType, Reference.Weak, elements);
 				
 			case Soft:
 				return new ReferenceTypeBuffer<T, SoftReference<T>>(forType, Reference.Soft, elements);
@@ -63,7 +64,16 @@ public abstract class TypeBuffer<T, TA, C, R> extends MutableArrayBuffer<T, T[],
 	@Override
 	public void put(int pos, T value) {
 		T[] put = create(1);
+		put[0] = value;
 		write(0, put);
+	}
+
+	@Override
+	public T get(int pos) {
+		T[] get = create(1);
+		if(read(0, get) < 1)
+			throw new NoSuchElementException();
+		return get[0];
 	}
 
 	@Override
