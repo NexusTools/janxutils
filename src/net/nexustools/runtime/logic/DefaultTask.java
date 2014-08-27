@@ -124,13 +124,6 @@ public abstract class DefaultTask implements Task {
 	}
 	
 	public final void execute() {
-		execute(new Testable<Void>() {
-			public boolean test(Void against) {
-				return state() == State.Executing;
-			}
-		});
-	}
-	public final void execute(Testable<Void> isRunning) {
 		boolean stopRepeating = false;
 		try {
 			if(state.read(new WriteReader<Boolean, PropAccessor<State>>() {
@@ -146,7 +139,7 @@ public abstract class DefaultTask implements Task {
 				try {
 					runThread.set(Thread.currentThread());
 					try {
-						executeImpl(isRunning);
+						executeImpl();
 					} catch(StopRepeating ex) {
 						stopRepeating = true;
 					}
@@ -191,7 +184,7 @@ public abstract class DefaultTask implements Task {
 		}
 	}
 	
-	protected abstract void executeImpl(Testable<Void> isRunning) throws Throwable;
+	protected abstract void executeImpl() throws Throwable;
 
 	
 }

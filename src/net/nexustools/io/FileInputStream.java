@@ -93,6 +93,9 @@ public class FileInputStream extends EfficientInputStream {
 
 	@Override
 	public void close() throws IOException {
+		if(file == null)
+			return;
+		
 		file.close();
 		file = null;
 	}

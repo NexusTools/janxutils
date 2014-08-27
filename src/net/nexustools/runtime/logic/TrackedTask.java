@@ -94,11 +94,11 @@ public class TrackedTask<R extends Runnable> extends RunTask {
 	}
 
 	@Override
-	protected void executeImpl(final Testable isRunning) {
+	protected void executeImpl() {
 		removeFromTracker(new Runnable() {
 			public void run() {
 				try {
-					TrackedTask.super.executeImpl(isRunning);
+					TrackedTask.super.executeImpl();
 				} catch (Throwable ex) {
 					throw NXUtils.wrapRuntime(ex);
 				}

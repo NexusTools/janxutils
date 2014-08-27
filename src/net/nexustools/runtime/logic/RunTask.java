@@ -34,7 +34,7 @@ public class RunTask<R extends Runnable> extends DefaultTask {
 	}
 
 	@Override
-	protected void executeImpl(Testable<Void> isRunning) throws Throwable {
+	protected void executeImpl() throws Throwable {
 		syncExecute(runnable);
 	}
 
