@@ -94,13 +94,9 @@ public class Hasher {
 		MessageDigest md = MessageDigest.getInstance(algorithm);
 		DigestInputStream in = new DigestInputStream(inStream, md);
 		
-		byte[] b = StreamUtils.nextCopyBuffer();
-		try {
-			while (in.read(b) > -1);
-			return md.digest();
-		} finally {
-			StreamUtils.releaseBuffer(b);
-		}
+		byte[] b = new byte[StreamUtils.DefaultBufferSize];
+		while (in.read(b) > -1);
+		return md.digest();
 	}
 
 }

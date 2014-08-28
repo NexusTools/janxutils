@@ -37,10 +37,6 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 				throw new RuntimeException();
 		}
 		@Override
-		public void replace(int from, T... elements) {
-			throw new RuntimeException();
-		}
-		@Override
 		public void remove(int offset, int count) {
 			try {
 				delete(pos+offset+moveOffset, count);
@@ -61,6 +57,9 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 		public T previous() {
 			moveOffset=0;
 			return get(--pos);
+		}
+		public void set(T e) {
+			put(pos+moveOffset, e);
 		}
 	}
 

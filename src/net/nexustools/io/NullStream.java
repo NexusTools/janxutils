@@ -18,6 +18,7 @@ package net.nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.ByteChannel;
 
 /**
  *
@@ -71,6 +72,11 @@ public final class NullStream extends Stream {
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
 		throw new IOException("NullStream cannot be read from.");
+	}
+
+	@Override
+	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	
 }

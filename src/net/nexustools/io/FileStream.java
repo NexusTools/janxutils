@@ -23,6 +23,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.channels.ByteChannel;
 import java.util.Iterator;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.SoftWriteReader;
@@ -46,7 +47,7 @@ public class FileStream extends Stream {
 		}
 	});
 	
-	public static synchronized Stream getStream(String filePath) {
+	public static Stream instance(String filePath) {
 		return cache.get(filePath);
 	}
 	
@@ -73,7 +74,7 @@ public class FileStream extends Stream {
 	}
 
 	@Override
-	public long size() throws IOException {
+	public long size() {
 		return internal.get().length();
 	}
 
@@ -165,7 +166,7 @@ public class FileStream extends Stream {
 									create(internal.get()); // Test it once
 									Logger.debug("Detected Java 7 APIs", pathsGet, probeContentType);
 								}
-								public synchronized String create(File using) {
+								public String create(File using) {
 									try {
 										return (String) probeContentType.invoke(null, pathsGet.invoke(null, using.toURI()));
 									} catch (IllegalAccessException ex) {
@@ -226,6 +227,13 @@ public class FileStream extends Stream {
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
 		return new FileOutputStream(internalPath);
+	}
+
+	@Override
+	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+		if(args.length > 0)
+			throw new UnsupportedOperationException();
+		return RandomFileFactory.open(internalPath, true).getChannel();
 	}
 	
 	public void delete() {

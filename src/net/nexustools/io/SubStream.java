@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.channels.ByteChannel;
 
 /**
  * A Stream that uses other Streams,
@@ -127,7 +128,7 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public long size() throws IOException {
+	public long size() {
 		return Math.min(stream.size() - range.start(), range.size());
 	}
 	
@@ -199,12 +200,12 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public boolean isHidden() throws IOException {
+	public boolean isHidden() {
 		return stream.isHidden();
 	}
 
 	@Override
-	public long lastModified() throws IOException {
+	public long lastModified() {
 		return stream.lastModified();
 	}
 
@@ -233,6 +234,22 @@ public class SubStream extends Stream {
 		if(range.isSubRange())
 			throw new UnsupportedOperationException();
 		return stream.createOutputStream(pos);
+	}
+
+	@Override
+	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+		if(range.isSubRange()) {
+			Object[] rangeArgs = new Object[args.length];
+			System.arraycopy(args, 0, rangeArgs, 0, args.length);
+			rangeArgs[args.length] = range; // Append range onto arguments
+			args = rangeArgs;
+		}
+		return stream.createChannel(args);
+	}
+
+	@Override
+	public void close() {
+		stream.close();
 	}
 	
 }

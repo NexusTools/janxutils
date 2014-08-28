@@ -15,7 +15,6 @@
 
 package net.nexustools.data.buffer.basic;
 
-import net.nexustools.data.accessor.DataAccessor;
 import net.nexustools.data.accessor.DataAccessor.CacheLifetime;
 import net.nexustools.data.buffer.TypeList;
 
@@ -23,7 +22,7 @@ import net.nexustools.data.buffer.TypeList;
  *
  * @author katelyn
  */
-public class CacheTypeList<T> extends TypeList<T, Class<T>, DataAccessor.CacheLifetime>  {
+public class CacheTypeList<T> extends TypeList<T, Class<T>, CacheLifetime>  {
 
 	public CacheTypeList(T... elements) {
 		this((Class<T>)elements.getClass().getComponentType(), elements);

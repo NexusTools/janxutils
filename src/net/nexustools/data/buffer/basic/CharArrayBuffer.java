@@ -16,16 +16,8 @@
 package net.nexustools.data.buffer.basic;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import net.nexustools.concurrent.PropMap;
-import net.nexustools.concurrent.logic.WriteReader;
-import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.data.accessor.MapAccessor;
-import static net.nexustools.io.StreamUtils.DefaultBufferSize;
-import net.nexustools.utils.NXUtils;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -34,58 +26,11 @@ import net.nexustools.utils.log.Logger;
 public class CharArrayBuffer extends AppendablePrimitiveBuffer<Character, char[]> {
 	private static final char[] EMPTY = new char[0];
 	
-	private static final PropMap<Integer, CacheTypeList<char[]>> cache = new PropMap();
-	
-	public static char[] nextBuffer(int size) {
-		if(size < 1)
-			size = DefaultBufferSize;
-		
-		final Integer desiredSize = size;
-		try {
-			return cache.read(new WriteReader<char[], MapAccessor<Integer, CacheTypeList<char[]>>>() {
-				@Override
-				public char[] read(MapAccessor<Integer, CacheTypeList<char[]>> data) throws Throwable {
-					char[] next;
-					try {
-						next = data.get(desiredSize).shift();
-						if(next == null)
-							throw new NullPointerException();
-					} catch(NullPointerException ex) {
-						Logger.performance("Allocating", "char[" + desiredSize + "]");
-						next = new char[desiredSize];
-					}
-					return next;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public static void releaseBuffer(final char[] buffer) {
-		if(buffer == null)
-			throw new NullPointerException();
-		
-		final Integer desiredSize = buffer.length;
-		try {
-			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<char[]>>>() {
-				@Override
-				public void write(MapAccessor<Integer, CacheTypeList<char[]>> data) throws Throwable {
-					CacheTypeList<char[]> cache = data.get(desiredSize);
-					if(cache == null)
-						data.put(desiredSize, cache = new CacheTypeList<char[]>());
-					cache.push(buffer);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	
 	public CharArrayBuffer() {
 		this((char[])null);
 	}
 	public CharArrayBuffer(int size) {
-		this(nextBuffer(size));
+		this(new char[size]);
 	}
 	public CharArrayBuffer(char[] buffer) {
 		super(Character.class, buffer);
@@ -98,7 +43,7 @@ public class CharArrayBuffer extends AppendablePrimitiveBuffer<Character, char[]
 				return append(cs, 0, cs.length());
 			}
 			public Appendable append(CharSequence cs, int offset, int len) throws IOException {
-				char[] buff = nextBuffer(len);
+				char[] buff = new char[cs.length()];
 				for(int i=0; i<len--; i++)
 					buff[i] = cs.charAt(i + offset++);
 				write(pos, buff);
@@ -121,14 +66,11 @@ public class CharArrayBuffer extends AppendablePrimitiveBuffer<Character, char[]
 	}
 
 	@Override
-	protected void release(char[] buffer) {
-		assert(buffer.length <= Short.MAX_VALUE);
-		releaseBuffer(buffer);
-	}
+	protected void release(char[] buffer) {}
 
 	@Override
 	protected char[] create(int size) {
-		return nextBuffer(size);
+		return new char[size];
 	}
 
 	@Override

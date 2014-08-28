@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ListIterator;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.data.annote.ThreadUnsafe;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -53,7 +54,8 @@ public abstract class BufferList<T, C, R, B extends ArrayBuffer<T, T[], ?, C, R>
 	public int indexOf(T object, int from) {
 		Iterator<T> it = listIterator(from);
 		while(it.hasNext()) {
-			if(object.hashCode() == it.next().hashCode())
+			T val = it.next();
+			if(object.hashCode() == val.hashCode())
 				return from;
 			from ++;
 		}
@@ -63,7 +65,7 @@ public abstract class BufferList<T, C, R, B extends ArrayBuffer<T, T[], ?, C, R>
 	public int lastIndexOf(T object, int from) {
 		ListIterator<T> it = listIterator(from);
 		while(it.hasPrevious()) {
-			if(object.hashCode() == it.previous().hashCode())
+			if(object.equals(it.previous()))
 				return from;
 			from ++;
 		}

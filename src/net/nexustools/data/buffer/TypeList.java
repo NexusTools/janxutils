@@ -18,7 +18,6 @@ package net.nexustools.data.buffer;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
-import net.nexustools.data.accessor.DataAccessor.Reference;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.utils.Testable;
 
@@ -43,7 +42,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	public boolean unique(T object) {
 		ListIterator<T> it = listIterator();
 		while(it.hasNext()) {
-			if(object.hashCode() == it.next().hashCode())
+			if(object.equals(it.next()))
 				return false;
 		}
 		it.add(object);
@@ -83,7 +82,7 @@ public class TypeList<T, C, R> extends BufferList<T, C, R, TypeBuffer<T, ?, C, R
 	public void remove(T object) {
 		ListIterator<T> it = listIterator();
 		while(it.hasNext()) {
-			if(object.hashCode() == it.next().hashCode()) {
+			if(object.equals(it.next())) {
 				it.remove();
 				break;
 			}

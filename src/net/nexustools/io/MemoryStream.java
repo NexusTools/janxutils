@@ -19,6 +19,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.ByteChannel;
 import java.nio.charset.Charset;
 import net.nexustools.data.buffer.basic.ByteArrayBuffer;
 import static net.nexustools.io.StreamUtils.DefaultBufferSize;
@@ -90,13 +91,13 @@ public class MemoryStream extends Stream {
 	}
 
 	@Override
-	public long size() throws IOException {
+	public long size() {
 		return buffer.size();
 	}
 
 	@Override
-	public long lastModified() throws IOException {
-		throw new IOException("Modification times not tracked on memory streams");
+	public long lastModified() throws UnsupportedOperationException {
+		throw new UnsupportedOperationException("Modification times not tracked on memory streams");
 	}
 
 	@Override
@@ -122,6 +123,11 @@ public class MemoryStream extends Stream {
 	@Override
 	public String path() {
 		return "";
+	}
+
+	@Override
+	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	
 }

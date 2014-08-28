@@ -46,19 +46,10 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static void copyStream(final InputStream in, final OutputStream out) throws IOException {
-		try {
-			StreamUtils.useCopyBuffer(new Processor<byte[]>() {
-				public void process(byte[] b) throws Throwable {
-					int r;
-					while((r = in.read(b))>-1){
-						out.write(b,0,r);
-					}
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		} finally {
-			out.flush();
+		int r;
+		byte[] b = new byte[StreamUtils.DefaultBufferSize];
+		while((r = in.read(b))>-1){
+			out.write(b,0,r);
 		}
 	}
 	

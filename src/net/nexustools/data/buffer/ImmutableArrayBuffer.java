@@ -31,10 +31,6 @@ public abstract class ImmutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T
 		public void remove(int previous, int next) {
 			throw new UnsupportedOperationException(getClass().getSimpleName() + ".remove is Immutable");
 		}
-		@Override
-		public void replace(int from, T... elements) {
-			throw new UnsupportedOperationException(getClass().getSimpleName() + ".replace is Immutable");
-		}
 	}
 
 	public ImmutableArrayBuffer(C typeClass, B buffer) {

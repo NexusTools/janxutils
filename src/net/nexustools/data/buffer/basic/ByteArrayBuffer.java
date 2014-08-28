@@ -18,10 +18,10 @@ package net.nexustools.data.buffer.basic;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import net.nexustools.io.EfficientInputStream;
 import net.nexustools.io.EfficientOutputStream;
-import net.nexustools.io.StreamUtils;
 
 /**
  *
@@ -34,7 +34,7 @@ public class ByteArrayBuffer extends AppendablePrimitiveBuffer<Byte, byte[]> {
 		this((byte[])null);
 	}
 	public ByteArrayBuffer(int size) {
-		this(StreamUtils.nextBuffer(size));
+		this(new byte[size]);
 	}
 	public ByteArrayBuffer(byte[] buffer) {
 		super(Byte.class, buffer);
@@ -79,14 +79,11 @@ public class ByteArrayBuffer extends AppendablePrimitiveBuffer<Byte, byte[]> {
 	}
 
 	@Override
-	protected void release(byte[] buffer) {
-		assert(buffer.length <= Short.MAX_VALUE);
-		StreamUtils.releaseBuffer(buffer);
-	}
+	protected void release(byte[] buffer) {}
 
 	@Override
 	protected byte[] create(int size) {
-		return StreamUtils.nextBuffer(size);
+		return new byte[size];
 	}
 
 	@Override
@@ -114,6 +111,19 @@ public class ByteArrayBuffer extends AppendablePrimitiveBuffer<Byte, byte[]> {
 	@Override
 	public int length(byte[] of) {
 		return of.length;
+	}
+	
+	public ByteBuffer buffer(int pos, int len) {
+		assert(pos > 0 && pos+len <= size);
+		return ByteBuffer.wrap(buffer, pos, len);
+	}
+	
+	public ByteBuffer buffer() {
+		return buffer(0, size);
+	}
+	
+	public void write(int pos, ByteBuffer buffer, int offset, int len) {
+		write(pos, buffer.array(), offset, len);
 	}
 
 	@Override

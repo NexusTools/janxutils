@@ -15,7 +15,6 @@
 
 package net.nexustools.utils;
 
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.runtime.ThreadedRunQueue;

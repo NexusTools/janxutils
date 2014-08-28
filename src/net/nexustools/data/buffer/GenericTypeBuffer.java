@@ -41,9 +41,11 @@ public abstract class GenericTypeBuffer<T, C, R> extends TypeBuffer<T, T, C, R> 
 
 	@Override
 	public void put(int pos, T value) {
+		int cSize = size;
 		T[] put = create(1);
 		put[0] = value;
 		write(pos, put, 1);
+		size = cSize;
 	}
 
 	@Override

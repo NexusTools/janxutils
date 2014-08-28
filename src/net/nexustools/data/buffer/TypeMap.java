@@ -47,7 +47,7 @@ public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Clas
 
 	public V get(K key, V def) {
 		for(Pair<K, V> entry : this)
-			if(entry.i.hashCode() == key.hashCode())
+			if(entry.i.equals(key))
 				return entry.v;
 		
 		return def;
@@ -56,20 +56,24 @@ public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Clas
 	public void remove(K key) {
 		Iterator<Pair<K, V>> it = iterator();
 		while(it.hasNext())
-			if(it.next().i.hashCode() == key.hashCode()) {
+			if(it.next().i.equals(key)) {
 				it.remove();
 				break;
 			}
 	}
+	
+	protected Pair<K, V> pair(final K key, V value) {
+		return new Pair(key, value);
+	}
 
-	public void put(K key, V value) {
+	public void put(final K key, V value) {
 		ListIterator<Pair<K, V>> it = (ListIterator<Pair<K, V>>)iterator();
 		while(it.hasNext())
 			if(it.next().i.hashCode() == key.hashCode()) {
-				it.set(new Pair(key, value));
+				it.set(pair(key, value));
 				return;
 			}
-		it.add(new Pair(key, value));
+		it.add(pair(key, value));
 	}
 
 	public void putAll(Iterable<Pair<K, V>> iterable) {
@@ -90,12 +94,12 @@ public abstract class TypeMap<K, V, B extends TypeBuffer<Pair<K,V>, ?, Pair<Clas
 				if(entry.v.hashCode() == value.hashCode())
 					return value;
 				else {
-					it.set(new Pair(key, value));
+					it.set(pair(key, value));
 					return entry.v;
 				}
 			}
 		}
-		it.add(new Pair(key, value));
+		it.add(pair(key, value));
 		return value;
 	}
 

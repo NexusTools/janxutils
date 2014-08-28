@@ -154,5 +154,14 @@ public class ArgumentMap extends StrongTypeMap<String, StringList> {
 				init(key);
 		} while(nextPos > 0);
 	}
+
+	public String parseCommand(String command) {
+		int space = command.trim().indexOf(" ");
+		if(space > 0) {
+			throw new UnsupportedOperationException("Not supported yet.");
+			//return command.substring(0, space);
+		} else
+			return command;
+	}
 	
 }

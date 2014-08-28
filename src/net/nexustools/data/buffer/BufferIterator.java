@@ -24,12 +24,8 @@ import java.util.ListIterator;
 public abstract class BufferIterator<T> implements ListIterator<T> {
 	
 	public abstract void insert(T... e);
-	public abstract void replace(int from, T... elements);
 	public abstract void remove(int offset, int count);
 
-	public void set(T e) {
-		replace(0, e);
-	}
 	public void remove() {
 		remove(1);
 	}

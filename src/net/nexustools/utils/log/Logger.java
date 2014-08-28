@@ -106,10 +106,10 @@ public class Logger extends Thread {
 	};
 	private static final PropList<String> classesToSkip = new PropList() {
 		{
-			push(Thread.class);
-			push(Message.class);
-			push(Logger.class);
-			push(Level.class);
+			push(Thread.class.getName());
+			push(Message.class.getName());
+			push(Logger.class.getName());
+			push(Level.class.getName());
 		}
 	};
 	private static final PrintStream SystemOut = System.out;
@@ -348,6 +348,7 @@ public class Logger extends Thread {
 		for(StackTraceElement element : stackElements) {
 			if(classesToSkip.contains(element.getClassName()))
 				continue;
+			
 			if(skip > 0) {
 				skip--;
 				continue;

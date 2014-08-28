@@ -19,24 +19,32 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Set;
+import java.util.concurrent.Semaphore;
 import net.nexustools.data.buffer.basic.StrongTypeList;
+import net.nexustools.runtime.FairTaskDelegator;
+import net.nexustools.runtime.RunQueue;
+import net.nexustools.runtime.ThreadedRunQueue;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.IOUtils;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Processor;
 import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.StringUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -110,6 +118,36 @@ public abstract class Stream implements Iterable<Stream> {
 					return Null();
 				}
 			});
+			put("tcp", new StreamProvider() {
+				@Override
+				public String scheme() {
+					return "tcp";
+				}
+				@Override
+				public Stream open(String path, URI raw) throws IOException {
+					return SocketStream.open(raw.getHost(), raw.getPort(), SocketStream.Type.TCP);
+				}
+			});
+			put("udp", new StreamProvider() {
+				@Override
+				public String scheme() {
+					return "udp";
+				}
+				@Override
+				public Stream open(String path, URI raw) throws IOException {
+					return SocketStream.open(raw.getHost(), raw.getPort(), SocketStream.Type.UDP);
+				}
+			});
+			put("unix", new StreamProvider() {
+				@Override
+				public String scheme() {
+					return "unix";
+				}
+				@Override
+				public Stream open(String path, URI raw) throws IOException {
+					return SocketStream.open(raw.getHost(), raw.getPort(), SocketStream.Type.Local);
+				}
+			});
 			put("void", new StreamProvider() {
 				@Override
 				public String scheme() {
@@ -127,7 +165,7 @@ public abstract class Stream implements Iterable<Stream> {
 				}
 				@Override
 				public Stream open(String path, URI raw) throws IOException {
-					return FileStream.getStream(path);
+					return FileStream.instance(path);
 				}
 			});
 			/*put("substream", new StreamProvider() {
@@ -225,7 +263,7 @@ public abstract class Stream implements Iterable<Stream> {
 		try {
 			return open(new URI(uri));
 		} catch(URISyntaxException ex) {
-			return FileStream.getStream(uri);
+			return FileStream.instance(uri);
 		}
 	}
 
@@ -257,11 +295,11 @@ public abstract class Stream implements Iterable<Stream> {
 			
 			throw new IOException("No handler found for URI: " + uri.toString());
 		} else
-			return FileStream.getStream(uri.getPath());
+			return FileStream.instance(uri.getPath());
 	}
 	
 	public static Stream open(File file) throws IOException {
-		return FileStream.getStream(file.getAbsolutePath());
+		return FileStream.instance(file.getAbsolutePath());
 	}
 	
 	/**
@@ -375,23 +413,23 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @return
 	 * @throws IOException
 	 */
-	public abstract long size() throws IOException;
+	public abstract long size() throws UnsupportedOperationException;
 	
-	public long created() throws IOException {
+	public long created() throws UnsupportedOperationException {
 		return 0;
 	}
-	public long lastModified() throws IOException {
+	public long lastModified() throws UnsupportedOperationException {
 		return 0;
 	}
 	
-	public Map<String,String> properties() throws IOException{
+	public Map<String,String> properties() {
 		return new HashMap();
 	}
 	
-	public boolean isHidden() throws IOException{
+	public boolean isHidden() throws UnsupportedOperationException{
 		return true;
 	}
-	public boolean exists() throws IOException{
+	public boolean exists() throws UnsupportedOperationException{
 		return true;
 	}
 	
@@ -400,7 +438,7 @@ public abstract class Stream implements Iterable<Stream> {
 			StringBuilder builder = new StringBuilder();
 			try {
 				builder.append(StringUtils.stringForSize(size()));
-			} catch(IOException ex) {}
+			} catch(UnsupportedOperationException ex) {}
 			if(isDirectory()) {
 				int folderCount = 0;
 				int fileCount = 0;
@@ -440,12 +478,32 @@ public abstract class Stream implements Iterable<Stream> {
 		return sizeStrCache.get();
 	}
 	
-	public final void read(StreamReader<InputStream> reader) throws IOException {
-		throw new UnsupportedOperationException();
+	public final void read(StreamReader<? super InputStream> reader) throws IOException {
+		InputStream in = createInputStream();
+		try {
+			reader.read(in);
+		} finally {
+			in.close();
+		}
 	}
 	
-	public final void readData(StreamReader<DataInputStream> reader) throws IOException {
-		throw new UnsupportedOperationException();
+	public final void readData(StreamReader<? super DataInputStream> reader) throws IOException {
+		DataInputStream in = createDataInputStream();
+		try {
+			reader.read(in);
+		} finally {
+			in.close();
+		}
+	}
+	
+	public final void readNonBlocking(final NonBlockingStreamProcessor<? super InputStream> reader) throws IOException, UnsupportedOperationException {
+		if(!NonBlockingStreamProcessor.isSupported())
+			throw new UnsupportedOperationException();
+		
+		final ByteChannel channel = createChannel();
+		if(!(channel instanceof SelectableChannel))
+			throw new UnsupportedOperationException(this + ": does not provide a SelectableChannel compatible ByteChannel");
+		reader.register(((SelectableChannel)channel), Stream.this.toURL().hashCode());
 	}
 	
 	public final void write(StreamWriter<OutputStream> writer) throws IOException {
@@ -471,6 +529,45 @@ public abstract class Stream implements Iterable<Stream> {
 	}
 	public final DataOutputStream createDataOutputStream() throws IOException{
 		return createDataOutputStream(0);
+	}
+	
+	public final Appendable createAppendable() throws IOException{
+		return new Appendable() {
+			final OutputStream oStream = createOutputStream();
+			public Appendable append(CharSequence cs) throws IOException {
+				return append(cs, 0, cs.length());
+			}
+			public Appendable append(CharSequence cs, int offset, int len) throws IOException {
+				byte[] buff = new byte[len];
+				for(int i=0; i<len; i++)
+					buff[i] = (byte)cs.charAt(offset+i);
+				oStream.write(buff);
+				return this;
+			}
+			public Appendable append(char c) throws IOException {
+				oStream.write(c);
+				return this;
+			}
+		};
+	}
+	public final Appendable createAppendable(final Charset charset) throws IOException{
+		return new Appendable() {
+			final OutputStream oStream = createOutputStream();
+			public Appendable append(CharSequence cs) throws IOException {
+				return append(cs, 0, cs.length());
+			}
+			public Appendable append(CharSequence cs, int offset, int len) throws IOException {
+				char[] buff = new char[len];
+				for(int i=0; i<len; i++)
+					buff[i] = cs.charAt(offset+i);
+				oStream.write(new String(buff).getBytes(charset));
+				return this;
+			}
+			public Appendable append(char c) throws IOException {
+				oStream.write(c);
+				return this;
+			}
+		};
 	}
 
 	public final InputStream createInputStream() throws IOException{
@@ -562,12 +659,7 @@ public abstract class Stream implements Iterable<Stream> {
 	 * @return
 	 */
 	protected static String stringForStream(Stream stream, String name) {
-		Map<String,String> properties;
-		try {
-			properties = stream.properties();
-		} catch (IOException ex) {
-			properties = new HashMap();
-		}
+		Map<String,String> properties = stream.properties();
 		return stringForStream(stream, name, properties);
 	}
 	
@@ -693,6 +785,8 @@ public abstract class Stream implements Iterable<Stream> {
 			};
 	}
 	
+	public abstract ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException;
+	
 	public Iterable<String> children() throws IOException {
 		throw new IOException(toURL() + " has no children");
 	}
@@ -704,5 +798,7 @@ public abstract class Stream implements Iterable<Stream> {
 	public boolean isDirectory() {
 		return false;
 	}
+	
+	public void close() {}
 	
 }

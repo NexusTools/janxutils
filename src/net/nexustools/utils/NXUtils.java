@@ -31,6 +31,12 @@ public final class NXUtils {
 			return unwrapTarget(((RuntimeTargetException)throwable).target());
 		return throwable;
 	}
+	public static UnsupportedOperationException unwrapOperationException(Throwable throwable) {
+		throwable = unwrapTarget(throwable);
+		if(throwable instanceof UnsupportedOperationException)
+			return (UnsupportedOperationException)throwable;
+		throw wrapRuntime(throwable);
+	}
 	public static IOException unwrapIOException(Throwable throwable) {
 		throwable = unwrapTarget(throwable);
 		if(throwable instanceof IOException)

@@ -102,13 +102,9 @@ public class DataInputStream extends java.io.DataInputStream {
 		if(size < 1)
 			return null;
 		
-		byte[] stringBytes = StreamUtils.nextBuffer(size);
-		try {
-			readFully(stringBytes);
-			return new String(stringBytes, charset);
-		} finally {
-			StreamUtils.releaseBuffer(stringBytes);
-		}
+		byte[] stringBytes = new byte[StreamUtils.DefaultBufferSize];
+		readFully(stringBytes);
+		return new String(stringBytes, charset);
 	}
 	
 	/**

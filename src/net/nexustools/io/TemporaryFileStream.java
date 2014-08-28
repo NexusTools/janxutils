@@ -30,19 +30,21 @@ import net.nexustools.utils.log.Logger;
 public class TemporaryFileStream extends FileStream {
 	
 	private static String baseTMPFolder = null;
+	static {
+		StringBuilder randomFilename = new StringBuilder();
+		randomFilename.append(System.getProperty("java.io.tmpdir"));
+		randomFilename.append(File.separator);
+		randomFilename.append("janxutils");
+		randomFilename.append(File.separator);
+		baseTMPFolder = randomFilename.toString();
+		File tmpFilePath = new File(baseTMPFolder);
+		if(!tmpFilePath.exists() && !tmpFilePath.mkdirs())
+			throw new RuntimeException("Cannot create temporary file directory: " + baseTMPFolder);
+	}
+	
 	protected static synchronized String getTemporaryFileName(String prefix) {
 		StringBuilder randomFilename = new StringBuilder();
-		if(baseTMPFolder == null) {
-			randomFilename.append(System.getProperty("java.io.tmpdir"));
-			randomFilename.append(File.separator);
-			randomFilename.append("janxutils");
-			randomFilename.append(File.separator);
-			baseTMPFolder = randomFilename.toString();
-			File tmpFilePath = new File(baseTMPFolder);
-			if(!tmpFilePath.exists() && !tmpFilePath.mkdirs())
-				throw new RuntimeException("Cannot create temporary file directory: " + baseTMPFolder);
-		} else 
-			randomFilename.append(baseTMPFolder);
+		randomFilename.append(baseTMPFolder);
 		if(prefix != null) {
 			randomFilename.append(prefix);
 			randomFilename.append('-');

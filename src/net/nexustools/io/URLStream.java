@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.channels.ByteChannel;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 
@@ -120,7 +121,7 @@ public class URLStream extends Stream {
 
 	static final Prop<Creator<Long, URLConnection>> detectedConnectionLength = new Prop<Creator<Long, URLConnection>>();
 	@Override
-	public long size() throws IOException {
+	public long size() {
 		try {
 			long size = detectedConnectionLength.read(new SoftWriteReader<Long, PropAccessor<Creator<Long, URLConnection>>>() {
 				@Override
@@ -161,9 +162,9 @@ public class URLStream extends Stream {
 			});
 			if(size > -1)
 				return size;
-			throw new IOException("Server not sending size");
+			throw new UnsupportedOperationException("Server not sending size");
 		} catch (InvocationTargetException ex) {
-			throw NXUtils.unwrapIOException(ex);
+			throw NXUtils.unwrapOperationException(ex);
 		}
 	}
 
@@ -173,11 +174,13 @@ public class URLStream extends Stream {
 	}
 	
 	@Override
-	public boolean exists() throws IOException {
+	public boolean exists() {
 		try {
 			open();
 		} catch(FileNotFoundException t) {
 			return false;
+		} catch (IOException ex) {
+			throw new UnsupportedOperationException(ex);
 		}
 		return true;
 	}
@@ -204,11 +207,16 @@ public class URLStream extends Stream {
 	}
 
 	@Override
-	public long lastModified() throws IOException {
-		long lastModified = open().getLastModified();
+	public long lastModified() {
+		long lastModified;
+		try {
+			lastModified = open().getLastModified();
+		} catch (IOException ex) {
+			throw new UnsupportedOperationException(ex);
+		}
 		if(lastModified > 0)
 			return lastModified;
-		throw new IOException("Server is not sending a modification time");
+		throw new UnsupportedOperationException("Server is not sending a modification time");
 	}
 
 	@Override
@@ -225,7 +233,12 @@ public class URLStream extends Stream {
 
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	
 }

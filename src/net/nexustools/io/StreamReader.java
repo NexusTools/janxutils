@@ -24,6 +24,7 @@ import java.io.InputStream;
  */
 public interface StreamReader<I extends InputStream> {
 	
-	public void write(I in) throws IOException;
+	public void read(I inputStream) throws IOException;
+	
 	
 }

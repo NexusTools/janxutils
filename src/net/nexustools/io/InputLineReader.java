@@ -16,8 +16,13 @@
 package net.nexustools.io;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import net.nexustools.data.buffer.basic.ByteArrayBuffer;
+import net.nexustools.utils.StringUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -26,49 +31,61 @@ import java.io.InputStream;
 public class InputLineReader implements LineReader {
 	
 	final int maxLength;
+	final Charset charset;
 	final InputStream inputStream;
-	public InputLineReader(int maxLength, InputStream inputStream) {
+	public InputLineReader(int maxLength, InputStream inputStream, Charset charset) {
 		if(!inputStream.markSupported())
 			throw new UnsupportedOperationException("Mark is required");
 		
 		this.inputStream = inputStream;
 		this.maxLength = maxLength;
+		this.charset = charset;
+	}
+	public InputLineReader(int maxLength, InputStream inputStream) {
+		this(maxLength, inputStream, StringUtils.UTF8);
+	}
+	public InputLineReader(InputStream inputStream, Charset charset) {
+		this(256, inputStream, charset);
 	}
 	public InputLineReader(InputStream inputStream) {
-		this(256, inputStream);
+		this(inputStream, StringUtils.UTF8);
 	}
 	
 	public String readNext() throws IOException {
-		int read;
 		int usefulLength = 0;
-		char foundReturn = 0;
-		StringBuilder builder = new StringBuilder();
+		int stringLength = 0;
+		boolean killNext = false;
+		Logger.debug("Reading line");
 		
 		inputStream.mark(maxLength);
-		while((read = inputStream.read()) > 0) {
+		byte[] buffer = new byte[maxLength];
+		int read = inputStream.read(buffer);
+		Logger.debug("Got ", read, "bytes");
+		byte current;
+		for(int i=0; i<read; i++) {
+			current = buffer[i];
 			usefulLength ++;
-			if(read == '\r' || read == '\n') {
-				if(foundReturn != 0) {
-					if(foundReturn == read)
-						usefulLength--;
-					break;
-				}
-				foundReturn = (char)read;
+			
+			// TODO: Investigate if charsets provide different line endings
+			if(current == (byte)'\r' && !killNext){
+				killNext = true;
 				continue;
 			}
-			if(foundReturn != 0) {
-				usefulLength--;
+			if(current == (byte)'\r' || current == (byte)'\n')
+				break;
+			if(killNext) {
+				usefulLength --;
 				break;
 			}
-			builder.append((char)read);
+			stringLength++;
 		}
 		
 		if(usefulLength < 1)
-			return null;
+			throw new EOFException();
 		
 		inputStream.reset();
 		inputStream.skip(usefulLength);
-		return builder.toString();
+		return new String(buffer, 0, stringLength, charset);
 	}
 	
 }

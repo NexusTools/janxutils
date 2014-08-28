@@ -38,70 +38,6 @@ import net.nexustools.utils.log.Logger;
 public class StreamUtils {
 	
 	public static final short DefaultBufferSize = Short.valueOf(System.getProperty("stream.buffersize", "8192"));
-	private static final PropMap<Integer, CacheTypeList<byte[]>> cache = new PropMap();
-	
-	public static byte[] nextCopyBuffer() {
-		return nextBuffer(0);
-	}
-	public static byte[] nextBuffer(int size) {
-		if(size < 1)
-			size = DefaultBufferSize;
-		
-		final Integer desiredSize = size;
-		try {
-			return cache.read(new WriteReader<byte[], MapAccessor<Integer, CacheTypeList<byte[]>>>() {
-				@Override
-				public byte[] read(MapAccessor<Integer, CacheTypeList<byte[]>> data) throws Throwable {
-					byte[] next;
-					try {
-						next = data.get(desiredSize).shift();
-						if(next == null)
-							throw new NullPointerException();
-					} catch(NullPointerException ex) {
-						Logger.performance("Allocating", StringUtils.stringForSize(desiredSize), "byte[]");
-						next = new byte[desiredSize];
-					}
-					return next;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public static void releaseBuffer(final byte[] buffer) {
-		if(buffer == null)
-			throw new NullPointerException();
-		
-		final Integer desiredSize = buffer.length;
-		try {
-			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<byte[]>>>() {
-				@Override
-				public void write(MapAccessor<Integer, CacheTypeList<byte[]>> data) throws Throwable {
-					CacheTypeList<byte[]> cache = data.get(desiredSize);
-					if(cache == null)
-						data.put(desiredSize, cache = new CacheTypeList<byte[]>());
-					cache.push(buffer);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public static void useCopyBuffer(Processor<byte[]> processor) throws IOException, InvocationTargetException {
-		useBuffer(processor, 0);
-	}
-	public static void useBuffer(Processor<byte[]> processor, int size) throws IOException, InvocationTargetException {
-		final byte[] buffer = nextBuffer(size);
-		try {
-			processor.process(buffer);
-		} catch (IOException ex) {
-			throw ex;
-		} catch (Throwable ex) {
-			throw NXUtils.wrapInvocation(ex);
-		} finally {
-			releaseBuffer(buffer);
-		}
-	}
 	
 	public static void copy(InputStream inStream, OutputStream outStream) throws IOException {
 		copy(inStream, outStream, DefaultBufferSize);
@@ -112,15 +48,7 @@ public class StreamUtils {
 	}
 
 	public static void copy(final InputStream inStream, final OutputStream outStream, short bufferSize, final long amount) throws IOException {
-		try {
-			useBuffer(new Processor<byte[]>() {
-				public void process(byte[] buffer) throws Throwable {
-					copy(inStream, outStream, buffer, amount);
-				}
-			}, bufferSize);
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		copy(inStream, outStream, new byte[bufferSize], amount);
 	}
 
 	public static void copy(InputStream inStream, OutputStream outStream, byte[] buffer, long amount) throws IOException {

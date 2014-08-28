@@ -28,16 +28,13 @@ public abstract class BufferInputStream extends EfficientInputStream {
 	public BufferInputStream(int... bufferLengths) {
 		buffers = new byte[bufferLengths.length][];
 		for(int i=0; i<bufferLengths.length; i++)
-			buffers[i] = StreamUtils.nextBuffer(bufferLengths[i]);
+			buffers[i] = new byte[bufferLengths[i]];
 	}
 
 	@Override
 	public void close() throws IOException {
-		if(buffers != null) {
-			for(byte[] buffer : buffers)
-				StreamUtils.releaseBuffer(buffer);
+		if(buffers != null)
 			buffers = null;
-		}
 	}
 
 	@Override
@@ -46,14 +43,5 @@ public abstract class BufferInputStream extends EfficientInputStream {
 	}
 
 	public abstract int read(byte[] b, int off, int len, byte[]... buffers) throws IOException;
-
-	@Override
-	protected void finalize() throws Throwable {
-		super.finalize();
-		if(buffers != null) {
-			Logger.warn("BufferInputStream.close not called, buffers being released by system.");
-			close();
-		}
-	}
 	
 }
