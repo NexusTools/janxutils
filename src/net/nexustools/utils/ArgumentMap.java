@@ -124,7 +124,7 @@ public class ArgumentMap extends StrongTypeMap<String, StringList> {
 			init(key);
 	}
 
-	public void readUrl(String arguments) throws UnsupportedEncodingException {
+	public void readURLEncoded(String arguments) throws UnsupportedEncodingException {
 		if(arguments.length() < 1)
 			return;
 		

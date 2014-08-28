@@ -27,7 +27,8 @@ import net.nexustools.io.StreamUtils;
  *
  * @author katelyn
  */
-public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
+public class ByteArrayBuffer extends AppendablePrimitiveBuffer<Byte, byte[]> {
+	private static final byte[] EMPTY = new byte[0];
 	
 	public ByteArrayBuffer() {
 		this((byte[])null);
@@ -72,6 +73,8 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 
 	@Override
 	public byte[] copy() {
+		if(buffer == null)
+			return EMPTY;
 		return Arrays.copyOf(buffer, size);
 	}
 
@@ -111,6 +114,19 @@ public class ByteArrayBuffer extends PrimitiveArrayBuffer<Byte, byte[]> {
 	@Override
 	public int length(byte[] of) {
 		return of.length;
+	}
+
+	@Override
+	public void write(int pos, CharSequence cs, int offset, int len) {
+		int newSize = prepWrite(pos, len);
+		for(int i=0; i<len; i++)
+			buffer[pos+i] = (byte)cs.charAt(offset+i);
+		size = newSize;
+	}
+
+	@Override
+	public void put(int pos, char ch) {
+		write(pos, new byte[]{(byte)ch});
 	}
 	
 }

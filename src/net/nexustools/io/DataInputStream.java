@@ -35,7 +35,7 @@ import net.nexustools.utils.Processor;
  * 
  * Adds additional functionality to the standard DataInputStream
  */
-public final class DataInputStream extends java.io.DataInputStream {
+public class DataInputStream extends java.io.DataInputStream {
 
 	public DataInputStream(InputStream in) {
 		super(in);

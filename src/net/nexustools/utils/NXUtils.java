@@ -59,4 +59,14 @@ public final class NXUtils {
 		return (int) Math.pow(2, Math.ceil(Math.log(size)/Math.log(2)));
 	}
 	
+	public static int remaining(long amount) {
+		if(amount > Integer.MAX_VALUE)
+			return Integer.MAX_VALUE;
+		return (int)amount;
+	}
+	
+	public static int remainingMin(long amount, long amount2) {
+		return remaining(Math.min(amount, amount2));
+	}
+	
 }

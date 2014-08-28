@@ -24,24 +24,16 @@ import net.nexustools.utils.log.Logger;
  *
  * @author katelyn
  */
-public class FileInputStream extends EfficientInputStream {
+public class FileOutputStream extends EfficientOutputStream {
 	
 	long pos = 0;
 	long markPos = -1;
 	RandomAccessFile file;
-	public FileInputStream(File file) throws IOException {
+	public FileOutputStream(File file) throws IOException {
 		this(file.getAbsolutePath());
 	}
-	public FileInputStream(String file) throws IOException {
-		this.file = RandomFileFactory.open(file,false);
-	}
-
-	@Override
-	public int available() throws IOException {
-		long available = file.length() - pos;
-		if(available > Integer.MAX_VALUE)
-			return Integer.MAX_VALUE;
-		return (int)available;
+	public FileOutputStream(String file) throws IOException {
+		this.file = RandomFileFactory.open(file, true);
 	}
 
 	@Override
@@ -54,39 +46,19 @@ public class FileInputStream extends EfficientInputStream {
 	}
 
 	@Override
-	public synchronized void mark(int readlimit) {
-		markPos = pos;
-	}
-
-	@Override
-	public synchronized void reset() throws IOException {
-		if(markPos < 0)
-			throw new IOException("Mark was not called, cannot reset");
-		pos = markPos;
-		markPos = -1;
-	}
-
-	@Override
-	public long skip(long n) throws IOException {
-		pos += n;
-		return n;
-	}
-
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		file.seek(pos);
-		int read = file.read(b, off, len);
-		pos = file.getFilePointer();
-		return read;
-	}
-
-	@Override
 	protected void finalize() throws Throwable {
 		super.finalize();
 		if(file != null) {
 			Logger.warn(file.toString() + " was not closed");
 			close();
 		}
+	}
+
+	@Override
+	public void write(byte[] b, int off, int len) throws IOException {
+		file.seek(pos);
+		file.write(b, off, len);
+		pos = file.getFilePointer();
 	}
 	
 }

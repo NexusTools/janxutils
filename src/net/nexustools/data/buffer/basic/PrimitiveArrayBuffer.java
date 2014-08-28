@@ -41,9 +41,8 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 		}
 		return buffer;
 	}
-
-	@Override
-	public final void writeImpl(int pos, B from, int off, int len) {
+	
+	protected final int prepWrite(int pos, int len) {
 		int newSize = pos+len;
 		int newLength = NXUtils.nearestPow(newSize);
 		if(newLength < 256)
@@ -60,7 +59,12 @@ public abstract class PrimitiveArrayBuffer<T, B> extends MutableArrayBuffer<T, B
 				arraycopy(buffer, 0, newBuffer, 0, copy);
 			setBuffer(newBuffer);
 		}
-		//System.out.println("Writing " + len+"bytes of new data");
+		return newSize;
+	}
+
+	@Override
+	public final void writeImpl(int pos, B from, int off, int len) {
+		int newSize = prepWrite(pos, len);
 		if(len > 0)
 			arraycopy(from, off, buffer, pos, len);
 		size = newSize;

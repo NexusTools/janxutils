@@ -107,11 +107,11 @@ public class StreamUtils {
 		copy(inStream, outStream, DefaultBufferSize);
 	}
 	
-	public static void copy(InputStream inStream, OutputStream outStream, int amount) throws IOException {
+	public static void copy(InputStream inStream, OutputStream outStream, long amount) throws IOException {
 		copy(inStream, outStream, DefaultBufferSize, amount);
 	}
 
-	public static void copy(final InputStream inStream, final OutputStream outStream, short bufferSize,final int amount) throws IOException {
+	public static void copy(final InputStream inStream, final OutputStream outStream, short bufferSize, final long amount) throws IOException {
 		try {
 			useBuffer(new Processor<byte[]>() {
 				public void process(byte[] buffer) throws Throwable {
@@ -123,9 +123,9 @@ public class StreamUtils {
 		}
 	}
 
-	public static void copy(InputStream inStream, OutputStream outStream, byte[] buffer, int amount) throws IOException {
+	public static void copy(InputStream inStream, OutputStream outStream, byte[] buffer, long amount) throws IOException {
 		int copied;
-		while((copied = inStream.read(buffer, 0, (int) Math.min(amount, buffer.length))) > 0) {
+		while((copied = inStream.read(buffer, 0, NXUtils.remainingMin(amount, buffer.length))) > 0) {
 			amount -= copied;
 			outStream.write(buffer, 0, copied);
 			if(amount < 0)

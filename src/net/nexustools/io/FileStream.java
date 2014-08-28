@@ -225,7 +225,11 @@ public class FileStream extends Stream {
 
 	@Override
 	public OutputStream createOutputStream(long pos) throws IOException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		return new FileOutputStream(internalPath);
+	}
+	
+	public void delete() {
+		internal.get().delete();
 	}
 
 	@Override

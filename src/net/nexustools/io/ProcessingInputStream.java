@@ -33,7 +33,9 @@ public abstract class ProcessingInputStream extends BufferInputStream {
 	@Override
 	public void close() throws IOException {
 		super.close();
-		underlying.close();
+		try {
+			underlying.close();
+		} catch(IOException ex) {}
 	}
 
 	@Override

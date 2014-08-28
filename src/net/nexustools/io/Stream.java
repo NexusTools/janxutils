@@ -28,9 +28,13 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.buffer.basic.StrongTypeList;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.IOUtils;
+import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.Processor;
 import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.StringUtils;
 
@@ -477,6 +481,28 @@ public abstract class Stream implements Iterable<Stream> {
 	}
 	public abstract InputStream createInputStream(long pos) throws IOException;
 	public abstract OutputStream createOutputStream(long pos) throws IOException;
+	
+	public void read(Processor<InputStream> readProcessor) throws IOException {
+		InputStream in = createInputStream();
+		try {
+		 	readProcessor.process(in);
+		} catch (Throwable ex) {
+			throw NXUtils.unwrapIOException(ex);
+		} finally {
+			in.close();
+		}
+	}
+	
+	public void write(Processor<OutputStream> writeProcessor) throws IOException {
+		OutputStream out = createOutputStream();
+		try {
+		 	writeProcessor.process(out);
+		} catch (Throwable ex) {
+			throw NXUtils.unwrapIOException(ex);
+		} finally {
+			out.close();
+		}
+	}
 	
 	
 	/**

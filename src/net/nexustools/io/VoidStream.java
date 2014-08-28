@@ -55,7 +55,7 @@ public final class VoidStream extends Stream {
 
 	@Override
 	public final long size() {
-		return Long.MAX_VALUE;
+		return 0;
 	}
 	
 	@Override
