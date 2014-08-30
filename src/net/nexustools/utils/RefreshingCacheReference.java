@@ -17,9 +17,8 @@ package net.nexustools.utils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
-import net.nexustools.runtime.logic.Task;
-import net.nexustools.runtime.logic.Task.State;
-import net.nexustools.utils.log.Logger;
+import net.nexustools.tasks.Task;
+import net.nexustools.tasks.Task.State;
 
 /**
  *
@@ -65,9 +64,9 @@ public class RefreshingCacheReference<T> extends CacheReference<T> {
 		
 		taskLock.acquireUninterruptibly();
 		try {
-			cacheTask.sync(new Processor<State>() {
-				public void process(State state) {
-					if(state == State.WaitingInQueue ||
+			cacheTask.sync(new Handler<State>() {
+				public void handle(State state) {
+					if(state == State.Enqueued ||
 							state == State.Scheduled)
 						cacheTask.cancel();
 
@@ -80,8 +79,6 @@ public class RefreshingCacheReference<T> extends CacheReference<T> {
 				}
 			});
 			return cache.get();
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
 		} finally {
 			taskLock.release();
 		}

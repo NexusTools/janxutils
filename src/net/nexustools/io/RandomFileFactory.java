@@ -23,10 +23,12 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import net.nexustools.concurrent.PropMap;
 import net.nexustools.concurrent.logic.SoftWriteReader;
 import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.RuntimeTargetException;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -89,37 +91,43 @@ public class RandomFileFactory {
 					}
 				}
 				@Override
-				public RandomAccessFile read(MapAccessor<String, SoftReference<Impl>> data) throws Throwable {
-					if(file != null && file.ref.get() < 1)
-						file.close();
-					
-					Impl impl = new Impl(path, writeable);
-					int tries = 20;
-					while(true)
-						try {
-							impl.getChannel().lock(0L, Long.MAX_VALUE, !writeable);
-							break;
-						} catch(OverlappingFileLockException ex) {
-							if(tries == 20)
-								Logger.performance("Waiting on lock", path);
-							
-							if(file != null && file.ref.get() < 1)
-								file.close();
-							
-							if(tries-- < 1)
-								throw new IOException(path + ": Could not get read lock after 20 tries.");
-							Thread.sleep(200);
-						}
-					data.put(path, new SoftReference<Impl>(impl));
-					return impl;
+				public RandomAccessFile read(MapAccessor<String, SoftReference<Impl>> data) {
+					try {
+						if(file != null && file.ref.get() < 1)
+							file.close();
+						
+						Impl impl = new Impl(path, writeable);
+						int tries = 20;
+						while(true)
+							try {
+								impl.getChannel().lock(0L, Long.MAX_VALUE, !writeable);
+								break;
+							} catch(OverlappingFileLockException ex) {
+								if(tries == 20)
+									Logger.performance("Waiting on lock", path);
+								
+								if(file != null && file.ref.get() < 1)
+									file.close();
+								
+								if(tries-- < 1)
+									throw new IOException(path + ": Could not get read lock after 20 tries.");
+								try {
+									Thread.sleep(200);
+								} catch (InterruptedException ex1) {}
+							}
+						data.put(path, new SoftReference<Impl>(impl));
+						return impl;
+					} catch (IOException ex) {
+						throw NXUtils.wrapRuntime(ex);
+					}
 				}
 				@Override
-				public RandomAccessFile soft(MapAccessor<String, SoftReference<Impl>> data) throws Throwable {
+				public RandomAccessFile soft(MapAccessor<String, SoftReference<Impl>> data) {
 					file.addRef();
 					return file;
 				}
 			});
-		} catch (InvocationTargetException ex) {
+		} catch (RuntimeTargetException ex) {
 			throw NXUtils.unwrapIOException(ex);
 		}
 	}

@@ -22,7 +22,7 @@ import java.util.ArrayList;
  *
  * @author katelyn
  */
-public class BoundLocks<A extends BaseAccessor> extends Lockable<A> {
+public class BoundLocks<A extends BaseAccessor> extends Lockable {
 	
 	private final Lockable[] boundLocks;
 	public BoundLocks(Lockable... locks) {

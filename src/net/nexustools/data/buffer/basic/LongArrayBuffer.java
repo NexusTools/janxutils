@@ -40,44 +40,36 @@ public class LongArrayBuffer extends PrimitiveArrayBuffer<Long, long[]> {
 			size = DefaultBufferSize;
 		
 		final Integer desiredSize = size;
-		try {
-			return cache.read(new WriteReader<long[], MapAccessor<Integer, CacheTypeList<long[]>>>() {
-				@Override
-				public long[] read(MapAccessor<Integer, CacheTypeList<long[]>> data) throws Throwable {
-					long[] next;
-					try {
-						next = data.get(desiredSize).shift();
-						if(next == null)
-							throw new NullPointerException();
-					} catch(NullPointerException ex) {
-						Logger.performance("Allocating", "long[" + desiredSize + "]");
-						next = new long[desiredSize];
-					}
-					return next;
+		return cache.read(new WriteReader<long[], MapAccessor<Integer, CacheTypeList<long[]>>>() {
+			@Override
+			public long[] read(MapAccessor<Integer, CacheTypeList<long[]>> data) {
+				long[] next;
+				try {
+					next = data.get(desiredSize).shift();
+					if(next == null)
+						throw new NullPointerException();
+				} catch(NullPointerException ex) {
+					Logger.performance("Allocating", "long[" + desiredSize + "]");
+					next = new long[desiredSize];
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+				return next;
+			}
+		});
 	}
 	public static void releaseBuffer(final long[] buffer) {
 		if(buffer == null)
 			throw new NullPointerException();
 		
 		final Integer desiredSize = buffer.length;
-		try {
-			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<long[]>>>() {
-				@Override
-				public void write(MapAccessor<Integer, CacheTypeList<long[]>> data) throws Throwable {
-					CacheTypeList<long[]> cache = data.get(desiredSize);
-					if(cache == null)
-						data.put(desiredSize, cache = new CacheTypeList<long[]>());
-					cache.push(buffer);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		cache.write(new Writer<MapAccessor<Integer, CacheTypeList<long[]>>>() {
+			@Override
+			public void write(MapAccessor<Integer, CacheTypeList<long[]>> data) {
+				CacheTypeList<long[]> cache = data.get(desiredSize);
+				if(cache == null)
+					data.put(desiredSize, cache = new CacheTypeList<long[]>());
+				cache.push(buffer);
+			}
+		});
 	}
 	
 	public LongArrayBuffer() {

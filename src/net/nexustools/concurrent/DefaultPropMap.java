@@ -39,26 +39,22 @@ public class DefaultPropMap<K, V> extends PropMap<K, V> {
 		public V get(final K key) {
 			V val = accessor.get(key);
 			if(val == null)
-				try {
-					val = lock.read(accessor, new SoftWriteReader<V, MapAccessor<K, V>>() {
-						@Override
-						public boolean test(MapAccessor<K, V> against) {
-							return !against.has(key);
-						}
-						@Override
-						public V soft(MapAccessor<K, V> data) {
-							return data.get(key);
-						}
-						@Override
-						public V read(MapAccessor<K, V> data) {
-							V val = creator.create(key);
-							data.put(key, val);
-							return val;
-						}
-					});
-				} catch (InvocationTargetException ex) {
-					throw NXUtils.wrapRuntime(ex);
-				}
+				val = lock.read(accessor, new SoftWriteReader<V, MapAccessor<K, V>>() {
+					@Override
+					public boolean test(MapAccessor<K, V> against) {
+						return !against.has(key);
+					}
+					@Override
+					public V soft(MapAccessor<K, V> data) {
+						return data.get(key);
+					}
+					@Override
+					public V read(MapAccessor<K, V> data) {
+						V val = creator.create(key);
+						data.put(key, val);
+						return val;
+					}
+				});
 			return val;
 		}
 		public V get(K key, V def) {

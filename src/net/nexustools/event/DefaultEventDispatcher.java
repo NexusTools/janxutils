@@ -16,15 +16,15 @@
 package net.nexustools.event;
 
 import java.util.EventListener;
-import net.nexustools.runtime.RunQueue;
+import net.nexustools.tasks.TaskSink;
 
 /**
  *
  * @author katelyn
  */
-public class DefaultEventDispatcher<R extends RunQueue, L extends EventListener, E extends Event> extends EventDispatcher<R, L, E> {
+public class DefaultEventDispatcher<S extends TaskSink, L extends EventListener, E extends Event> extends EventDispatcher<S, L, E> {
 	
-	public DefaultEventDispatcher(R queue) {
+	public DefaultEventDispatcher(S queue) {
 		super(queue);
 	}
 	

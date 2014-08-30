@@ -80,10 +80,35 @@ public interface AppDelegate {
 		}
 	}
 	
+	public static enum Platform {
+		Linux,
+		Solaris,
+		Windows,
+		Apple,
+		BSD,
+		
+		OtherUnix,
+		Unknown
+	}
+	
+	public static enum Device {
+		Desktop,
+		Tablet,
+		Phone,
+		
+		Unknown
+	}
+	
 	public abstract String name();
 	public abstract String organization();
 	public abstract String pathUri(Path path);
 	public abstract boolean needsMainLoop();
 	public abstract void mainLoop();
+	
+	public abstract Device device();
+	public abstract Platform platform();
+	
+	public abstract Object deviceObject();
+	public abstract Object platformObject();
 	
 }

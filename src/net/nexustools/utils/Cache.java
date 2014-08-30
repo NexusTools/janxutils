@@ -39,31 +39,27 @@ public class Cache<V, C extends CacheReference<V>> {
 	}
 	
 	public V get() {
-		try {
-			return cache.read(new SoftWriteReader<V, PropAccessor<C>>() {
-				V value;
-				@Override
-				public boolean test(PropAccessor<C> against) {
-					try {
-						return (value = against.get().get()) == null;
-					} catch(NullPointerException ex) {
-						return true;
-					}
+		return cache.read(new SoftWriteReader<V, PropAccessor<C>>() {
+			V value;
+			@Override
+			public boolean test(PropAccessor<C> against) {
+				try {
+					return (value = against.get().get()) == null;
+				} catch(NullPointerException ex) {
+					return true;
 				}
-				@Override
-				public V soft(PropAccessor<C> data) throws Throwable {
-					return value;
-				}
-				@Override
-				public V read(PropAccessor<C> data) throws Throwable {
-					value = creator.create(null);
-					data.set(ref(value));
-					return value;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+			@Override
+			public V soft(PropAccessor<C> data) {
+				return value;
+			}
+			@Override
+			public V read(PropAccessor<C> data) {
+				value = creator.create(null);
+				data.set(ref(value));
+				return value;
+			}
+		});
 	}
 	
 	public void clear() {

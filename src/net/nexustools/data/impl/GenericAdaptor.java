@@ -44,7 +44,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 	private final ClassDefinition definition;
 	
 	public GenericAdaptor(Class<? extends T> target) throws AdaptorException {
-		this.definition = ClassDefinition.getInstance(target);
+		this.definition = ClassDefinition.load(target);
 	}
 
 	@Override
@@ -54,12 +54,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void write(T target, DataOutputStream out) throws IOException {
-		ClassDefinition targetDefinition;
-		try {
-			targetDefinition = ClassDefinition.getInstance(target.getClass());
-		} catch (AdaptorException ex) {
-			throw new IOException(ex);
-		}
+		ClassDefinition targetDefinition = ClassDefinition.load(target.getClass());
 		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.write(target, out);
 		}
@@ -77,12 +72,7 @@ public class GenericAdaptor<T> extends Adaptor<T> {
 
 	@Override
 	public void read(T target, DataInputStream in) throws IOException {
-		ClassDefinition targetDefinition;
-		try {
-			targetDefinition = ClassDefinition.getInstance(target.getClass());
-		} catch (AdaptorException ex) {
-			throw new IOException(ex);
-		}
+		ClassDefinition targetDefinition = ClassDefinition.load(target.getClass());
 		for(FieldDefinition.Adaptor fAdaptor : targetDefinition.getStaticFields()) {
 			fAdaptor.read(target, in);
 		}

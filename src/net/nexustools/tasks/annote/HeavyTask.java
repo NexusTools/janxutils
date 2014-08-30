@@ -13,17 +13,22 @@
  * 
  */
 
-package net.nexustools.runtime;
+package net.nexustools.tasks.annote;
 
-import net.nexustools.data.accessor.ListAccessor;
-import net.nexustools.runtime.logic.Task;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
- * @author kate
+ * @author katelyn
  */
-public interface FutureDelegator<F extends Task> {
-	
-	public F nextTask(ListAccessor<F> queue);
-	
-}
+/**
+ * Used to indicate a Task can take a long time to execute.
+ * This disables execution time warnings, however Long Tasks may be
+ * incompatible with some TaskSinks, and are usually given less priority.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface HeavyTask {}

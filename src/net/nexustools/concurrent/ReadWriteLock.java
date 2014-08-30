@@ -27,7 +27,7 @@ import net.nexustools.utils.NXUtils;
  *
  * @author katelyn
  */
-public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
+public class ReadWriteLock extends Lockable {
 	
 	private static boolean verbose;
 	public static final byte defaultPermitCount;
@@ -41,27 +41,23 @@ public class ReadWriteLock<A extends BaseAccessor> extends Lockable<A> {
 		if(target instanceof ReadWriteConcurrency)
 			return ((ReadWriteConcurrency)target).lockable();
 		
-		try {
-			return lockMap.read(new SoftWriteReader<Lockable, MapAccessor<Object, ReadWriteLock>>() {
-				Lockable lock;
-				@Override
-				public boolean test(MapAccessor<Object, ReadWriteLock> against) {
-					return (lock = against.get(target)) == null;
-				}
-				@Override
-				public Lockable soft(MapAccessor<Object, ReadWriteLock> data) {
-					return lock;
-				}
-				@Override
-				public Lockable read(MapAccessor<Object, ReadWriteLock> data) {
-					lock = new ReadWriteLock();
-					data.put(target, (ReadWriteLock)lock);
-					return lock;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return lockMap.read(new SoftWriteReader<Lockable, MapAccessor<Object, ReadWriteLock>>() {
+			Lockable lock;
+			@Override
+			public boolean test(MapAccessor<Object, ReadWriteLock> against) {
+				return (lock = against.get(target)) == null;
+			}
+			@Override
+			public Lockable soft(MapAccessor<Object, ReadWriteLock> data) {
+				return lock;
+			}
+			@Override
+			public Lockable read(MapAccessor<Object, ReadWriteLock> data) {
+				lock = new ReadWriteLock();
+				data.put(target, (ReadWriteLock)lock);
+				return lock;
+			}
+		});
 	}
 
 	public static void setVerbose(boolean b) {

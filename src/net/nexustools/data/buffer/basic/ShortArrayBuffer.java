@@ -39,44 +39,36 @@ public class ShortArrayBuffer extends PrimitiveArrayBuffer<Short, short[]> {
 			size = DefaultBufferSize;
 		
 		final Integer desiredSize = size;
-		try {
-			return cache.read(new WriteReader<short[], MapAccessor<Integer, CacheTypeList<short[]>>>() {
-				@Override
-				public short[] read(MapAccessor<Integer, CacheTypeList<short[]>> data) throws Throwable {
-					short[] next;
-					try {
-						next = data.get(desiredSize).shift();
-						if(next == null)
-							throw new NullPointerException();
-					} catch(NullPointerException ex) {
-						Logger.performance("Allocating", "short[" + desiredSize + "]");
-						next = new short[desiredSize];
-					}
-					return next;
+		return cache.read(new WriteReader<short[], MapAccessor<Integer, CacheTypeList<short[]>>>() {
+			@Override
+			public short[] read(MapAccessor<Integer, CacheTypeList<short[]>> data) {
+				short[] next;
+				try {
+					next = data.get(desiredSize).shift();
+					if(next == null)
+						throw new NullPointerException();
+				} catch(NullPointerException ex) {
+					Logger.performance("Allocating", "short[" + desiredSize + "]");
+					next = new short[desiredSize];
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+				return next;
+			}
+		});
 	}
 	public static void releaseBuffer(final short[] buffer) {
 		if(buffer == null)
 			throw new NullPointerException();
 		
 		final Integer desiredSize = buffer.length;
-		try {
-			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<short[]>>>() {
-				@Override
-				public void write(MapAccessor<Integer, CacheTypeList<short[]>> data) throws Throwable {
-					CacheTypeList<short[]> cache = data.get(desiredSize);
-					if(cache == null)
-						data.put(desiredSize, cache = new CacheTypeList<short[]>());
-					cache.push(buffer);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		cache.write(new Writer<MapAccessor<Integer, CacheTypeList<short[]>>>() {
+			@Override
+			public void write(MapAccessor<Integer, CacheTypeList<short[]>> data) {
+				CacheTypeList<short[]> cache = data.get(desiredSize);
+				if(cache == null)
+					data.put(desiredSize, cache = new CacheTypeList<short[]>());
+				cache.push(buffer);
+			}
+		});
 	}
 	
 	public ShortArrayBuffer() {

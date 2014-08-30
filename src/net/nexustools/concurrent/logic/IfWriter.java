@@ -26,7 +26,7 @@ import net.nexustools.utils.Testable;
 public abstract class IfWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
 
 	@Override
-	public final void write(A data, Lockable lock) throws Throwable {
+	public final void write(A data, Lockable lock) {
 		if(lock.writeLockTest(data, this))
 			try {
 				write(data);
@@ -34,7 +34,7 @@ public abstract class IfWriter<A extends BaseAccessor> implements BaseWriter<A>,
 				lock.unlock();
 			}
 	}
-	public abstract void write(A data) throws Throwable;
+	public abstract void write(A data);
 
 	public boolean test(A against) {
 		return against.isTrue();

@@ -15,9 +15,10 @@
 
 package net.nexustools.concurrent;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.reflect.InvocationTargetException;
 import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.data.annote.ThreadUnsafe;
+import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 
@@ -26,6 +27,7 @@ import net.nexustools.utils.Testable;
  * @author katelyn
  * @param <T>
  */
+@ThreadUnsafe
 public class Prop<T> extends AbstractProp<T> {
 
 	private final PropAccessor<T> directAccessor = new PropAccessor<T>() {
@@ -78,6 +80,16 @@ public class Prop<T> extends AbstractProp<T> {
 	@Override
 	public PropAccessor<T> directAccessor() {
 		return directAccessor;
+	}
+
+	@Override
+	public String toString() {
+		return read(new Reader<String, PropAccessor<T>>() {
+			@Override
+			public String read(PropAccessor<T> data) {
+				return data.toString();
+			}
+		});
 	}
 
 }

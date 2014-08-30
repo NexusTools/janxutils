@@ -35,7 +35,7 @@ public class InputLineReader implements LineReader {
 	final InputStream inputStream;
 	public InputLineReader(int maxLength, InputStream inputStream, Charset charset) {
 		if(!inputStream.markSupported())
-			throw new UnsupportedOperationException("Mark is required");
+			throw new IllegalArgumentException("Mark is required");
 		
 		this.inputStream = inputStream;
 		this.maxLength = maxLength;
@@ -55,12 +55,10 @@ public class InputLineReader implements LineReader {
 		int usefulLength = 0;
 		int stringLength = 0;
 		boolean killNext = false;
-		Logger.debug("Reading line");
 		
 		inputStream.mark(maxLength);
 		byte[] buffer = new byte[maxLength];
 		int read = inputStream.read(buffer);
-		Logger.debug("Got ", read, "bytes");
 		byte current;
 		for(int i=0; i<read; i++) {
 			current = buffer[i];

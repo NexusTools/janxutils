@@ -16,7 +16,6 @@
 package net.nexustools.io;
 
 import java.io.IOException;
-import net.nexustools.utils.log.Logger;
 
 /**
  *

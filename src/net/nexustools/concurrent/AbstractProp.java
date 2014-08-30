@@ -71,119 +71,87 @@ public abstract class AbstractProp<T> extends DefaultReadWriteConcurrency<PropAc
 	}
 
 	public boolean isset() {
-		try {
-			return read(new Reader<Boolean, PropAccessor<T>>() {
-				@Override
-				public Boolean read(PropAccessor<T> data) {
-					return data.isset();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Boolean, PropAccessor<T>>() {
+			@Override
+			public Boolean read(PropAccessor<T> data) {
+				return data.isset();
+			}
+		});
 	}
 
 	public void clear() {
-		try {
-			write(new Writer<PropAccessor<T>>() {
-				@Override
-				public void write(PropAccessor<T> data) {
-					data.clear();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<PropAccessor<T>>() {
+			@Override
+			public void write(PropAccessor<T> data) {
+				data.clear();
+			}
+		});
 	}
 
 	public T get() {
-		try {
-			return read(new Reader<T, PropAccessor<T>>() {
-				@Override
-				public T read(PropAccessor<T> data) {
-					return data.get();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<T, PropAccessor<T>>() {
+			@Override
+			public T read(PropAccessor<T> data) {
+				return data.get();
+			}
+		});
 	}
 
 	public void set(final T value) {
-		try {
-			write(new Writer<PropAccessor<T>>() {
-				@Override
-				public void write(PropAccessor<T> data) {
-					data.set(value);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<PropAccessor<T>>() {
+			@Override
+			public void write(PropAccessor<T> data) {
+				data.set(value);
+			}
+		});
 	}
 
 	public boolean isTrue() {
-		try {
-			return read(new Reader<Boolean, PropAccessor<T>>() {
-				@Override
-				public Boolean read(PropAccessor<T> data) {
-					return data.isTrue();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Boolean, PropAccessor<T>>() {
+			@Override
+			public Boolean read(PropAccessor<T> data) {
+				return data.isTrue();
+			}
+		});
 	}
 
 	@Override
 	public abstract PropAccessor<T> directAccessor();
 
 	public T take() {
-		try {
-			return read(new WriteReader<T, PropAccessor<T>>() {
-				@Override
-				public T read(PropAccessor<T> data) {
-					return data.take();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<T, PropAccessor<T>>() {
+			@Override
+			public T read(PropAccessor<T> data) {
+				return data.take();
+			}
+		});
 	}
 	
 	public boolean update(final T newValue) {
-		try {
-			return read(new UpdateReader<PropAccessor<T>>() {
-				@Override
-				public void update(PropAccessor<T> data) {
-					data.set(newValue);
-				}
-				@Override
-				public boolean needUpdate(PropAccessor<T> against) {
-					return !newValue.equals(against.get());
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new UpdateReader<PropAccessor<T>>() {
+			@Override
+			public void update(PropAccessor<T> data) {
+				data.set(newValue);
+			}
+			@Override
+			public boolean needUpdate(PropAccessor<T> against) {
+				return !newValue.equals(against.get());
+			}
+		});
 	}
 
 	public void set(final T value, final Testable<T> test) {
-		try {
-			write(new BaseWriter<PropAccessor<T>>() {
-				public void write(PropAccessor<T> data, Lockable lock) throws Throwable {
-					lock.lock();
-					try {
-						if(lock.fastUpgradeTest(test))
-							data.set(value);
-					} finally {
-						lock.unlock();
-					}
+		write(new BaseWriter<PropAccessor<T>>() {
+			public void write(final PropAccessor<T> data, Lockable lock) {
+				lock.lock();
+				try {
+					if(lock.fastUpgradeTest(data.get(), test))
+						data.set(value);
+				} finally {
+					lock.unlock();
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+		});
 	}
 	
 }

@@ -26,7 +26,7 @@ import net.nexustools.utils.Testable;
 public abstract class IfUpdateWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
 
 	@Override
-	public final void write(A data, Lockable lock) throws Throwable {
+	public final void write(A data, Lockable lock) {
 		lock.lock();
 		try {
 			if(test(data)) {
@@ -43,7 +43,7 @@ public abstract class IfUpdateWriter<A extends BaseAccessor> implements BaseWrit
 			lock.unlock();
 		}
 	}
-	public abstract void write(A data) throws Throwable;
-	public abstract void update() throws Throwable;
+	public abstract void write(A data);
+	public abstract void update();
 	
 }

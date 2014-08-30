@@ -31,10 +31,15 @@ public abstract class MutableArrayBuffer<T, TA, B, C, R> extends ArrayBuffer<T, 
 		}
 		@Override
 		public void insert(T... elements) {
-			if(pos >= size)
+			int rem = size - pos - elements.length;
+			if(rem > 0) {
+				TA right = create(rem);
+				int pos = size - rem;
+				int read = read(pos, right);
+				write(this.pos, convert(elements));
+				write(pos, right, 0, read);
+			} else
 				write(pos, convert(elements));
-			else
-				throw new RuntimeException();
 		}
 		@Override
 		public void remove(int offset, int count) {

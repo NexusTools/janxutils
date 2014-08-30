@@ -16,8 +16,7 @@
 package net.nexustools.concurrent;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.CancellationException;
 import net.nexustools.data.accessor.BaseAccessor;
 import net.nexustools.concurrent.logic.BaseReader;
 import net.nexustools.concurrent.logic.BaseWriter;
@@ -28,7 +27,7 @@ import net.nexustools.utils.Testable;
  *
  * @author katelyn
  */
-public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStage<A> {
+public abstract class Lockable {
 	
 	public final void lock() {
 		lock(false);
@@ -55,7 +54,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 */
 	public abstract void downgrade();
 	
-	public <I> boolean writeLockTest(I against, Testable<I> testable) throws Throwable {
+	public <I> boolean writeLockTest(I against, Testable<I> testable) {
 		boolean worked = false;
 		lock();
 		try {
@@ -74,7 +73,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 		return worked;
 	}
 	
-	public <I> boolean fastUpgradeTest(I against, Testable<I> testable) throws Throwable {
+	public <I> boolean fastUpgradeTest(I against, Testable<I> testable) {
 		boolean worked = false;
 		try {
 			if(testable.test(against)) {
@@ -96,7 +95,7 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 		return worked;
 	}
 	
-	public boolean fastUpgradeTest(Testable<Void> testable) throws Throwable {
+	public boolean fastUpgradeTest(Testable<Void> testable) {
 		return fastUpgradeTest(null, testable);
 	}
 	
@@ -131,14 +130,8 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @param data
 	 * @param actor 
 	 */
-	public final void write(A data, BaseWriter<A> actor) throws InvocationTargetException {
-		try {
-			actor.write(data, this);
-		} catch (Throwable ex) {
-			if(ex instanceof InvocationTargetException)
-				throw (InvocationTargetException)ex;
-			throw new InvocationTargetException(ex);
-		}
+	public final <A extends BaseAccessor> void write(A data, BaseWriter<A> actor) {
+		actor.write(data, this);
 	}
 	/**
 	 * Runs a Reader using this Lockable.
@@ -147,18 +140,8 @@ public abstract class Lockable<A extends BaseAccessor> implements ConcurrentStag
 	 * @param reader
 	 * @return  
 	 */
-	public final <R> R read(A data, BaseReader<R, A> reader) throws InvocationTargetException{
-		try {
-			return reader.read(data, this);
-		} catch (Throwable ex) {
-			if(ex instanceof InvocationTargetException)
-				throw (InvocationTargetException)ex;
-			throw new InvocationTargetException(ex);
-		}
-	}
-
-	public void invokeLater(Runnable run) {
-		run.run();
+	public final <R, A extends BaseAccessor> R read(A data, BaseReader<R, A> reader) {
+		return reader.read(data, this);
 	}
 	
 }

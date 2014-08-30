@@ -23,7 +23,24 @@ import java.lang.reflect.InvocationTargetException;
  * @author katelyn
  */
 public final class NXUtils {
+	public static Runnable NOP = new Runnable() {
+		public void run() {}
+	};
+	public static Runnable FOREVER = new Runnable() {
+		public void run() {
+			while(true)
+				try {
+					Thread.sleep(50000);
+				} catch (InterruptedException ex) {}
+		}
+	};
 	
+	public static <T extends Throwable> T unwrapTarget(Class<T> target, Throwable throwable) {
+		throwable = unwrapTarget(throwable);
+		if(target.isAssignableFrom(throwable.getClass()))
+			return target.cast(throwable);
+		throw wrapRuntime(throwable);
+	}
 	public static Throwable unwrapTarget(Throwable throwable) {
 		if(throwable instanceof InvocationTargetException)
 			return unwrapTarget(((InvocationTargetException)throwable).getTargetException());
@@ -32,16 +49,10 @@ public final class NXUtils {
 		return throwable;
 	}
 	public static UnsupportedOperationException unwrapOperationException(Throwable throwable) {
-		throwable = unwrapTarget(throwable);
-		if(throwable instanceof UnsupportedOperationException)
-			return (UnsupportedOperationException)throwable;
-		throw wrapRuntime(throwable);
+		return unwrapTarget(UnsupportedOperationException.class, throwable);
 	}
 	public static IOException unwrapIOException(Throwable throwable) {
-		throwable = unwrapTarget(throwable);
-		if(throwable instanceof IOException)
-			return (IOException)throwable;
-		throw wrapRuntime(throwable);
+		return unwrapTarget(IOException.class, throwable);
 	}
 
 	public static RuntimeTargetException wrapRuntime(Throwable throwable) {
@@ -73,6 +84,62 @@ public final class NXUtils {
 	
 	public static int remainingMin(long amount, long amount2) {
 		return remaining(Math.min(amount, amount2));
+	}
+
+	public static String toString(Object target, Pair<String, Object>... vars) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(target.getClass().getSimpleName());
+		if(vars.length > 0) {
+			builder.append('{');
+			boolean addComma = false;
+			for(Pair<String, Object> var : vars) {
+				if(addComma)
+					builder.append(',');
+				else
+					addComma = true;
+				builder.append(var.i);
+				builder.append("=");
+				builder.append(var.v);
+			}
+			builder.append('}');
+		}
+		return builder.toString();
+	}
+
+	public static void passException(Throwable targetException) throws RuntimeTargetException {
+		throw wrapRuntime(targetException);
+	}
+	public static <T extends Throwable> void passException(Class<T> wrappedException, Throwable targetException) throws T {
+		throw unwrapTarget(wrappedException, targetException);
+	}
+	public static <T extends Throwable> void throwException(Class<T> throwableClass, Object source, String method, String message, Throwable cause) throws T {
+		StringBuilder error = new StringBuilder();
+		error.append(source.getClass().getName());
+		error.append('.');
+		error.append(method);
+		error.append(": ");
+		error.append(message);
+		
+		try {
+			if(cause == null)
+				throw throwableClass.getConstructor(String.class).newInstance(error.toString());
+			throw throwableClass.getConstructor(String.class, Throwable.class).newInstance(error.toString(), cause);
+		} catch (InstantiationException ex) {
+			throw wrapRuntime(ex);
+		} catch (IllegalAccessException ex) {
+			throw wrapRuntime(ex);
+		} catch (IllegalArgumentException ex) {
+			throw wrapRuntime(ex);
+		} catch (InvocationTargetException ex) {
+			throw wrapRuntime(ex);
+		} catch (NoSuchMethodException ex) {
+			throw wrapRuntime(ex);
+		} catch (SecurityException ex) {
+			throw wrapRuntime(ex);
+		}
+	}
+	public static <T extends Throwable> void throwException(Class<T> throwableClass, Object source, String method, String message) throws T {
+		throwException(throwableClass, source, method, message, null);
 	}
 	
 }

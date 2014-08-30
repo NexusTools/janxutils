@@ -23,28 +23,23 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.data.buffer.basic.StrongTypeList;
-import net.nexustools.runtime.FairTaskDelegator;
-import net.nexustools.runtime.RunQueue;
-import net.nexustools.runtime.ThreadedRunQueue;
+import net.nexustools.io.monitor.ChannelMonitor;
+import net.nexustools.tasks.TaskSink;
 import net.nexustools.utils.Creator;
+import net.nexustools.utils.Handler;
 import net.nexustools.utils.IOUtils;
 import net.nexustools.utils.NXUtils;
-import net.nexustools.utils.Processor;
 import net.nexustools.utils.RefreshingCache;
 import net.nexustools.utils.StringUtils;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -478,7 +473,7 @@ public abstract class Stream implements Iterable<Stream> {
 		return sizeStrCache.get();
 	}
 	
-	public final void read(StreamReader<? super InputStream> reader) throws IOException {
+	public final void read(StreamReader<InputStream> reader) throws IOException {
 		InputStream in = createInputStream();
 		try {
 			reader.read(in);
@@ -496,14 +491,18 @@ public abstract class Stream implements Iterable<Stream> {
 		}
 	}
 	
-	public final void readNonBlocking(final NonBlockingStreamProcessor<? super InputStream> reader) throws IOException, UnsupportedOperationException {
-		if(!NonBlockingStreamProcessor.isSupported())
-			throw new UnsupportedOperationException();
-		
-		final ByteChannel channel = createChannel();
-		if(!(channel instanceof SelectableChannel))
-			throw new UnsupportedOperationException(this + ": does not provide a SelectableChannel compatible ByteChannel");
-		reader.register(((SelectableChannel)channel), Stream.this.toURL().hashCode());
+	public final void readNonBlocking(final NBStreamProcessor reader) throws IOException, UnsupportedOperationException {
+		//if(NBStreamProcessor.hasSelectorSupport()) {
+			final ByteChannel channel = createChannel();
+			if(channel instanceof SelectableChannel) {
+				reader.register(((SelectableChannel)channel), Stream.this.toURL().hashCode());
+			}
+//		}
+//		try {
+//			reader.useThread(createInputStream(), createOutputStream());
+//		} catch (TaskSink.FullException ex) {
+//			Logger.getLogger(Stream.class.getName()).log(Level.SEVERE, null, ex);
+//		}
 	}
 	
 	public final void write(StreamWriter<OutputStream> writer) throws IOException {
@@ -579,10 +578,10 @@ public abstract class Stream implements Iterable<Stream> {
 	public abstract InputStream createInputStream(long pos) throws IOException;
 	public abstract OutputStream createOutputStream(long pos) throws IOException;
 	
-	public void read(Processor<InputStream> readProcessor) throws IOException {
+	public void read(Handler<InputStream> readProcessor) throws IOException {
 		InputStream in = createInputStream();
 		try {
-		 	readProcessor.process(in);
+		 	readProcessor.handle(in);
 		} catch (Throwable ex) {
 			throw NXUtils.unwrapIOException(ex);
 		} finally {
@@ -590,10 +589,10 @@ public abstract class Stream implements Iterable<Stream> {
 		}
 	}
 	
-	public void write(Processor<OutputStream> writeProcessor) throws IOException {
+	public void write(Handler<OutputStream> writeProcessor) throws IOException {
 		OutputStream out = createOutputStream();
 		try {
-		 	writeProcessor.process(out);
+		 	writeProcessor.handle(out);
 		} catch (Throwable ex) {
 			throw NXUtils.unwrapIOException(ex);
 		} finally {

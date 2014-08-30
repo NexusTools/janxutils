@@ -17,7 +17,7 @@ package net.nexustools.utils;
 
 import java.lang.ref.WeakReference;
 import net.nexustools.concurrent.Prop;
-import net.nexustools.runtime.ThreadedRunQueue;
+import net.nexustools.tasks.ThreadedTaskQueue;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -26,7 +26,7 @@ import net.nexustools.utils.log.Logger;
  */
 public class CacheReference<T> extends WeakReference<T> {
 	
-	protected static final ThreadedRunQueue runQueue = new ThreadedRunQueue("CacheReference");
+	protected static final ThreadedTaskQueue runQueue = new ThreadedTaskQueue("CacheReference");
 
 	protected final int lifetime;
 	protected final Prop<T> cache;

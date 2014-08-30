@@ -13,14 +13,17 @@
  * 
  */
 
-package net.nexustools.utils;
+package net.nexustools.tasks;
 
 /**
  *
  * @author katelyn
  */
-public interface Processor<T> {
-	
-	public void process(T type) throws Throwable;
-	
+public class FullSinkException extends TaskSinkException {
+	public FullSinkException() {
+		super();
+	}
+	public FullSinkException(String msg) {
+		super(msg);
+	}
 }

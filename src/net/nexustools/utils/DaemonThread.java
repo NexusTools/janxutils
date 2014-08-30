@@ -13,19 +13,21 @@
  * 
  */
 
-package net.nexustools.runtime;
-
-import net.nexustools.data.accessor.ListAccessor;
-import net.nexustools.runtime.logic.Task;
+package net.nexustools.utils;
 
 /**
  *
- * @author kate
+ * @author katelyn
  */
-public class FCFSTaskDelegator<F extends Task> implements FutureDelegator<F> {
-
-	public F nextTask(ListAccessor<F> queue) {
-		return queue.shift();
+public abstract class DaemonThread extends Thread {
+	
+	public DaemonThread(String name, int priority) {
+		super(name);
+		setDaemon(true);
+		setPriority(priority);
 	}
+	
+	@Override
+	public abstract void run();
 	
 }

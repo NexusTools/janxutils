@@ -26,7 +26,7 @@ import net.nexustools.utils.Testable;
 public abstract class SoftWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
 
 	@Override
-	public final R read(A data, Lockable<A> lock) throws Throwable {
+	public final R read(A data, Lockable lock) {
 		lock.lock();
 		try {
 			if(lock.fastUpgradeTest(data, this))
@@ -38,8 +38,8 @@ public abstract class SoftWriteReader<R, A extends BaseAccessor> implements Base
 		}
 	}
 	
-	public abstract R soft(A data) throws Throwable;
-	public abstract R read(A data) throws Throwable;
+	public abstract R soft(A data);
+	public abstract R read(A data);
 
 	public boolean test(A against) {
 		return !against.isTrue();

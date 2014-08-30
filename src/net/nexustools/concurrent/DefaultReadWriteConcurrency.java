@@ -27,7 +27,7 @@ import net.nexustools.concurrent.logic.BaseWriter;
  */
 public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implements ReadWriteConcurrency<A> {
 	
-	final Lockable<A> lock;
+	final Lockable lock;
 	
 	protected DefaultReadWriteConcurrency() {
 		this(new ReadWriteLock());
@@ -36,15 +36,15 @@ public abstract class DefaultReadWriteConcurrency<A extends BaseAccessor> implem
 		this.lock = lock;
 	}
 	
-	public void write(BaseWriter<A> actor) throws InvocationTargetException {
+	public void write(BaseWriter<A> actor) {
 		lock.write(directAccessor(), actor);
 	}
 
-	public <R> R read(BaseReader<R, A> reader) throws InvocationTargetException {
+	public <R> R read(BaseReader<R, A> reader) {
 		return (R)lock.read(directAccessor(), reader);
 	}
 
-	public Lockable<A> lockable() {
+	public Lockable lockable() {
 		return lock;
 	}
 	

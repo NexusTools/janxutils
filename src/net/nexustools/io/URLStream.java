@@ -37,6 +37,7 @@ import net.nexustools.data.accessor.MapAccessor;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.RuntimeTargetException;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -75,19 +76,23 @@ public class URLStream extends Stream {
 					public boolean test(MapAccessor<String,URLConnection> against) {
 						return !against.has(uri);
 					};
-					public URLConnection read(MapAccessor<String,URLConnection> data) throws Throwable {
-						URLConnection connection = open0();
+					public URLConnection read(MapAccessor<String,URLConnection> data) {
+						URLConnection connection;
+						try {
+							connection = open0();
+						} catch (IOException ex) {
+							throw NXUtils.wrapRuntime(ex);
+						}
 						data.put(uri, connection);
 						return connection;
 					};
-					public URLConnection soft(MapAccessor<String,URLConnection> data) throws Throwable {
+					public URLConnection soft(MapAccessor<String,URLConnection> data) {
 						return data.get(uri);
 					};
 				});
-		} catch (InvocationTargetException e) {
-			throw NXUtils.wrapRuntime(e);
-		}
-					
+		} catch(RuntimeTargetException ex) {
+			throw NXUtils.unwrapTarget(IOException.class, ex);
+		}		
 	}
 	
 	protected URLStream(String uri) throws MalformedURLException {
@@ -125,11 +130,15 @@ public class URLStream extends Stream {
 		try {
 			long size = detectedConnectionLength.read(new SoftWriteReader<Long, PropAccessor<Creator<Long, URLConnection>>>() {
 				@Override
-				public Long soft(PropAccessor<Creator<Long, URLConnection>> data) throws IOException {
-					return data.get().create(open());
+				public Long soft(PropAccessor<Creator<Long, URLConnection>> data) {
+					try {
+						return data.get().create(open());
+					} catch (IOException ex) {
+						throw NXUtils.wrapRuntime(ex);
+					}
 				}
 				@Override
-				public Long read(PropAccessor<Creator<Long, URLConnection>> data) throws IOException {
+				public Long read(PropAccessor<Creator<Long, URLConnection>> data) {
 					Creator<Long, URLConnection> creator;
 					try {
 						creator = new Creator<Long, URLConnection>() {
@@ -157,13 +166,17 @@ public class URLStream extends Stream {
 							}
 						};
 					}
-					return creator.create(open());
+					try {
+						return creator.create(open());
+					} catch (IOException ex) {
+						throw NXUtils.wrapRuntime(ex);
+					}
 				}
 			});
 			if(size > -1)
 				return size;
 			throw new UnsupportedOperationException("Server not sending size");
-		} catch (InvocationTargetException ex) {
+		} catch (RuntimeTargetException ex) {
 			throw NXUtils.unwrapOperationException(ex);
 		}
 	}

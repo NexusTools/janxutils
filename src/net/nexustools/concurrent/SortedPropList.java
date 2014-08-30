@@ -37,69 +37,57 @@ public class SortedPropList<I> extends PropList<I> {
 	}
 	
 	public void dirtyOperation(final Runnable operation) {
-		try {
-			super.write(new BaseWriter<ListAccessor<I>>() {
-				public void write(ListAccessor<I> data, Lockable lock) {
-					lock.lock(true);
-					try {
-						dirty = true;
-						operation.run();
-					} finally {
-						lock.unlock();
-					}
+		super.write(new BaseWriter<ListAccessor<I>>() {
+			public void write(ListAccessor<I> data, Lockable lock) {
+				lock.lock(true);
+				try {
+					dirty = true;
+					operation.run();
+				} finally {
+					lock.unlock();
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+		});
 	}
 
 	@Override
 	public void write(final BaseWriter<ListAccessor<I>> actor) {
-		try {
-			super.write(new BaseWriter<ListAccessor<I>>() {
-				public void write(ListAccessor<I> data, Lockable lock) throws Throwable {
-					lock.lock(true);
-					try {
-						dirty = true;
-						actor.write(data, lock);
-					} finally {
-						lock.unlock();
-					}
+		super.write(new BaseWriter<ListAccessor<I>>() {
+			public void write(ListAccessor<I> data, Lockable lock) {
+				lock.lock(true);
+				try {
+					dirty = true;
+					actor.write(data, lock);
+				} finally {
+					lock.unlock();
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+		});
 	}
 
 	@Override
 	public <R> R read(final BaseReader<R, ListAccessor<I>> reader) {
-		try {
-			return super.read(new BaseReader<R, ListAccessor<I>>() {
-				public R read(ListAccessor<I> data, Lockable<ListAccessor<I>> lock) throws Throwable {
-					lock.lock();
-					try {
-						if(lock.fastUpgradeTest(new Testable() {
-							public boolean test(Object against) {
-								return dirty;
-							}
-						})) {
-							Logger.gears("List is dirty, sorting before read");
-							data.sort(comparator);
-							dirty = false;
-							lock.downgrade();
+		return super.read(new BaseReader<R, ListAccessor<I>>() {
+			public R read(ListAccessor<I> data, Lockable lock) {
+				lock.lock();
+				try {
+					if(lock.fastUpgradeTest(new Testable<Void>() {
+						public boolean test(Void against) {
+							return dirty;
 						}
-						
-						return reader.read(data, lock);
-					} finally {
-						lock.unlock();
+					})) {
+						Logger.gears("List is dirty, sorting before read");
+						data.sort(comparator);
+						dirty = false;
+						lock.downgrade();
 					}
+
+					return reader.read(data, lock);
+				} finally {
+					lock.unlock();
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+		});
 	}
 	
 	public Comparator<I> getComparator() {

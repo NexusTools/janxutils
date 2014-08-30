@@ -15,16 +15,13 @@
 
 package net.nexustools;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
 import net.nexustools.AppDelegate.Path;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.logic.IfWriter;
-import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.io.Stream;
 import static net.nexustools.io.Stream.bindSynthScheme;
-import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -124,37 +121,47 @@ public class Application {
 	}
 	
 	public static void setDelegateIfNone(final AppDelegate app) {
-		try {
-			delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
-				@Override
-				public boolean test(PropAccessor<AppDelegate> against) {
-					return !against.isset();
-				}
-				@Override
-				public void write(PropAccessor<AppDelegate> data) {
-					setDelegate0(data, app);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
+			@Override
+			public boolean test(PropAccessor<AppDelegate> against) {
+				return !against.isset();
+			}
+			@Override
+			public void write(PropAccessor<AppDelegate> data) {
+				setDelegate0(data, app);
+			}
+		});
 	}
 	
 	public static void setDelegate(final AppDelegate app) {
-		try {
-			delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
-				@Override
-				public boolean test(PropAccessor<AppDelegate> against) {
-					return app != against.get();
-				}
-				@Override
-				public void write(PropAccessor<AppDelegate> data) {
-					setDelegate0(data, app);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		delegate.write(new IfWriter<PropAccessor<AppDelegate>>() {
+			@Override
+			public boolean test(PropAccessor<AppDelegate> against) {
+				return app != against.get();
+			}
+			@Override
+			public void write(PropAccessor<AppDelegate> data) {
+				setDelegate0(data, app);
+			}
+		});
+	}
+	
+	public static AppDelegate.Platform platform() {
+		return delegate.read(new Reader<AppDelegate.Platform, PropAccessor<AppDelegate>>() {
+			@Override
+			public AppDelegate.Platform read(PropAccessor<AppDelegate> data) {
+				return data.get().platform();
+			}
+		});
+	}
+	
+	public static AppDelegate.Device device() {
+		return delegate.read(new Reader<AppDelegate.Device, PropAccessor<AppDelegate>>() {
+			@Override
+			public AppDelegate.Device read(PropAccessor<AppDelegate> data) {
+				return data.get().device();
+			}
+		});
 	}
 	
 }

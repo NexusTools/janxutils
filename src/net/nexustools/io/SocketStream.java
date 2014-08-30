@@ -15,6 +15,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.nexustools.utils.NXUtils;
 
 /**
@@ -27,30 +29,83 @@ public class SocketStream extends Stream {
 		TCP("tcp"),
 		UDP("udp"),
 		
-		Local("unix");
+		/**
+		 * Provides a Unix Socket or Named Pipe, requires a LocalSocketAddress.
+		 * 
+		 * On Unix like operating systems (mac, linux, bsd, solaris),
+		 * this would use a unix socket.
+		 * On Windows based operating systems, this would create a Named Pipe.
+		 * 
+		 * For compatibility, if a file path is given, it is passed directly to
+		 * unix socket implementations, but transformed slightly for named pipes.
+		 * 
+		 * Where as if a string is given which does not appear to be a file path,
+		 * a directory is created for storing the file relative to the program's configuration
+		 * when using a unix socket, but passed directly for named pipes.
+		 * 
+		 * If you want to be assured no transformation is done to the address,
+		 * use the Unix or Named types directly, as this is a proxy for those.
+		 */
+		Local("local"),
 		
-		private final String scheme;
+		/**
+		 * Creates a Unix socket where possible.
+		 * 
+		 * Not supported on Windows.
+		 */
+		Unix("unix"),
+		
+		/**
+		 * Creates a Named Pipe where possible.
+		 * 
+		 * Only supported on Windows.
+		 */
+		Named("unix");
+		
+		public final String scheme;
 		Type(String scheme) {
 			this.scheme = scheme;
 		}
-		@Override
-		public String toString() {
-			return scheme;
+	}
+	
+	public static boolean isSupported(Type type) {
+		switch(type) {
+			case TCP:
+			case UDP:
+				return true;
+			
+			default:
+				return false;
 		}
+	}
+	
+	static URI uriForAddress(SocketAddress address, Type type) throws UnsupportedOperationException {
+		try {
+			if(address instanceof InetSocketAddress)
+				return new URI("tcp", null, ((InetSocketAddress)address).getAddress().getHostAddress(), ((InetSocketAddress)address).getPort(), null, null, null);
+		} catch (URISyntaxException ex) {
+			throw NXUtils.wrapRuntime(ex);
+		}
+		
+		throw new UnsupportedOperationException("Cannot create a uri for " + address + '[' + type + ']');
+	}
+	
+	public static SocketStream open(SocketAddress address) throws IOException, UnsupportedOperationException {
+		if(address instanceof InetSocketAddress)
+			return open(address, Type.TCP);
+		else if(address instanceof LocalSocketAddress)
+			return open(address, Type.Local);
+		
+		throw new UnsupportedOperationException("`" + address.getClass().getName() + "` addresses cannot be handled at this time.");
 	}
 	
 	public static SocketStream open(SocketAddress address, Type type) throws IOException {
 		switch(type) {
 			case TCP:
-				InetSocketAddress inetAddress = (InetSocketAddress)address;
-				try {
-					return new SocketStream(SocketChannel.open(address), new URI("tcp", null, inetAddress.getAddress().getHostAddress(), inetAddress.getPort(), null, null, null), type);
-				} catch (URISyntaxException ex) {
-					throw NXUtils.wrapRuntime(ex);
-				}
+				return new SocketStream(SocketChannel.open(address), uriForAddress(address, type), type);
 			
 			default:
-				throw new IllegalArgumentException("Not supported yet: " + type);
+				throw new UnsupportedOperationException(type.name() + " sockets cannot be created, this may mean a library is missing or the underlying operating system cannot handle this type of socket.");
 		}
 		
 	}
@@ -68,6 +123,9 @@ public class SocketStream extends Stream {
 	private final URI uri;
 	private final Type type;
 	private final SocketChannel socketChannel;
+	SocketStream(SocketChannel channel, Type type) {
+		this(channel, uriForAddress(channel.socket().getRemoteSocketAddress(), type), type);
+	}
 	SocketStream(SocketChannel channel, URI uri, Type type) {
 		this.socketChannel = channel;
 		this.type = type;
@@ -76,17 +134,35 @@ public class SocketStream extends Stream {
 
 	@Override
 	public boolean canWrite() {
-		return true;
+		return !socketChannel.socket().isOutputShutdown();
 	}
 
 	@Override
 	public boolean canRead() {
-		return true;
+		return !socketChannel.socket().isInputShutdown();
+	}
+	
+	public void shutdownInput() {
+		if(socketChannel.socket().isOutputShutdown())
+			close();
+		else
+			try {
+				socketChannel.socket().shutdownInput();
+			} catch (IOException ex) {}
+	}
+	
+	public void shutdownOutput() {
+		if(socketChannel.socket().isInputShutdown())
+			close();
+		else
+			try {
+				socketChannel.socket().shutdownInput();
+			} catch (IOException ex) {}
 	}
 
 	@Override
 	public long size() throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("Not supported.");
+		throw new UnsupportedOperationException("Sockets cannot provide a size, if you wish to have size support than implement a protocol ontop of the SocketStream class which provides a size.");
 	}
 
 	@Override
@@ -123,6 +199,13 @@ public class SocketStream extends Stream {
 		if(args.length > 0)
 			throw new UnsupportedOperationException();
 		return socketChannel;
+	}
+
+	@Override
+	public void close() {
+		try {
+			socketChannel.close();
+		} catch (IOException ex) {}
 	}
 	
 }

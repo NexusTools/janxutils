@@ -18,10 +18,10 @@ package net.nexustools;
 import java.io.File;
 import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
-import net.nexustools.concurrent.Condition;
 import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.ThreadCondition;
 import net.nexustools.io.Stream;
-import net.nexustools.runtime.RunQueue;
+import net.nexustools.tasks.TaskSink;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
@@ -29,25 +29,37 @@ import net.nexustools.utils.log.Logger;
  *
  * @author kate
  */
-public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDelegate {
+public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDelegate {
 	public final String name;
-	protected final R runQueue;
+	protected final S taskSink;
 	private final String organization;
 	private final Prop<Runnable> mainLoop = new Prop();
-	private final Condition hasMainLoop = new Condition();
-	public DefaultAppDelegate(String[] args) {
-		this(args, defaultName(), defaultOrganization());
-	}
-	public DefaultAppDelegate(String[] args, String name, String organization) {
-		this(args, name, organization, (R)RunQueue.current());
-	}
-	public DefaultAppDelegate(String[] args, R queue) {
+	private final ThreadCondition hasMainLoop = new ThreadCondition();
+	private final Platform platform;
+	
+	public DefaultAppDelegate(String[] args, S queue) {
 		this(args, defaultName(), defaultOrganization(), queue);
 	}
-	protected DefaultAppDelegate(final String[] args, String name, String organization, R queue) {
+	protected DefaultAppDelegate(final String[] args, String name, String organization, S queue) {
 		this.name = name;
 		this.organization = organization;
-		runQueue = queue;
+		taskSink = queue;
+		
+		String OS = System.getProperty("os.name").toLowerCase();
+		if(OS.contains("sunos"))
+			platform = Platform.Solaris;
+		else if(OS.contains("mac") || OS.contains("ios"))
+			platform = Platform.Apple;
+		else if(OS.contains("linux"))
+			platform = Platform.Linux;
+		else if(OS.contains("windows"))
+			platform = Platform.Windows;
+		else if(OS.contains("bsd"))
+			platform = Platform.BSD;
+		else if(OS.contains("nix") || OS.contains("nux") || OS.contains("aix"))
+			platform = Platform.OtherUnix;
+		else
+			platform = Platform.Unknown;
 		
 		queue.push(new Runnable() {
 			public void run() {
@@ -75,6 +87,10 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 					hasMainLoop.finish();
 				}
 			}
+			@Override
+			public String toString() {
+				return name() + "LauncherTask";
+			}
 		});
 	}
 
@@ -82,15 +98,19 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 		Application.setDelegate(this);
 		if(!mainLoop.isset()) {
 			Logger.debug("Waiting on MainLoop", DefaultAppDelegate.this);
-			hasMainLoop.waitFor();
+			hasMainLoop.waitForUninterruptibly();
 		}
 		
-		Logger.info("Entering MainLoop", DefaultAppDelegate.this);
-		mainLoop.get().run();
+		Logger.debug("Entering MainLoop", DefaultAppDelegate.this);
+		try {
+			mainLoop.get().run();
+		} finally {
+			Logger.shutdownAndWait();
+		}
 	}
 	
-	public final R queue() {
-		return runQueue;
+	public final S queue() {
+		return taskSink;
 	}
 	
 	public String pathUri(Path path) {
@@ -148,6 +168,20 @@ public abstract class DefaultAppDelegate<R extends RunQueue> implements AppDeleg
 	}
 	
 	protected abstract Runnable launch(String[] args) throws Throwable;
+	
+	public Device device() {
+		return Device.Desktop;
+	}
+	public Platform platform() {
+		return platform;
+	}
+	
+	public Object deviceObject() {
+		return device();
+	}
+	public Object platformObject() {
+		return platform();
+	}
 	
 	@Override
 	public String toString() {

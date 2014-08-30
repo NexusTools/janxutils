@@ -25,7 +25,7 @@ import net.nexustools.concurrent.Lockable;
 public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
 
 	@Override
-	public final void write(A data, Lockable lock) throws Throwable {
+	public final void write(A data, Lockable lock) {
 		lock.lock(true);
 		try {
 			write(data);
@@ -33,6 +33,6 @@ public abstract class Writer<A extends BaseAccessor> implements BaseWriter<A> {
 			lock.unlock();
 		}
 	}
-	public abstract void write(A data) throws Throwable;
+	public abstract void write(A data);
 	
 }

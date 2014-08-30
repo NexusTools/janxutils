@@ -66,185 +66,125 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 		this(new GenericListAccessor(items));
 	}
 	public boolean isTrue() {
-		try {
-			return read(new Reader<Boolean, ListAccessor<I>>() {
-				@Override
-				public Boolean read(ListAccessor<I> data) {
-					return data.isTrue();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Boolean, ListAccessor<I>>() {
+			@Override
+			public Boolean read(ListAccessor<I> data) {
+				return data.isTrue();
+			}
+		});
 	}
 	public void clear() {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.clear();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.clear();
+			}
+		});
 	}
 	// TODO: Make more effecient by checking if it exists before obtaining a write lock
 	public boolean unique(final I object) {
-		try {
-			return read(new WriteReader<Boolean, ListAccessor<I>>() {
-				@Override
-				public Boolean read(ListAccessor<I> data) {
-					return data.unique(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<Boolean, ListAccessor<I>>() {
+			@Override
+			public Boolean read(ListAccessor<I> data) {
+				return data.unique(object);
+			}
+		});
 	}
 	public void push(final I object) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.push(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.push(object);
+			}
+		});
 	}
 	public void unshift(final I object) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.unshift(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.unshift(object);
+			}
+		});
 	}
 	public void insert(final I object, final int at) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.insert(object, at);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.insert(object, at);
+			}
+		});
 	}
 	public void remove(final I object) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.remove(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.remove(object);
+			}
+		});
 	}
 	public I remove(final int at) {
-		try {
-			return read(new WriteReader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.remove(at);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.remove(at);
+			}
+		});
 	}
 	public int indexOf(final I object) {
-		try {
-			return read(new Reader<Integer, ListAccessor<I>>() {
-				@Override
-				public Integer read(ListAccessor<I> data) {
-					return data.indexOf(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Integer, ListAccessor<I>>() {
+			@Override
+			public Integer read(ListAccessor<I> data) {
+				return data.indexOf(object);
+			}
+		});
 	}
 	public int indexOf(final I object, final int from) {
-		try {
-			return read(new Reader<Integer, ListAccessor<I>>() {
-				@Override
-				public Integer read(ListAccessor<I> data) {
-					return data.indexOf(object, from);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Integer, ListAccessor<I>>() {
+			@Override
+			public Integer read(ListAccessor<I> data) {
+				return data.indexOf(object, from);
+			}
+		});
 	}
 	public int lastIndexOf(final I object, final int from) {
-		try {
-			return read(new Reader<Integer, ListAccessor<I>>() {
-				@Override
-				public Integer read(ListAccessor<I> data) {
-					return data.lastIndexOf(object, from);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Integer, ListAccessor<I>>() {
+			@Override
+			public Integer read(ListAccessor<I> data) {
+				return data.lastIndexOf(object, from);
+			}
+		});
 	}
 	public int lastIndexOf(final I object) {
-		try {
-			return read(new Reader<Integer, ListAccessor<I>>() {
-				@Override
-				public Integer read(ListAccessor<I> data) {
-					return data.lastIndexOf(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Integer, ListAccessor<I>>() {
+			@Override
+			public Integer read(ListAccessor<I> data) {
+				return data.lastIndexOf(object);
+			}
+		});
 	}
 	public int length() {
-		try {
-			return read(new Reader<Integer, ListAccessor<I>>() {
-				@Override
-				public Integer read(ListAccessor<I> data) {
-					return data.length();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Integer, ListAccessor<I>>() {
+			@Override
+			public Integer read(ListAccessor<I> data) {
+				return data.length();
+			}
+		});
 	}
 	public I shift() {
-		try {
-			return read(new WriteReader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.shift();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.shift();
+			}
+		});
 	}
 	public I pop() {
-		try {
-			return read(new WriteReader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.pop();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.pop();
+			}
+		});
 	}
 	public Iterator<I> iterator() {
 		return new Iterator<I>() {
@@ -267,72 +207,52 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 	}
 	
 	public boolean contains(final I object) {
-		try {
-			return read(new Reader<Boolean, ListAccessor<I>>() {
-				@Override
-				public Boolean read(ListAccessor<I> data) {
-					return data.contains(object);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<Boolean, ListAccessor<I>>() {
+			@Override
+			public Boolean read(ListAccessor<I> data) {
+				return data.contains(object);
+			}
+		});
 	}
 
 	public I first() {
-		try {
-			return read(new Reader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.first();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.first();
+			}
+		});
 	}
 
 	public I get(final int at) {
-		try {
-			return read(new Reader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.get(at);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.get(at);
+			}
+		});
 	}
 
 	public I last() {
-		try {
-			return read(new Reader<I, ListAccessor<I>>() {
-				@Override
-				public I read(ListAccessor<I> data) {
-					return data.last();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<I, ListAccessor<I>>() {
+			@Override
+			public I read(ListAccessor<I> data) {
+				return data.last();
+			}
+		});
 	}
 	
 	public void iterate(final PropIterator<I> iterator) {
-		try {
-			write(new BaseWriter<ListAccessor<I>>() {
-				public void write(ListAccessor<I> data, Lockable lock) {
-					lock.lock();
-					try {
-						iterator.iterate(data.listIterator(), lock);
-					} finally {
-						lock.unlock();
-					}
+		write(new BaseWriter<ListAccessor<I>>() {
+			public void write(ListAccessor<I> data, Lockable lock) {
+				lock.lock();
+				try {
+					iterator.iterate(data.listIterator(), lock);
+				} finally {
+					lock.unlock();
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+		});
 	}
 
 	public ListIterator<I> listIterator() {
@@ -340,29 +260,21 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 	}
 
 	public void pushAll(final Iterable<I> objects) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.pushAll(objects);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.pushAll(objects);
+			}
+		});
 	}
 
 	public void unshiftAll(final Iterable<I> objects) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) {
-					data.unshiftAll(objects);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		write(new Writer<ListAccessor<I>>() {
+			@Override
+			public void write(ListAccessor<I> data) {
+				data.unshiftAll(objects);
+			}
+		});
 	}
 
 	public ListIterator<I> listIterator(int where) {
@@ -374,68 +286,43 @@ public class PropList<I> extends DefaultReadWriteConcurrency<ListAccessor<I>> im
 	}
 
 	public void sort(Comparator<I> sortMethod) {
-		try {
-			write(new Writer<ListAccessor<I>>() {
-				@Override
-				public void write(ListAccessor<I> data) throws Throwable {
-					throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	public ListAccessor<I> take(final Testable<I> shouldTake) {
-		try {
-			return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
-				@Override
-				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
-					return data.take(shouldTake);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
+			@Override
+			public ListAccessor<I> read(ListAccessor<I> data) {
+				return data.take(shouldTake);
+			}
+		});
 	}
 
 	public ListAccessor<I> copy(final Testable<I> shouldCopy) {
-		try {
-			return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
-				@Override
-				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
-					return data.copy(shouldCopy);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
+			@Override
+			public ListAccessor<I> read(ListAccessor<I> data) {
+				return data.copy(shouldCopy);
+			}
+		});
 	}
 
 	public ListAccessor<I> copy() {
-		try {
-			return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
-				@Override
-				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
-					return data.copy();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new Reader<ListAccessor<I>, ListAccessor<I>>() {
+			@Override
+			public ListAccessor<I> read(ListAccessor<I> data) {
+				return data.copy();
+			}
+		});
 	}
 
 	public ListAccessor<I> take() {
-		try {
-			return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
-				@Override
-				public ListAccessor<I> read(ListAccessor<I> data) throws Throwable {
-					return data.take();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		return read(new WriteReader<ListAccessor<I>, ListAccessor<I>>() {
+			@Override
+			public ListAccessor<I> read(ListAccessor<I> data) {
+				return data.take();
+			}
+		});
 	}
 
 	public I[] toArray() throws UnsupportedOperationException {

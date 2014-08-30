@@ -39,44 +39,36 @@ public class IntArrayBuffer extends PrimitiveArrayBuffer<Integer, int[]> {
 			size = DefaultBufferSize;
 		
 		final Integer desiredSize = size;
-		try {
-			return cache.read(new WriteReader<int[], MapAccessor<Integer, CacheTypeList<int[]>>>() {
-				@Override
-				public int[] read(MapAccessor<Integer, CacheTypeList<int[]>> data) throws Throwable {
-					int[] next;
-					try {
-						next = data.get(desiredSize).shift();
-						if(next == null)
-							throw new NullPointerException();
-					} catch(NullPointerException ex) {
-						Logger.performance("Allocating", "int[" + desiredSize + "]");
-						next = new int[desiredSize];
-					}
-					return next;
+		return cache.read(new WriteReader<int[], MapAccessor<Integer, CacheTypeList<int[]>>>() {
+			@Override
+			public int[] read(MapAccessor<Integer, CacheTypeList<int[]>> data) {
+				int[] next;
+				try {
+					next = data.get(desiredSize).shift();
+					if(next == null)
+						throw new NullPointerException();
+				} catch(NullPointerException ex) {
+					Logger.performance("Allocating", "int[" + desiredSize + "]");
+					next = new int[desiredSize];
 				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+				return next;
+			}
+		});
 	}
 	public static void releaseBuffer(final int[] buffer) {
 		if(buffer == null)
 			throw new NullPointerException();
 		
 		final Integer desiredSize = buffer.length;
-		try {
-			cache.write(new Writer<MapAccessor<Integer, CacheTypeList<int[]>>>() {
-				@Override
-				public void write(MapAccessor<Integer, CacheTypeList<int[]>> data) throws Throwable {
-					CacheTypeList<int[]> cache = data.get(desiredSize);
-					if(cache == null)
-						data.put(desiredSize, cache = new CacheTypeList<int[]>());
-					cache.push(buffer);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		cache.write(new Writer<MapAccessor<Integer, CacheTypeList<int[]>>>() {
+			@Override
+			public void write(MapAccessor<Integer, CacheTypeList<int[]>> data) {
+				CacheTypeList<int[]> cache = data.get(desiredSize);
+				if(cache == null)
+					data.put(desiredSize, cache = new CacheTypeList<int[]>());
+				cache.push(buffer);
+			}
+		});
 	}
 	
 	public IntArrayBuffer() {

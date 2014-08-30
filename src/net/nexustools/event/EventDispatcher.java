@@ -17,12 +17,10 @@ package net.nexustools.event;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
-import java.util.List;
-import java.util.logging.Level;
 import net.nexustools.concurrent.logic.IfWriter;
 import net.nexustools.data.accessor.ListAccessor;
 import net.nexustools.concurrent.PropList;
-import net.nexustools.runtime.RunQueue;
+import net.nexustools.tasks.TaskSink;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
@@ -30,16 +28,16 @@ import net.nexustools.utils.log.Logger;
  *
  * @author katelyn
  */
-public abstract class EventDispatcher<R extends RunQueue, L extends EventListener, E extends Event> {
+public abstract class EventDispatcher<S extends TaskSink, L extends EventListener, E extends Event> {
 	
 	public static interface Processor<L extends EventListener, E extends Event> {
 		public E create();
 		public void dispatch(L listener, E event);
 	}
 	
-	private final R queue;
+	private final S queue;
 	protected final PropList<L> listeners = new PropList();
-	public EventDispatcher(R queue) {
+	public EventDispatcher(S queue) {
 		this.queue = queue;
 	}
 	
@@ -57,7 +55,7 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 					processor.dispatch(cListeners.get(0), event);
 					return;
 				}
-				
+
 				Logger.debug("Dispatching Event to " + cListeners.length() + " listeners");
 				for(final L listener : cListeners)
 					queue.push(new Runnable() {
@@ -71,43 +69,35 @@ public abstract class EventDispatcher<R extends RunQueue, L extends EventListene
 	}
 	
 	public void add(final L listener) {
-		try {
-			listeners.write(new IfWriter<ListAccessor<L>>() {
-				@Override
-				public void write(ListAccessor<L> data) {
-					if(!data.isTrue())
-						connect();
-					
-					data.push(listener);
-				}
-				@Override
-				public boolean test(ListAccessor<L> against) {
-					return !against.contains(listener);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		listeners.write(new IfWriter<ListAccessor<L>>() {
+			@Override
+			public void write(ListAccessor<L> data) {
+				if(!data.isTrue())
+					connect();
+
+				data.push(listener);
+			}
+			@Override
+			public boolean test(ListAccessor<L> against) {
+				return !against.contains(listener);
+			}
+		});
 	}
 	
 	public void remove(final L listener) {
-		try {
-			listeners.write(new IfWriter<ListAccessor<L>>() {
-				@Override
-				public void write(ListAccessor<L> data) {
-					data.remove(listener);
-					
-					if(!data.isTrue())
-						disconnect();
-				}
-				@Override
-				public boolean test(ListAccessor<L> against) {
-					return against.contains(listener);
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+		listeners.write(new IfWriter<ListAccessor<L>>() {
+			@Override
+			public void write(ListAccessor<L> data) {
+				data.remove(listener);
+
+				if(!data.isTrue())
+					disconnect();
+			}
+			@Override
+			public boolean test(ListAccessor<L> against) {
+				return against.contains(listener);
+			}
+		});
 	}
 	
 	public abstract void connect();

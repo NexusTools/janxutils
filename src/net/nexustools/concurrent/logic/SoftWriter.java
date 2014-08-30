@@ -26,7 +26,7 @@ import net.nexustools.utils.Testable;
 public abstract class SoftWriter<A extends BaseAccessor> implements BaseWriter<A>, Testable<A> {
 
 	@Override
-	public final void write(A data, Lockable lock) throws Throwable {
+	public final void write(A data, Lockable lock) {
 		lock.lock();
 		try {
 			if(lock.fastUpgradeTest(data, this))
@@ -37,8 +37,8 @@ public abstract class SoftWriter<A extends BaseAccessor> implements BaseWriter<A
 			lock.unlock();
 		}
 	}
-	public abstract void write(A data) throws Throwable;
-	public abstract void soft(A data) throws Throwable;
+	public abstract void write(A data);
+	public abstract void soft(A data);
 
 	public boolean test(A against) {
 		return !against.isTrue();

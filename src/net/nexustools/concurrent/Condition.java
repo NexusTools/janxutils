@@ -15,103 +15,19 @@
 
 package net.nexustools.concurrent;
 
-import java.lang.reflect.InvocationTargetException;
-import net.nexustools.data.accessor.PropAccessor;
-import net.nexustools.concurrent.logic.VoidReader;
-import net.nexustools.concurrent.logic.Writer;
-import net.nexustools.utils.NXUtils;
-
 /**
  *
- * @author kate
+ * @author katelyn
  */
-public class Condition {
+public interface Condition {
 	
-	private final Prop<Boolean> condition;
-	private final PropList<Thread> waitingThreads = new PropList<Thread>();
-	public Condition(boolean initialState) {
-		condition = new Prop<Boolean>(initialState);
-	}
-	public Condition() {
-		this(false);
-	}
+	public boolean waitForUninterruptibly(long millis);
+	public void waitForUninterruptibly();
 	
-	public void waitFor() {
-		waitingThreads.unique(Thread.currentThread());
-		while(!condition.isTrue())
-			try {
-				Thread.sleep(60 * 60 * 1000);
-			} catch (InterruptedException ex) {}
-		waitingThreads.remove(Thread.currentThread());
-	}
+	public boolean waitFor(long millis) throws InterruptedException;
+	public void waitFor() throws InterruptedException;
 	
-	public void start() {
-		condition.set(false);
-	}
-	public void ifFalse(final Runnable block) {
-		try {
-			condition.read(new VoidReader<PropAccessor<Boolean>>() {
-				@Override
-				public void readV(PropAccessor<Boolean> data) {
-					if(!data.get())
-						block.run();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public void ifTrue(final Runnable block) {
-		try {
-			condition.read(new VoidReader<PropAccessor<Boolean>>() {
-				@Override
-				public void readV(PropAccessor<Boolean> data) {
-					if(data.get())
-						block.run();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public void ifRun(final Runnable trueBlock, final Runnable falseBlock) {
-		try {
-			condition.read(new VoidReader<PropAccessor<Boolean>>() {
-				@Override
-				public void readV(PropAccessor<Boolean> data) {
-					if(data.get())
-						trueBlock.run();
-					else
-						falseBlock.run();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-	}
-	public void finish() {
-		condition.set(true);
-		for(Thread thread : waitingThreads)
-			thread.interrupt();
-	}
-	public void finish(final Runnable finalize) {
-		try {
-			condition.write(new Writer<PropAccessor<Boolean>>() {
-				@Override
-				public void write(PropAccessor<Boolean> data) {
-					data.set(true);
-					finalize.run();
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
-		for(Thread thread : waitingThreads)
-			thread.interrupt();
-	}
-
-	public boolean isFinished() {
-		return condition.get();
-	}
+	public void interrupt();
+	public boolean check();
 	
 }

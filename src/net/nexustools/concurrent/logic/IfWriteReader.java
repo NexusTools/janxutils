@@ -26,7 +26,7 @@ import net.nexustools.utils.Testable;
 public abstract class IfWriteReader<R, A extends BaseAccessor> implements BaseReader<R, A>, Testable<A> {
 
 	@Override
-	public final R read(A data, Lockable<A> lock) throws Throwable {
+	public final R read(A data, Lockable lock) {
 		if(lock.writeLockTest(data, this))
 			try {
 				return read(data);
@@ -36,8 +36,8 @@ public abstract class IfWriteReader<R, A extends BaseAccessor> implements BaseRe
 		return def();
 	}
 	
-	public abstract R def() throws Throwable;
-	public abstract R read(A data) throws Throwable;
+	public abstract R def();
+	public abstract R read(A data);
 
 	public boolean test(A against) {
 		return against.isTrue();

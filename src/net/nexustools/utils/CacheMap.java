@@ -29,7 +29,7 @@ public class CacheMap<K,V, C extends CacheReference<V>> {
 	
 	private final Creator<V,K> creator;
 	protected final CacheLifetime lifetime;
-	private final ReadWriteLock<StrongTypeMap<K, C>> lock = new ReadWriteLock();
+	private final ReadWriteLock lock = new ReadWriteLock();
 	private final StrongTypeMap<K, C> map = new StrongTypeMap();
 	public CacheMap(Creator<V,K> creator) {
 		this(creator, CacheLifetime.Medium);
@@ -40,30 +40,26 @@ public class CacheMap<K,V, C extends CacheReference<V>> {
 	}
 	
 	public V get(final K key) {
-		try {
-			return lock.read(map, new SoftWriteReader<V, StrongTypeMap<K, C>>() {
-				V value;
-				@Override
-				public boolean test(StrongTypeMap<K, C> against) {
-					try {
-						return (value = against.get(key).get()) == null;
-					} catch(NullPointerException ex) {
-						return true;
-					}
+		return lock.read(map, new SoftWriteReader<V, StrongTypeMap<K, C>>() {
+			V value;
+			@Override
+			public boolean test(StrongTypeMap<K, C> against) {
+				try {
+					return (value = against.get(key).get()) == null;
+				} catch(NullPointerException ex) {
+					return true;
 				}
-				@Override
-				public V soft(StrongTypeMap<K, C> data) throws Throwable {
-					return value;
-				}
-				@Override
-				public V read(StrongTypeMap<K, C> data) throws Throwable {
-					map.put(key, ref(value = creator.create(key)));
-					return value;
-				}
-			});
-		} catch (InvocationTargetException ex) {
-			throw NXUtils.wrapRuntime(ex);
-		}
+			}
+			@Override
+			public V soft(StrongTypeMap<K, C> data) {
+				return value;
+			}
+			@Override
+			public V read(StrongTypeMap<K, C> data) {
+				map.put(key, ref(value = creator.create(key)));
+				return value;
+			}
+		});
 	}
 	
 	protected C ref(V value) {

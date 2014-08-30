@@ -27,7 +27,7 @@ import static net.nexustools.utils.StringUtils.UTF8;
 import static net.nexustools.utils.StringUtils.UTF16;
 import static net.nexustools.utils.StringUtils.ASCII;
 import net.nexustools.data.adaptor.AdaptorException;
-import net.nexustools.utils.Processor;
+import net.nexustools.utils.Handler;
 
 /**
  *
