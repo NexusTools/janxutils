@@ -237,14 +237,10 @@ public class SubStream extends Stream {
 	}
 
 	@Override
-	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
-		if(range.isSubRange()) {
-			Object[] rangeArgs = new Object[args.length];
-			System.arraycopy(args, 0, rangeArgs, 0, args.length);
-			rangeArgs[args.length] = range; // Append range onto arguments
-			args = rangeArgs;
-		}
-		return stream.createChannel(args);
+	public ByteChannel createChannel() throws UnsupportedOperationException, IOException {
+		if(range.isSubRange())
+			throw new UnsupportedOperationException();
+		return stream.createChannel();
 	}
 
 	@Override

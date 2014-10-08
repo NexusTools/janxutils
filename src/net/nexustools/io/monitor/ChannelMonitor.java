@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.logic.IfWriter;
+import net.nexustools.concurrent.logic.Writer;
+import net.nexustools.data.accessor.PropAccessor;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -26,18 +31,36 @@ import java.nio.channels.SelectionKey;
  */
 public abstract class ChannelMonitor<C extends SelectableChannel> {
 	protected C channel;
-	private int interests;
-	final Object interestsLock = new Object();
+	private final Prop<Integer> interests;
 	SelectionKey key;
 
 	public ChannelMonitor(C channel, int interests) {
 		this.channel = channel;
-		this.interests = interests;
+		this.interests = new Prop(interests);
 	}
 	
 	public final void start() throws IOException {
-		this.channel.configureBlocking(false);
+		Logger.debug("Installing Monitor", this);
+		
+		channel.configureBlocking(false);
 		SelectorDaemon.installMonitor(this);
+	}
+
+	void doSelect() {
+		interests.write(new Writer<PropAccessor<Integer>>() {
+			@Override
+			public void write(PropAccessor<Integer> data) {
+				try {
+					data.set(onSelect(key.readyOps()));
+				} catch (Throwable t) {
+					handleError(t);
+				}
+				try {
+					if(key.interestOps() != data.get())
+						key.interestOps(data.get());
+				} catch(CancelledKeyException ex) {} // Removed
+			}
+		});
 	}
 
 	/**
@@ -49,7 +72,7 @@ public abstract class ChannelMonitor<C extends SelectableChannel> {
 	 * @param t 
 	 */
 	public abstract void handleError(Throwable t);
-	public abstract int onSelect(SelectionKey key) throws IOException;
+	public abstract int onSelect(int readyOps) throws IOException;
 
 	/**
 	* Requests new interests for this Monitor.
@@ -67,16 +90,28 @@ public abstract class ChannelMonitor<C extends SelectableChannel> {
 	* @throws  CancelledKeyException
 	*          If this key has been cancelled
 	*/
-	public void registerInterests(int op) throws IOException {
-		synchronized(interestsLock) {
-			interests |= op;
-			try {
-				key.interestOps(interests);
-			} catch(CancelledKeyException ex) {
-				key = null;
-				start();
+	public void registerInterests(final int op) throws IOException {
+		interests.write(new IfWriter<PropAccessor<Integer>>() {
+			@Override
+			public boolean test(PropAccessor<Integer> against) {
+				return (against.get() & op) != op;
 			}
-		}
+
+			@Override
+			public void write(PropAccessor<Integer> data) {
+				data.set(data.get() | op);
+				try {
+					key.interestOps(data.get());
+				} catch(CancelledKeyException ex) {
+					key = null;
+					try {
+						start();
+					} catch (IOException iex) {
+						handleError(iex);
+					}
+				}
+			}
+		});
 	}
 
 	/**
@@ -85,6 +120,6 @@ public abstract class ChannelMonitor<C extends SelectableChannel> {
 	 * @return 
 	 */
 	public int interests() {
-		return interests;
+		return interests.get();
 	}
 }

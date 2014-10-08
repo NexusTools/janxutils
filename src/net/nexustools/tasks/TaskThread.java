@@ -22,7 +22,6 @@ import net.nexustools.utils.DaemonThread;
 import net.nexustools.utils.Handler;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -34,15 +33,24 @@ public class TaskThread extends DaemonThread implements TaskSink, Condition {
 	protected Runnable runAfter;
 	protected final int idleShutdown;
 	protected final ThreadCondition shutdown = new ThreadCondition();
-	protected final ThreadCondition hasPacket = new ThreadCondition();
+	protected final ThreadCondition hasTask = new ThreadCondition();
 	public TaskThread(String name) {
-		this(name, 60000 * 5 /* 5 Minutes */, MIN_PRIORITY);
+		this(name, null);
 	}
 	public TaskThread(String name, int idleShutdown) {
 		this(name, idleShutdown, MIN_PRIORITY);
 	}
+	public TaskThread(String name, ThreadGroup threadGroup) {
+		this(name, threadGroup, 60000 * 5);
+	}
+	public TaskThread(String name, ThreadGroup threadGroup, int idleShutdown) {
+		this(name, threadGroup, idleShutdown, MIN_PRIORITY);
+	}
 	public TaskThread(String name, int idleShutdown, int priority) {
-		super(name, priority);
+		this(name, null, idleShutdown, priority);
+	}
+	public TaskThread(String name, ThreadGroup threadGroup, int idleShutdown, int priority) {
+		super(name, threadGroup, priority);
 		this.idleShutdown = idleShutdown;
 	}
 	protected void push0(final Task task, final Runnable after) throws ClosedSinkException, FullSinkException {
@@ -58,7 +66,7 @@ public class TaskThread extends DaemonThread implements TaskSink, Condition {
 					public void run() {
 						runAfter = after;
 						currentTask = task;
-						hasPacket.finish();
+						hasTask.finish();
 						if(!isAlive())
 							start();
 					}
@@ -83,7 +91,7 @@ public class TaskThread extends DaemonThread implements TaskSink, Condition {
 		try {
 			push0(task, after);
 		} catch(IllegalStateException ex) {
-			Logger.exception(Logger.Level.Debug, ex);
+			Logger.exception(Logger.Level.Gears, ex);
 			after.run(); // Ensure the thread is made idle if the task failed to push
 			return false;
 		}
@@ -107,13 +115,13 @@ public class TaskThread extends DaemonThread implements TaskSink, Condition {
 	@Override
 	public void run() {
 		while(true) {
-			if(hasPacket.waitForUninterruptibly(idleShutdown)) { // Wait for 5 minutes
+			if(hasTask.waitForUninterruptibly(idleShutdown)) {
 				Runnable after = runAfter;
 				currentTask.performExecution();
 				shutdown.sync(new Handler<Boolean>() {
 					public void handle(Boolean data) {
 						currentTask = null;
-						hasPacket.start();
+						hasTask.start();
 					}
 				});
 				after.run();

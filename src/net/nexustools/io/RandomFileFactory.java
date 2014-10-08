@@ -60,7 +60,6 @@ public class RandomFileFactory {
 		@Override
 		public void close() throws IOException {
 			super.close();
-			Logger.performance("Closing", path);
 			getChannel().close();
 			closed = true;
 		}

@@ -20,8 +20,11 @@ import static net.nexustools.Application.defaultName;
 import static net.nexustools.Application.defaultOrganization;
 import net.nexustools.concurrent.Prop;
 import net.nexustools.concurrent.ThreadCondition;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.io.Stream;
 import net.nexustools.tasks.TaskSink;
+import net.nexustools.tasks.ThreadedTaskQueue;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
@@ -31,19 +34,18 @@ import net.nexustools.utils.log.Logger;
  */
 public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDelegate {
 	public final String name;
-	protected final S taskSink;
 	private final String organization;
 	private final Prop<Runnable> mainLoop = new Prop();
 	private final ThreadCondition hasMainLoop = new ThreadCondition();
+	private final Prop<ThreadedTaskQueue> queue = new Prop();
 	private final Platform platform;
 	
-	public DefaultAppDelegate(String[] args, S queue) {
-		this(args, defaultName(), defaultOrganization(), queue);
+	public DefaultAppDelegate(String[] args) {
+		this(args, defaultName(), defaultOrganization());
 	}
-	protected DefaultAppDelegate(final String[] args, String name, String organization, S queue) {
+	protected DefaultAppDelegate(final String[] args, final String name, String organization) {
 		this.name = name;
 		this.organization = organization;
-		taskSink = queue;
 		
 		String OS = System.getProperty("os.name").toLowerCase();
 		if(OS.contains("sunos"))
@@ -61,7 +63,12 @@ public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDeleg
 		else
 			platform = Platform.Unknown;
 		
-		queue.push(new Runnable() {
+		
+		new Thread(new ThreadGroup(name), "init") {
+			{
+				setPriority(MAX_PRIORITY);
+			}
+			@Override
 			public void run() {
 				Application.setDelegateIfNone(DefaultAppDelegate.this);
 				Runnable main = null;
@@ -87,11 +94,7 @@ public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDeleg
 					hasMainLoop.finish();
 				}
 			}
-			@Override
-			public String toString() {
-				return name() + "LauncherTask";
-			}
-		});
+		}.start();
 	}
 
 	public final void mainLoop() {
@@ -107,10 +110,6 @@ public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDeleg
 		} finally {
 			Logger.shutdownAndWait();
 		}
-	}
-	
-	public final S queue() {
-		return taskSink;
 	}
 	
 	public String pathUri(Path path) {
@@ -181,6 +180,21 @@ public abstract class DefaultAppDelegate<S extends TaskSink> implements AppDeleg
 	}
 	public Object platformObject() {
 		return platform();
+	}
+
+	public TaskSink taskSink() {
+		return queue.read(new SoftWriteReader<TaskSink, PropAccessor<ThreadedTaskQueue>>() {
+			@Override
+			public TaskSink soft(PropAccessor<ThreadedTaskQueue> data) {
+				return data.get();
+			}
+			@Override
+			public TaskSink read(PropAccessor<ThreadedTaskQueue> data) {
+				ThreadedTaskQueue sink = new ThreadedTaskQueue(name + "Queue");
+				data.set(sink);
+				return sink;
+			}
+		});
 	}
 	
 	@Override

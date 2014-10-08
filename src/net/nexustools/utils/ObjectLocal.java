@@ -12,28 +12,12 @@
  * along with janxutils.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package net.nexustools.utils;
 
 /**
  *
  * @author katelyn
  */
-public abstract class DaemonThread extends Thread {
-	
-	public DaemonThread(String name, ThreadGroup group, int priority) {
-		super(group, name);
-		setDaemon(true);
-		setPriority(priority);
-	}
-	
-	public DaemonThread(String name, int priority) {
-		super(name);
-		setDaemon(true);
-		setPriority(priority);
-	}
-	
-	@Override
-	public abstract void run();
+public class ObjectLocal<O> {
 	
 }

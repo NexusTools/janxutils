@@ -7,15 +7,14 @@
 package net.nexustools.io;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.URI;
-import java.nio.channels.ServerSocketChannel;
+import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.ServerSocketChannel;
 import net.nexustools.io.monitor.ServerSocketChannelMonitor;
+import net.nexustools.tasks.ThreadedTaskQueue;
 import net.nexustools.tasks.TaskQueue;
 import net.nexustools.tasks.TaskSink;
-import net.nexustools.tasks.ThreadedTaskQueue;
 import net.nexustools.utils.Handler;
 
 /**
@@ -57,10 +56,10 @@ public class SocketStreamServer {
         }
 	}
 	
-	public ServerSocketChannelMonitor startMonitor(final Handler<Stream> childConnected, final Handler<Throwable> errorOccured) throws IOException {
+	public ServerSocketChannelMonitor startMonitor(final Handler<SocketStream> childConnected, final Handler<Throwable> errorOccured) throws IOException {
 		return startMonitor(childConnected, errorOccured, sharedMonitorQueue);
 	}
-	public ServerSocketChannelMonitor startMonitor(final Handler<Stream> childConnected, final Handler<Throwable> errorOccured, TaskSink taskSink) throws IOException {
+	public ServerSocketChannelMonitor startMonitor(final Handler<SocketStream> childConnected, final Handler<Throwable> errorOccured, TaskSink taskSink) throws IOException {
 		ServerSocketChannelMonitor monitor = new ServerSocketChannelMonitor(channel, taskSink) {
 			@Override
 			public void onConnect(SocketChannel child) {

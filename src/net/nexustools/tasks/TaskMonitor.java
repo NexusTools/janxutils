@@ -38,7 +38,6 @@ public class TaskMonitor extends SimpleSynchronizedTask {
 	}
 
 	void start() {
-		Logger.debug(target, "Starting TaskMonitor");
 		TaskScheduler.scheduleRepeating(this, 0, 15000, 15, monitorQueue);
 		start = System.currentTimeMillis();
 	}

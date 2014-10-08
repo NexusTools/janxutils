@@ -16,13 +16,16 @@
 package net.nexustools.io.monitor;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
-import net.nexustools.data.buffer.basic.StrongTypeList;
+import net.nexustools.concurrent.Prop;
+import net.nexustools.concurrent.logic.SoftUpdateWriter;
+import net.nexustools.concurrent.logic.SoftWriteReader;
+import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.utils.DaemonThread;
-import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -31,16 +34,32 @@ import net.nexustools.utils.log.Logger;
  */
 public class SelectorDaemon extends DaemonThread {
 	
-	private static Selector selector;
-	private static final Object selectorLock = new Object();
+	private static final Prop<Selector> selector = new Prop();
 	public static void installMonitor(final ChannelMonitor monitor) throws IOException {
-		synchronized(selectorLock) {
-			if(selector == null) {
-				selector = Selector.open();
-				new SelectorDaemon().start();
+		selector.write(new SoftUpdateWriter<PropAccessor<Selector>>() {
+			@Override
+			public void write(PropAccessor<Selector> data) {
+				try {
+					data.set(Selector.open());
+					new SelectorDaemon().start();
+				} catch (IOException ex) {
+					throw new RuntimeException(ex);
+				}
 			}
-			monitor.key = monitor.channel.register(selector, monitor.interests(), monitor);
-		}
+			@Override
+			public void update(PropAccessor<Selector> data) {
+				try {
+					data.get().wakeup();
+					monitor.key = monitor.channel.register(data.get(), monitor.interests(), monitor);
+				} catch (ClosedChannelException ex) {
+					throw new RuntimeException(ex);
+				}
+				Logger.debug("Registered Monitor", monitor, monitor.key);
+			}
+			public boolean test(PropAccessor<Selector> against) {
+				return !against.isTrue();
+			}
+		});
 	}
 	
 	private SelectorDaemon() throws IOException {
@@ -50,42 +69,46 @@ public class SelectorDaemon extends DaemonThread {
 
 	@Override
 	public void run() {
-		StrongTypeList<ChannelMonitor> selectedMonitors = new StrongTypeList();
 		while(true) {
-			synchronized(selectorLock) {
-				if(selector.keys().size() < 1) {
-					selector = null; // TODO: Add timeout
-					return;
+			Selector current;
+			try {
+				current = selector.read(new SoftWriteReader<Selector, PropAccessor<Selector>>() {
+					@Override
+					public boolean test(PropAccessor<Selector> against) {
+						return against.get().keys().size() < 1;
+					}
+					@Override
+					public Selector soft(PropAccessor<Selector> data) {
+						return data.get();
+					}
+					@Override
+					public Selector read(PropAccessor<Selector> data) {
+						data.clear();
+						throw new CancellationException();
+					}
+				});
+			} catch(CancellationException ex) {
+				return;
+			}
+
+			Set<SelectionKey> selectedKeys = null;
+			try {
+				current.select(150);
+				selectedKeys = current.selectedKeys();
+			} catch (IOException ex) {
+				throw new RuntimeException("Error occured in SelectorDaemon", ex);
+			}
+			
+			for(SelectionKey key : selectedKeys) {
+				ChannelMonitor monitor = (ChannelMonitor)key.attachment();
+				try {
+					Logger.debug("Monitor Selected", monitor, monitor.key.readyOps());
+					monitor.doSelect();
+				} catch(Throwable t) {
+					Logger.exception(t);
 				}
 			}
-
-			try {
-				selector.select(5000);
-				for(SelectionKey key : selector.selectedKeys())
-					selectedMonitors.push((ChannelMonitor)key.attachment());
-			} catch (IOException ex) {
-				throw NXUtils.wrapRuntime(ex);
-			}
-
-			if(selectedMonitors.isTrue()) {
-				for(ChannelMonitor monitor : selectedMonitors)
-					try {
-						Logger.gears("Monitor Selected", monitor);
-						synchronized(monitor.interestsLock) {
-							int interests = monitor.onSelect(monitor.key);
-							if(monitor.key.interestOps() != interests) {
-								Logger.gears("Updating interests", interests);
-								monitor.key.interestOps(interests);
-							}
-						}
-					} catch(Throwable t) {
-						monitor.handleError(t);
-					}
-				selectedMonitors.clear();
-			} else
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException ex) {}
+			selectedKeys.clear();
 		}
 	}
 	

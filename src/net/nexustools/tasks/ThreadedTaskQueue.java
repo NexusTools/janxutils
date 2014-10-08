@@ -16,7 +16,6 @@
 package net.nexustools.tasks;
 
 import static java.lang.Thread.MIN_PRIORITY;
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CancellationException;
 import net.nexustools.concurrent.PropList;
 import net.nexustools.concurrent.ReadWriteLock;
@@ -48,6 +47,7 @@ public class ThreadedTaskQueue implements TaskQueue {
 	
 	protected final String name;
 	protected final int priority;
+	private final ThreadGroup group;
 	protected final int idleShutdown;
 	protected final long created = System.currentTimeMillis();
 	protected final ReadWriteLock queueLock = new ReadWriteLock();
@@ -55,9 +55,14 @@ public class ThreadedTaskQueue implements TaskQueue {
 	protected final PropList<Integer> emptyThreadSlots = new PropList();
 	protected final PropList<Pair<Integer, TaskThread>> idleThreads = new PropList();
 	public ThreadedTaskQueue(String name, int priority, int threadLimit, int idleShutdown) {
-		for(int i=threadLimit; i>0; i--)
+		for(int i=Math.max(threadLimit, 2); i>0; i--)
 			emptyThreadSlots.push(i);
 		
+		group = new ThreadGroup(name) {
+			{
+				setDaemon(true);
+			}
+		};
 		this.idleShutdown = idleShutdown;
 		this.priority = priority;
 		this.name = name;
@@ -117,10 +122,13 @@ public class ThreadedTaskQueue implements TaskQueue {
 
 	public boolean push(final Task task) throws FullSinkException {
 		return queueLock.read(queue, new SoftWriteReader<Boolean, ListAccessor<Task>>() {
-			Boolean success;
+			Boolean success = null;
 
 			@Override
 			public boolean test(ListAccessor<Task> against) {
+				if(success != null)
+					return false;
+				
 				while(true) {
 					final Pair<Integer, TaskThread> nextTaskThread = idleThreads.pop();
 					if(nextTaskThread == null)
@@ -142,7 +150,7 @@ public class ThreadedTaskQueue implements TaskQueue {
 
 				final Integer nextSlot = emptyThreadSlots.pop();
 				if(nextSlot != null) {
-					final TaskThread newTaskThread = new TaskThread(name + '-' + nextSlot, idleShutdown, priority);
+					final TaskThread newTaskThread = new TaskThread(name + "-" + nextSlot, group, idleShutdown, priority);
 					try {
 						success = newTaskThread.push(task, new Runnable() {
 							public void run() {

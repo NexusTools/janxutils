@@ -33,7 +33,7 @@ public abstract class TaskChannelMonitor<C extends SelectableChannel> extends Ch
 		this.taskSink = taskSink;
 	}
 	
-	protected Task create(Runnable run) {
+	protected Task wrap(Runnable run) {
 		return new RunTask(run) {
 			@Override
 			protected void execute() {
@@ -46,9 +46,12 @@ public abstract class TaskChannelMonitor<C extends SelectableChannel> extends Ch
 		};
 	}
 	
+	protected void push(Runnable block) {
+		taskSink.push(wrap(block));
+	}
+	
 	public void push(Task task) {
-		if(!taskSink.push(task))
-			throw new RuntimeException("Unable to handle IO event: Task refusing to enter TaskSink");
+		taskSink.push(task);
 	}
 
 }

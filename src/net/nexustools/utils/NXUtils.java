@@ -17,6 +17,7 @@ package net.nexustools.utils;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import net.nexustools.data.analyze.ClassDefinition;
 
 /**
  *
@@ -88,7 +89,7 @@ public final class NXUtils {
 
 	public static String toString(Object target, Pair<String, Object>... vars) {
 		StringBuilder builder = new StringBuilder();
-		builder.append(target.getClass().getSimpleName());
+		builder.append(ClassDefinition.shortNameFor(target.getClass()));
 		if(vars.length > 0) {
 			builder.append('{');
 			boolean addComma = false;
@@ -108,6 +109,9 @@ public final class NXUtils {
 
 	public static void passException(Throwable targetException) throws RuntimeTargetException {
 		throw wrapRuntime(targetException);
+	}
+	public static void passIOException(Throwable targetException) throws IOException {
+		passException(IOException.class, targetException);
 	}
 	public static <T extends Throwable> void passException(Class<T> wrappedException, Throwable targetException) throws T {
 		throw unwrapTarget(wrappedException, targetException);

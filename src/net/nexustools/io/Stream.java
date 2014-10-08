@@ -492,17 +492,12 @@ public abstract class Stream implements Iterable<Stream> {
 	}
 	
 	public final void readNonBlocking(final NBStreamProcessor reader) throws IOException, UnsupportedOperationException {
-		//if(NBStreamProcessor.hasSelectorSupport()) {
-			final ByteChannel channel = createChannel();
-			if(channel instanceof SelectableChannel) {
-				reader.register(((SelectableChannel)channel), Stream.this.toURL().hashCode());
-			}
-//		}
-//		try {
-//			reader.useThread(createInputStream(), createOutputStream());
-//		} catch (TaskSink.FullException ex) {
-//			Logger.getLogger(Stream.class.getName()).log(Level.SEVERE, null, ex);
-//		}
+		try {
+			reader.register((SelectableChannel)createChannel());
+		} catch(Throwable t) {
+			// TODO: Create fallback Threaded implementation
+			throw new UnsupportedOperationException(t);
+		}
 	}
 	
 	public final void write(StreamWriter<OutputStream> writer) throws IOException {
@@ -784,7 +779,7 @@ public abstract class Stream implements Iterable<Stream> {
 			};
 	}
 	
-	public abstract ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException;
+	public abstract ByteChannel createChannel() throws UnsupportedOperationException, IOException;
 	
 	public Iterable<String> children() throws IOException {
 		throw new IOException(toURL() + " has no children");

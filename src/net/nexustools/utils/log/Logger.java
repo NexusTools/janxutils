@@ -16,7 +16,6 @@
 package net.nexustools.utils.log;
 
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -42,6 +41,7 @@ import net.nexustools.utils.Creator;
 import net.nexustools.utils.NXUtils;
 import net.nexustools.utils.Testable;
 import net.nexustools.utils.WeakArrayList;
+import net.nexustools.utils.log.Logger.Level;
 import net.nexustools.utils.sort.DescLongTypeComparator;
 
 /**
@@ -142,7 +142,6 @@ public class Logger extends Thread {
 	static {
 		Level mLevel = Level.Performance;
 		String strLevel = System.getProperty("logger");
-		System.out.println("Logging Level: " + strLevel);
 		if(strLevel != null)
 			for(Level level : Level.values())
 				if(level.name().equalsIgnoreCase(strLevel) ||

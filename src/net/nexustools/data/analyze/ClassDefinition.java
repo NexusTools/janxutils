@@ -56,6 +56,10 @@ public final class ClassDefinition {
 	public static boolean hasAnnotation(Class<?> type, Class<? extends Annotation> annote) {
 		return load(type).hasAnnotation(annote);
 	}
+
+	public static String shortNameFor(Class<? extends Object> type) {
+		return load(type).shortName();
+	}
 	
 	private static class Instruction {
 		boolean publicFields = true;
@@ -69,6 +73,7 @@ public final class ClassDefinition {
 	
 	// TODO: Add revision capabilities
 	private final Class<?> type;
+	private final String shortName;
 	private final ClassDefinition superDefinition;
 	private final HashMap<Class<? extends Annotation>, Annotation> annotations = new HashMap();
 	private final HashMap<String, FieldDefinition> fields = new HashMap();
@@ -84,6 +89,16 @@ public final class ClassDefinition {
 			superDefinition = null;
 		this.type = type;
 		process();
+		
+		
+		String sName = type.getSimpleName();
+		if(sName == null || sName.length() < 1)
+			sName = type.getName();
+		this.shortName = sName;
+	}
+	
+	public String shortName() {
+		return shortName;
 	}
 	
 	public Map<Class<? extends Annotation>, Annotation> annotations() {

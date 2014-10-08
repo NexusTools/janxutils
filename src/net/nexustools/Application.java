@@ -22,6 +22,8 @@ import net.nexustools.concurrent.logic.Reader;
 import net.nexustools.data.accessor.PropAccessor;
 import net.nexustools.io.Stream;
 import static net.nexustools.io.Stream.bindSynthScheme;
+import net.nexustools.tasks.TaskSink;
+import net.nexustools.tasks.ThreadedTaskQueue;
 import net.nexustools.utils.log.Logger;
 
 /**
@@ -142,6 +144,15 @@ public class Application {
 			@Override
 			public void write(PropAccessor<AppDelegate> data) {
 				setDelegate0(data, app);
+			}
+		});
+	}
+	
+	public static TaskSink taskSink() {
+		return delegate.read(new Reader<TaskSink, PropAccessor<AppDelegate>>() {
+			@Override
+			public TaskSink read(PropAccessor<AppDelegate> data) {
+				return data.get().taskSink();
 			}
 		});
 	}

@@ -17,9 +17,8 @@ package net.nexustools.io.monitor;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import net.nexustools.tasks.SimpleSynchronizedTask;
+import net.nexustools.concurrent.Condition;
+import net.nexustools.concurrent.ThreadCondition;
 import net.nexustools.tasks.Task;
 import net.nexustools.tasks.TaskSink;
 import net.nexustools.utils.NXUtils;
@@ -30,29 +29,42 @@ import net.nexustools.utils.NXUtils;
  */
 public abstract class SocketChannelMonitor extends TaskChannelMonitor<SocketChannel> {
 
+	private final Condition connected;
 	protected final Task onConnect;
 	protected final Task onRead;
-	protected final Task onWrite;
 
 	public SocketChannelMonitor(final SocketChannel channel, TaskSink taskSink) {
-		super(channel, taskSink, SelectionKey.OP_CONNECT);
-		onConnect = create(new Runnable() {
-			public void run() {
-				if(channel.isConnectionPending())
+		super(channel, taskSink, channel.isConnected() ? SelectionKey.OP_READ | SelectionKey.OP_WRITE : SelectionKey.OP_CONNECT);
+		if(channel.isConnected()) {
+			onConnect = wrap(new Runnable() {
+				public void run() {
+					if(channel.isConnectionPending())
+						try {
+							channel.finishConnect();
+						} catch (IOException ex) {
+							NXUtils.passException(ex);
+						}
+					onConnect();
 					try {
-						channel.finishConnect();
+						registerInterests(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 					} catch (IOException ex) {
 						NXUtils.passException(ex);
 					}
-				onConnect();
-				try {
-					registerInterests(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-				} catch (IOException ex) {
-					NXUtils.passException(ex);
 				}
-			}
-		});
-		onRead = create(new Runnable() {
+			});
+			// TODO: Replace with a fake condition that always returns true
+			connected = new ThreadCondition(true);
+		} else {
+			connected = new ThreadCondition();
+			push(new Runnable() {
+				public void run() {
+					onConnect();
+					((ThreadCondition)connected).finish();
+				}
+			});
+			onConnect = null;
+		}
+		onRead = wrap(new Runnable() {
 			public void run() {
 				if (onRead())
 					try {
@@ -62,29 +74,35 @@ public abstract class SocketChannelMonitor extends TaskChannelMonitor<SocketChan
 					}
 			}
 		});
-		onWrite = create(new Runnable() {
-			public void run() {
-				onWrite();
-			}
-		});
 	}
 
 	protected abstract void onConnect();
 	protected abstract boolean onRead();
 	protected abstract void onWrite();
+	
+	public final void registerWrite() throws IOException {
+		registerInterests(SelectionKey.OP_WRITE);
+	}
 
 	@Override
-	public final int onSelect(SelectionKey key) throws IOException {
+	public final int onSelect(int readyOps) throws IOException {
 		int interests = interests();
-		if ((key.readyOps()& SelectionKey.OP_CONNECT) == SelectionKey.OP_CONNECT) {
+		if ((readyOps& SelectionKey.OP_CONNECT) == SelectionKey.OP_CONNECT) {
 			interests ^= SelectionKey.OP_CONNECT;
 			push(onConnect);
-		}
-		if ((key.readyOps() & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE)
-			push(onWrite);
-		if ((key.readyOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-			interests ^= SelectionKey.OP_WRITE;
-			push(onRead);
+		} else {
+			connected.waitForUninterruptibly();
+			if ((readyOps & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE)
+				try {
+					onWrite();
+					interests ^= SelectionKey.OP_WRITE;
+				} catch(Throwable t) {
+					handleError(t);
+				}
+			if ((readyOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+				interests ^= SelectionKey.OP_READ;
+				push(onRead);
+			}
 		}
 		return interests;
 	}

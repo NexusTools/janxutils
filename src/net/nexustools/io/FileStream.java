@@ -225,9 +225,7 @@ public class FileStream extends Stream {
 	}
 
 	@Override
-	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
-		if(args.length > 0)
-			throw new UnsupportedOperationException();
+	public ByteChannel createChannel() throws UnsupportedOperationException, IOException {
 		return RandomFileFactory.open(internalPath, true).getChannel();
 	}
 	

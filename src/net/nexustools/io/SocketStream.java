@@ -13,10 +13,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.nexustools.utils.NXUtils;
 
 /**
@@ -60,7 +57,7 @@ public class SocketStream extends Stream {
 		 * 
 		 * Only supported on Windows.
 		 */
-		Named("unix");
+		NamedPipe("npipe");
 		
 		public final String scheme;
 		Type(String scheme) {
@@ -162,7 +159,7 @@ public class SocketStream extends Stream {
 
 	@Override
 	public long size() throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("Sockets cannot provide a size, if you wish to have size support than implement a protocol ontop of the SocketStream class which provides a size.");
+		throw new UnsupportedOperationException("Sockets cannot provide a size, if you wish to have size support than implement a protocol class extending SocketStream which provides a size.");
 	}
 
 	@Override
@@ -195,9 +192,7 @@ public class SocketStream extends Stream {
 	}
 
 	@Override
-	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
-		if(args.length > 0)
-			throw new UnsupportedOperationException();
+	public SocketChannel createChannel() throws UnsupportedOperationException, IOException {
 		return socketChannel;
 	}
 

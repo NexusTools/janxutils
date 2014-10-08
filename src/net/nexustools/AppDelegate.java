@@ -15,6 +15,8 @@
 
 package net.nexustools;
 
+import net.nexustools.tasks.TaskSink;
+
 /**
  *
  * @author katelyn
@@ -103,6 +105,7 @@ public interface AppDelegate {
 	public abstract String organization();
 	public abstract String pathUri(Path path);
 	public abstract boolean needsMainLoop();
+	public abstract TaskSink taskSink();
 	public abstract void mainLoop();
 	
 	public abstract Device device();

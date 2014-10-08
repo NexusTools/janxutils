@@ -105,9 +105,7 @@ public abstract class Task implements Cancelable {
 	protected Runnable interrupt = new Runnable() {
 		public void run() {
 			ClassDefinition def = ClassDefinition.load(Task.this.getClass());
-			Logger.performance("Analyzing", def, def.annotations());
 			if(!def.hasAnnotation(HeavyTask.class)) {
-				Logger.performance(Task.this, "is monitored");
 				exec0Impl = new Provider<Runnable>() {
 					final TaskMonitor monitor = new TaskMonitor(Task.this);
 					Runnable interrupt = new Runnable() {
@@ -123,7 +121,6 @@ public abstract class Task implements Cancelable {
 					}
 				};
 			} else {
-				Logger.performance(Task.this, "is heavy");
 				exec0Impl = new Provider<Runnable>() {
 					Runnable interrupt = new Runnable() {
 						public void run() {
@@ -316,7 +313,7 @@ public abstract class Task implements Cancelable {
 			@Override
 			public void write(PropAccessor<State> data) {
 				if(!data.get().ready)
-					throw new IllegalStateException("Task is not ready to be moved to a sink: " + data);
+					throw new IllegalStateException("Task is not ready: " + data.get());
 
 				try {
 					Task.this.interrupt.run();

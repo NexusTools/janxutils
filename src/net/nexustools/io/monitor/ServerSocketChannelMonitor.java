@@ -22,8 +22,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import net.nexustools.tasks.SimpleSynchronizedTask;
 import net.nexustools.tasks.TaskSink;
-import net.nexustools.tasks.TaskSinkException;
 import net.nexustools.utils.NXUtils;
+import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -38,7 +38,7 @@ public abstract class ServerSocketChannelMonitor extends TaskChannelMonitor<Serv
 	public abstract void onConnect(SocketChannel child);
 
 	@Override
-	public final int onSelect(SelectionKey key) throws IOException {
+	public final int onSelect(int readyOps) throws IOException {
 		final SocketChannel child = channel.accept();
 		if(child != null)
 			try {
@@ -54,8 +54,10 @@ public abstract class ServerSocketChannelMonitor extends TaskChannelMonitor<Serv
 				} catch(Throwable tt) {}
 				throw NXUtils.wrapRuntime(t);
 			}
-		if(!channel.isOpen())
+		else if(!channel.isOpen())
 			throw new ClosedChannelException();
+		else
+			Logger.performance("This should never happen", Thread.currentThread().getStackTrace());
 		return SelectionKey.OP_ACCEPT;
 	}
 }

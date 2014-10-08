@@ -75,7 +75,7 @@ public final class VoidStream extends Stream {
 	}
 
 	@Override
-	public ByteChannel createChannel(Object... args) throws UnsupportedOperationException, IOException {
+	public ByteChannel createChannel() throws UnsupportedOperationException, IOException {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
 	

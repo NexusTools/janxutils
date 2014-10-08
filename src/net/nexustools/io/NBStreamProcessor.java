@@ -18,18 +18,11 @@ package net.nexustools.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import net.nexustools.tasks.Task;
-import net.nexustools.tasks.TaskQueue;
+import java.nio.channels.SocketChannel;
+import net.nexustools.io.monitor.SocketChannelMonitor;
 import net.nexustools.tasks.TaskSink;
 import net.nexustools.tasks.ThreadedTaskQueue;
-import net.nexustools.utils.Handler;
-import net.nexustools.utils.NXUtils;
-import net.nexustools.utils.log.Logger;
 
 /**
  *
@@ -37,129 +30,41 @@ import net.nexustools.utils.log.Logger;
  */
 public abstract class NBStreamProcessor {
 	
-	private static final TaskQueue defaultQueue = new ThreadedTaskQueue("NBStreamProcessorQueue");
-	
+	private static final TaskSink defaultTaskSink = new ThreadedTaskQueue("NBStreamProcessorQueue");
 	public static class DontCloseChannel extends RuntimeException {}
 	
 	private final TaskSink taskSink;
 	public NBStreamProcessor() {
-		this(defaultQueue);
+		this(defaultTaskSink);
 	}
 	public NBStreamProcessor(TaskSink taskSink) {
 		this.taskSink = taskSink;
 	}
-	
-	private Runnable wantMoreImpl;
-	protected void nextStep() {
-		readyForMore();
-	}
-	
-	protected final void readyForMore() {
-		wantMoreImpl.run();
+
+	void register(SelectableChannel selectableChannel) throws IOException {
+		SocketChannelMonitor monitor = new SocketChannelMonitor((SocketChannel)selectableChannel, taskSink) {
+			@Override
+			protected void onConnect() {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+			@Override
+			protected boolean onRead() {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+			@Override
+			protected void onWrite() {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+			@Override
+			public void handleError(Throwable t) {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+		};
+		monitor.start();
 	}
 	
 	public abstract void opened(InputStream in, OutputStream out);
 	public abstract void readInput() throws IOException;
 	public abstract void closed();
 
-	Task useThread(final InputStream inStream, final OutputStream outStream) {
-//		readTask = new Task() {
-//			@Override
-//			protected void aboutToExecute() {
-//			}
-//			@Override
-//			protected void onFailure(Throwable reason) {
-//			}
-//			@Override
-//			protected void onSuccess() {
-//			}
-//			@Override
-//			protected void execute() {
-//			}
-//		};
-//		
-//		new TaskThread("NBStreamReader-" + StringUtils.randomString(8), 0).push(readTask);
-//		return readTask;
-		throw new UnsupportedOperationException();
-	}
-
-	void register(final SelectableChannel channel, final int fairHashCode) throws IOException {
-		channel.configureBlocking(false);
-		final Runnable readTask = new Runnable() {
-			public void run() {
-				try {
-					readInput();
-				} catch (Throwable t) {
-					if(t instanceof DontCloseChannel)
-						Logger.exception(Logger.Level.Gears, t);
-					else {
-						try {
-							channel.close();
-							closed();
-						} catch(Throwable tt) {}
-						throw NXUtils.wrapRuntime(t);
-					}
-					return;
-				}
-				nextStep();
-			}
-			public int fairHashCode() {
-				return fairHashCode;
-			}
-			@Override
-			public String toString() {
-				return channel.toString() + "-Reader";
-			}
-		};
-		wantMoreImpl = SelectorDaemon.install(readTask, new Handler<Throwable>() {
-			public void handle(Throwable data) {
-				if(data instanceof ClosedChannelException)
-					closed();
-				else
-					try {
-						channel.close();
-						closed();
-					} catch(Throwable t) {}
-			}
-		}, channel, SelectionKey.OP_READ);
-		taskSink.push(new Runnable() {
-			public int fairHashCode() {
-				return fairHashCode;
-			}
-			public void run() {
-				Logger.gears("Streams opened", channel);
-				opened(new EfficientInputStream() {
-					@Override
-					public int read(byte[] b, int off, int len) throws IOException {
-						return ((ByteChannel)channel).read(ByteBuffer.wrap(b, off, len));
-					}
-					@Override
-					public void close() throws IOException {
-						try {
-							channel.close();
-							closed();
-						} catch(Throwable t) {}
-					}
-				}, new EfficientOutputStream() {
-					@Override
-					public void write(byte[] b, int off, int len) throws IOException {
-						((ByteChannel)channel).write(ByteBuffer.wrap(b, off, len));
-					}
-					@Override
-					public void close() throws IOException {
-						try {
-							channel.close();
-							closed();
-						} catch(Throwable t) {}
-					}
-				});
-				taskSink.push(readTask);
-			}
-			@Override
-			public String toString() {
-				return channel.toString() + "-Initializer";
-			}
-		});
-	}
-	
 }
